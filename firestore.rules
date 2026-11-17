@@ -40,10 +40,9 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // الاختبارات: التطبيق يضيف فقط ويقرأ اختباراته، والتعديل والحذف للإدارة
+    // الاختبارات: التطبيق يقرأ الكل (لمعرفة الإعادة) ويضيف فقط، والتعديل والحذف للإدارة
     match /exams/{id} {
-      allow read: if isAdmin()
-        || (isApp() && resource.data.authorUid == request.auth.uid);
+      allow read: if isApp();
       allow create: if isAdmin()
         || (isApp() && request.resource.data.authorUid == request.auth.uid);
       allow update, delete: if isAdmin();

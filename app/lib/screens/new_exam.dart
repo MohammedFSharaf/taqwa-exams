@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../logic.dart';
@@ -19,6 +22,34 @@ class _NewExamScreenState extends State<NewExamScreen> {
   int? _type;
   int? _startJuz;
   bool _retest = false;
+  StreamSubscription? _prevSub;
+  Map<String, dynamic>? _prev; // آخر اختبار سابق لنفس الطالب بنفس النوع والأجزاء
+
+  bool get _forcedRetest => _prev != null && _prev!['passed'] != true;
+  bool get _isRetest => _forcedRetest || _retest;
+
+  void _watchPrev() {
+    _prevSub?.cancel();
+    _prevSub = null;
+    _prev = null;
+    if (_student == null || _type == null || _startJuz == null) return;
+    final type = _type, start = _startJuz;
+    _prevSub = Repo.I.studentExams(_student!.id).listen((list) {
+      final m = list.where((e) => e['type'] == type && e['startJuz'] == start).toList();
+      m.sort((a, b) {
+        final ta = a['createdAt'], tb = b['createdAt'];
+        if (ta is Timestamp && tb is Timestamp) return tb.compareTo(ta);
+        return 0;
+      });
+      if (mounted) setState(() => _prev = m.isEmpty ? null : m.first);
+    }, onError: (_) {});
+  }
+
+  @override
+  void dispose() {
+    _prevSub?.cancel();
+    super.dispose();
+  }
 
   int? get _endJuz => (_type == null || _startJuz == null) ? null : _startJuz! + _type! - 1;
   bool get _ready => _halaqa != null && _student != null && _type != null && _startJuz != null;
@@ -32,6 +63,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
         _startJuz = null;
       }
     });
+    _watchPrev();
   }
 
   Future<void> _pickStudent() async {
@@ -40,7 +72,10 @@ class _NewExamScreenState extends State<NewExamScreen> {
       isScrollControlled: true,
       builder: (_) => StudentPicker(halaqa: _halaqa!),
     );
-    if (res != null) setState(() => _student = res);
+    if (res != null) {
+      setState(() => _student = res);
+      _watchPrev();
+    }
   }
 
   void _start() {
@@ -52,10 +87,39 @@ class _NewExamScreenState extends State<NewExamScreen> {
       type: _type!,
       startJuz: _startJuz!,
       endJuz: _endJuz!,
-      isRetest: _retest,
+      isRetest: _isRetest,
       createdAt: DateTime.now(),
     );
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => ExamScreen(setup: setup)));
+  }
+
+  Widget _prevBox() {
+    final p = _prev!;
+    final failed = p['passed'] != true;
+    final result = p['closed'] == true ? 'راسب – أُغلق الاختبار' : (failed ? 'راسب' : 'ناجح');
+    final total = p['closed'] == true ? '' : ' (${fmt(p['total'])})';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: failed ? Colors.red.shade50 : const Color(0xFFFFF4DE),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(failed ? Icons.replay : Icons.warning_amber,
+              color: failed ? Colors.red.shade700 : const Color(0xFF9A6700)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              (failed ? 'هذا اختبار إعادة. ' : 'تنبيه: الطالب ناجح سابقاً بهذا الاختبار. ') +
+                  'آخر نتيجة: $result$total — ${p['createdAtText'] ?? ''} — المختبر: ${p['examinerName'] ?? ''}',
+              style: const TextStyle(height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _label(String t) => Padding(
@@ -89,10 +153,13 @@ class _NewExamScreenState extends State<NewExamScreen> {
                 isExpanded: true,
                 hint: const Text('اختر الحلقة'),
                 items: [for (final h in list) DropdownMenuItem(value: h.id, child: Text(h.name))],
-                onChanged: (id) => setState(() {
-                  _halaqa = list.firstWhere((h) => h.id == id);
-                  _student = null;
-                }),
+                onChanged: (id) {
+                  setState(() {
+                    _halaqa = list.firstWhere((h) => h.id == id);
+                    _student = null;
+                  });
+                  _watchPrev();
+                },
               );
             },
           ),
@@ -136,7 +203,10 @@ class _NewExamScreenState extends State<NewExamScreen> {
                   for (var i = 1; i <= 31 - _type!; i++)
                     DropdownMenuItem(value: i, child: Text('الجزء $i — ${juzNames[i]}')),
                 ],
-                onChanged: (v) => setState(() => _startJuz = v),
+                onChanged: (v) {
+                  setState(() => _startJuz = v);
+                  _watchPrev();
+                },
               ),
             if (_startJuz != null && _type! > 1 && _type != 30)
               Padding(
@@ -145,9 +215,11 @@ class _NewExamScreenState extends State<NewExamScreen> {
               ),
           ],
           const SizedBox(height: 12),
+          if (_prev != null) _prevBox(),
           CheckboxListTile(
-            value: _retest,
-            onChanged: (v) => setState(() => _retest = v ?? false),
+            value: _isRetest,
+            onChanged: _forcedRetest ? null : (v) => setState(() => _retest = v ?? false),
+            subtitle: _forcedRetest ? const Text('تلقائي: الطالب راسب سابقاً بنفس الاختبار') : null,
             title: const Text('اختبار إعادة'),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
