@@ -319,7 +319,16 @@ function sortAr(arr, key="name"){ return arr.sort((a,b)=>(a[key]||"").localeComp
 $("loginBtn").onclick = async () => {
   $("loginErr").textContent = "";
   try { await signInWithEmailAndPassword(auth, ADMIN_EMAIL, $("loginPass").value); }
-  catch(e){ $("loginErr").textContent = "كلمة السر غير صحيحة"; }
+  catch(e){
+    const c = e.code || "";
+    let m = "خطأ في الدخول: " + c;
+    if (c === "auth/invalid-credential" || c === "auth/wrong-password" || c === "auth/invalid-login-credentials") m = "كلمة السر غير صحيحة، أو الإيميل في Firebase ليس admin@taqwa.com";
+    else if (c === "auth/user-not-found") m = "لا يوجد مستخدم admin@taqwa.com في Firebase";
+    else if (c === "auth/operation-not-allowed") m = "تسجيل الدخول بالإيميل وكلمة السر غير مفعّل في Firebase";
+    else if (c === "auth/network-request-failed") m = "مشكلة في الاتصال بالإنترنت";
+    else if (c === "auth/too-many-requests") m = "محاولات كثيرة، انتظر قليلاً ثم حاول";
+    $("loginErr").textContent = m;
+  }
 };
 $("loginPass").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
 $("logoutBtn").onclick = () => signOut(auth);
