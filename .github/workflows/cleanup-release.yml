@@ -1,0 +1,23 @@
+name: Remove release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to delete'
+        required: true
+      latest:
+        description: 'Release tag to mark as latest'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: gh release delete "${{ inputs.tag }}" --cleanup-tag -y -R ${{ github.repository }}
+      - run: gh release edit "${{ inputs.latest }}" --latest -R ${{ github.repository }}
