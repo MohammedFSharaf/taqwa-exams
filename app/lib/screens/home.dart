@@ -1,0 +1,112 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+
+import '../repo.dart';
+import 'examiner.dart';
+import 'my_exams.dart';
+import 'new_exam.dart';
+import 'widgets.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          children: [
+            const AppHeader(),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.person, color: brandGreen),
+                      title: const Text('المختبر'),
+                      subtitle: Text(Repo.I.examinerName ?? '',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      trailing: TextButton(
+                        child: const Text('تغيير'),
+                        onPressed: () async {
+                          await Navigator.of(context)
+                              .push(MaterialPageRoute(builder: (_) => const ExaminerScreen()));
+                          setState(() {});
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  BigButton(
+                    icon: Icons.add_circle_outline,
+                    text: 'اختبار جديد',
+                    onPressed: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NewExamScreen())),
+                  ),
+                  const SizedBox(height: 14),
+                  BigButton(
+                    icon: Icons.list_alt,
+                    text: 'اختباراتي',
+                    filled: false,
+                    onPressed: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyExamsScreen())),
+                  ),
+                  const SizedBox(height: 24),
+                  const SyncStatus(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// حالة رفع الاختبارات
+class SyncStatus extends StatelessWidget {
+  const SyncStatus({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: Repo.I.myExams(),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final docs = snap.data!.docs;
+        final pending = docs.where((d) => d.metadata.hasPendingWrites).length;
+        final ok = pending == 0;
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: ok ? const Color(0xFFE8F3EC) : const Color(0xFFFFF4DE),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(ok ? Icons.cloud_done : Icons.cloud_upload,
+                  color: ok ? brandGreen : const Color(0xFF9A6700)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  ok
+                      ? 'كل الاختبارات مرفوعة (${docs.length})'
+                      : 'بانتظار الرفع: $pending اختبار — تُرفع تلقائياً عند الاتصال بالإنترنت',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

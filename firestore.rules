@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // الإدارة: الحساب admin@taqwa.com فقط
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.get('email', '') == 'admin@taqwa.com';
+    }
+
+    // أي جهاز عليه التطبيق (دخول مجهول)
+    function isApp() {
+      return request.auth != null;
+    }
+
+    // الإعدادات (كلمة سر التطبيق)
+    match /settings/{doc} {
+      allow read: if isApp();
+      allow write: if isAdmin();
+    }
+
+    // الحلقات والمختبرين: التطبيق يقرأ فقط
+    match /halaqat/{id} {
+      allow read: if isApp();
+      allow write: if isAdmin();
+    }
+    match /examiners/{id} {
+      allow read: if isApp();
+      allow write: if isAdmin();
+    }
+
+    // الطلاب: التطبيق يقرأ ويضيف طالب جديد بحالة "pending" فقط
+    match /students/{id} {
+      allow read: if isApp();
+      allow create: if isAdmin()
+        || (isApp()
+            && request.resource.data.status == 'pending'
+            && request.resource.data.name is string
+            && request.resource.data.name.size() > 0);
+      allow update, delete: if isAdmin();
+    }
+
+    // الاختبارات: التطبيق يضيف فقط ويقرأ اختباراته، والتعديل والحذف للإدارة
+    match /exams/{id} {
+      allow read: if isAdmin()
+        || (isApp() && resource.data.authorUid == request.auth.uid);
+      allow create: if isAdmin()
+        || (isApp() && request.resource.data.authorUid == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+  }
+}

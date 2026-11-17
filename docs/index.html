@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إدارة اختبارات مركز التقوى</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --green:#1f5f46; --green-dark:#174a36; --line:#d9dde1; --text:#222; --muted:#6b7280;
+    --bg:#f6f7f8; --red:#b42318; --amber:#9a6700;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Cairo',Tahoma,sans-serif;background:var(--bg);color:var(--text);font-size:15px}
+  header{background:var(--green);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+  header h1{margin:0;font-size:19px;font-weight:700}
+  header button{background:transparent;border:1px solid rgba(255,255,255,.6);color:#fff}
+  nav{background:#fff;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;padding:0 12px}
+  nav button{background:none;border:none;border-bottom:3px solid transparent;border-radius:0;padding:12px 14px;color:var(--muted);font-weight:600}
+  nav button.active{color:var(--green);border-bottom-color:var(--green)}
+  nav .badge{background:var(--red);color:#fff;border-radius:10px;padding:0 7px;font-size:12px;margin-right:4px}
+  main{padding:20px;max-width:1300px;margin:auto}
+  .card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:16px}
+  h2{font-size:17px;margin:0 0 12px}
+  button{font-family:inherit;font-size:14px;cursor:pointer;border-radius:5px;padding:7px 14px;border:1px solid var(--line);background:#fff;color:var(--text)}
+  button.primary{background:var(--green);border-color:var(--green);color:#fff}
+  button.primary:hover{background:var(--green-dark)}
+  button.danger{color:var(--red);border-color:#f1c4c0}
+  button.small{padding:3px 9px;font-size:13px}
+  input,select,textarea{font-family:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:#fff}
+  textarea{width:100%;min-height:70px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+  .row label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;background:#fff}
+  th,td{border-bottom:1px solid var(--line);padding:8px 7px;text-align:right;vertical-align:middle}
+  th{background:#f0f2f3;font-weight:600;font-size:13px;white-space:nowrap}
+  tr:hover td{background:#fafbfb}
+  .muted{color:var(--muted);font-size:13px}
+  .pass{color:var(--green);font-weight:700}
+  .fail{color:var(--red);font-weight:700}
+  .closed{color:var(--amber);font-weight:700}
+  .actions{white-space:nowrap}
+  .actions button{margin-left:4px}
+  .stats{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:12px;font-size:14px}
+  .stats b{font-size:17px}
+  #login{max-width:360px;margin:90px auto;text-align:center}
+  #login h1{font-size:20px;color:var(--green)}
+  #login input{width:100%;margin:12px 0;text-align:center}
+  #login button{width:100%}
+  .err{color:var(--red);font-size:13px;min-height:18px}
+  .hidden{display:none !important}
+  dialog{border:1px solid var(--line);border-radius:8px;padding:0;width:min(620px,95vw)}
+  dialog::backdrop{background:rgba(0,0,0,.35)}
+  .dlg-head{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:700}
+  .dlg-body{padding:16px;max-height:70vh;overflow:auto}
+  .dlg-foot{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-start}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid2 label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+  .qtable input{width:70px}
+  .detail td:first-child{color:var(--muted);width:150px}
+  .toast{position:fixed;bottom:20px;left:20px;background:#222;color:#fff;padding:10px 16px;border-radius:6px;opacity:0;transition:.3s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- شاشة الدخول -->
+<div id="login" class="card hidden">
+  <h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1>
+  <div class="muted">لوحة إدارة الاختبارات</div>
+  <input id="loginPass" type="password" placeholder="كلمة السر" autocomplete="current-password">
+  <div class="err" id="loginErr"></div>
+  <button class="primary" id="loginBtn">دخول</button>
+</div>
+
+<div id="loading" style="text-align:center;margin-top:120px" class="muted">جارٍ التحميل...</div>
+
+<!-- اللوحة -->
+<div id="app" class="hidden">
+  <header>
+    <h1>إدارة اختبارات مركز التقوى</h1>
+    <button id="logoutBtn">خروج</button>
+  </header>
+  <nav id="tabs">
+    <button data-tab="exams" class="active">الاختبارات</button>
+    <button data-tab="pending">طلاب جدد <span class="badge hidden" id="pendingBadge"></span></button>
+    <button data-tab="students">الطلاب</button>
+    <button data-tab="halaqat">الحلقات</button>
+    <button data-tab="examiners">المختبرين</button>
+    <button data-tab="settings">الإعدادات</button>
+  </nav>
+  <main>
+    <!-- الاختبارات -->
+    <section id="tab-exams">
+      <div class="card">
+        <div class="row">
+          <label>بحث باسم الطالب<input id="fStudent" placeholder="اسم الطالب"></label>
+          <label>الحلقة<select id="fHalaqa"></select></label>
+          <label>المختبر<select id="fExaminer"></select></label>
+          <label>نوع الاختبار<select id="fType"></select></label>
+          <label>النتيجة
+            <select id="fResult">
+              <option value="">الكل</option><option value="pass">ناجح</option>
+              <option value="fail">راسب</option><option value="closed">أُغلق الاختبار</option>
+            </select>
+          </label>
+          <label>إعادة
+            <select id="fRetest"><option value="">الكل</option><option value="1">إعادة فقط</option><option value="0">بدون إعادة</option></select>
+          </label>
+          <label>من تاريخ<input type="date" id="fFrom"></label>
+          <label>إلى تاريخ<input type="date" id="fTo"></label>
+          <button id="fClear">مسح الفلاتر</button>
+          <button class="primary" id="exportBtn">تصدير Excel</button>
+        </div>
+      </div>
+      <div class="stats" id="examStats"></div>
+      <div class="card" style="padding:0;overflow:auto">
+        <table>
+          <thead><tr>
+            <th>التاريخ</th><th>الطالب</th><th>الحلقة</th><th>النوع</th><th>الأجزاء</th>
+            <th>المختبر</th><th>المجموع</th><th>النتيجة</th><th></th>
+          </tr></thead>
+          <tbody id="examsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- طلاب جدد -->
+    <section id="tab-pending" class="hidden">
+      <div class="card">
+        <h2>طلاب أضافهم المختبرين</h2>
+        <p class="muted">اعتمد الطالب إذا كان جديداً فعلاً، أو ادمجه مع طالب موجود إذا كان مكرراً (تنتقل اختباراته للطالب الموجود).</p>
+        <table>
+          <thead><tr><th>الاسم</th><th>الحلقة</th><th>أضافه</th><th>عدد الاختبارات</th><th></th></tr></thead>
+          <tbody id="pendingBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- الطلاب -->
+    <section id="tab-students" class="hidden">
+      <div class="card">
+        <h2>إضافة طالب</h2>
+        <div class="row">
+          <label>اسم الطالب<input id="newStudentName" style="min-width:260px"></label>
+          <label>الحلقة<select id="newStudentHalaqa"></select></label>
+          <button class="primary" id="addStudentBtn">إضافة</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>استيراد من Excel</h2>
+        <p class="muted">ملف فيه عمودين: <b>اسم الطالب</b> و<b>اسم الحلقة</b> (الصف الأول عناوين). الحلقات غير الموجودة تُضاف تلقائياً، والأسماء المكررة بنفس الحلقة تُتجاهل.</p>
+        <div class="row">
+          <input type="file" id="importFile" accept=".xlsx,.xls,.csv">
+          <button class="primary" id="importBtn">استيراد</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row" style="margin-bottom:10px">
+          <label>بحث<input id="sSearch"></label>
+          <label>الحلقة<select id="sHalaqa"></select></label>
+          <span class="muted" id="studentsCount"></span>
+        </div>
+        <table>
+          <thead><tr><th>الاسم</th><th>الحلقة</th><th>عدد الاختبارات</th><th></th></tr></thead>
+          <tbody id="studentsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- الحلقات -->
+    <section id="tab-halaqat" class="hidden">
+      <div class="card">
+        <h2>الحلقات</h2>
+        <div class="row" style="margin-bottom:12px">
+          <label>اسم الحلقة<input id="newHalaqaName" style="min-width:260px"></label>
+          <button class="primary" id="addHalaqaBtn">إضافة</button>
+        </div>
+        <table>
+          <thead><tr><th>الحلقة</th><th>عدد الطلاب</th><th>عدد الاختبارات</th><th></th></tr></thead>
+          <tbody id="halaqatBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- المختبرين -->
+    <section id="tab-examiners" class="hidden">
+      <div class="card">
+        <h2>أسماء المختبرين</h2>
+        <p class="muted">هذه الأسماء تظهر في التطبيق للاختيار، ويقدر المختبر يكتب اسماً غيرها.</p>
+        <div class="row" style="margin-bottom:12px">
+          <label>الاسم<input id="newExaminerName" style="min-width:260px"></label>
+          <button class="primary" id="addExaminerBtn">إضافة</button>
+        </div>
+        <table>
+          <thead><tr><th>الاسم</th><th></th></tr></thead>
+          <tbody id="examinersBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- الإعدادات -->
+    <section id="tab-settings" class="hidden">
+      <div class="card">
+        <h2>كلمة سر التطبيق</h2>
+        <p class="muted">كلمة سر موحدة يكتبها المختبر لفتح التطبيق. التغيير يصل للجوالات عند اتصالها بالإنترنت.</p>
+        <div class="row">
+          <label>كلمة السر الحالية<input id="curAppPass" readonly></label>
+          <label>كلمة السر الجديدة<input id="newAppPass"></label>
+          <button class="primary" id="saveAppPassBtn">حفظ</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- نافذة عامة -->
+<dialog id="dlg">
+  <div class="dlg-head" id="dlgTitle"></div>
+  <div class="dlg-body" id="dlgBody"></div>
+  <div class="dlg-foot" id="dlgFoot"></div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc,
+  writeBatch, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCtv0M_swiZkblpwM27CjoX42-hveN98qI",
+  authDomain: "taqwa-exams.firebaseapp.com",
+  projectId: "taqwa-exams",
+  storageBucket: "taqwa-exams.firebasestorage.app",
+  messagingSenderId: "294156476353",
+  appId: "1:294156476353:web:9362a832dcc9ea18b41940"
+};
+const ADMIN_EMAIL = "admin@taqwa.com";
+
+// ===== ثوابت الاختبار =====
+const JUZ = ["", "الم", "سيقول", "تلك الرسل", "لن تنالوا", "والمحصنات", "لا يحب الله", "وإذا سمعوا",
+  "ولو أننا", "قال الملأ", "واعلموا", "يعتذرون", "وما من دابة", "وما أبرئ", "ربما", "سبحان الذي",
+  "قال ألم", "اقترب للناس", "قد أفلح", "وقال الذين", "أمّن خلق", "اتل ما أوحي", "ومن يقنت", "وما لي",
+  "فمن أظلم", "إليه يرد", "حم", "قال فما خطبكم", "قد سمع الله", "تبارك", "عمّ"];
+const TYPES = {1:"اختبار جزء", 3:"اختبار 3 أجزاء", 5:"اختبار 5 أجزاء", 10:"اختبار 10 أجزاء", 30:"اختبار 30 جزءاً"};
+const Q_COUNT = 5, Q_MAX = 15, TAJWEED_MAX = 20, PERF_MAX = 5, PASS_MARK = 85, CLOSE_AT = 9;
+const ERR_VAL = 1, ALERT_VAL = 0.5;
+
+function juzLabel(e){
+  if (!e.startJuz) return "";
+  if (e.startJuz === e.endJuz) return `الجزء ${e.startJuz} (${JUZ[e.startJuz]})`;
+  return `من ${e.startJuz} (${JUZ[e.startJuz]}) إلى ${e.endJuz} (${JUZ[e.endJuz]})`;
+}
+function resultOf(e){ return e.closed ? "closed" : (e.passed ? "pass" : "fail"); }
+function resultText(e){
+  return e.closed ? "راسب – أُغلق الاختبار" : (e.passed ? "ناجح" : "راسب");
+}
+function fmtNum(n){ return (n === null || n === undefined) ? "" : (Math.round(n*100)/100).toString(); }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function examDate(e){
+  if (e.createdAt && e.createdAt.toDate) return e.createdAt.toDate();
+  return null;
+}
+function dateText(e){
+  const d = examDate(e);
+  if (!d) return e.createdAtText || "";
+  const days = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+  const p = n => String(n).padStart(2,"0");
+  return `${days[d.getDay()]} ${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// يعيد حساب الاختبار من الأخطاء والتنبيهات (نفس منطق التطبيق)
+function computeExam(questions, tajweed, performance){
+  const qs = [];
+  let closed = false, closedAtQuestion = null;
+  for (let i = 0; i < Q_COUNT; i++){
+    const q = questions[i];
+    if (closed) { qs.push(null); continue; }
+    if (!q) return { error: `السؤال ${i+1} غير مكتمل` };
+    const deduction = q.errors*ERR_VAL + q.alerts*ALERT_VAL;
+    const score = Math.max(0, Q_MAX - deduction);
+    qs.push({ errors:q.errors, alerts:q.alerts, deduction, score });
+    if (deduction >= CLOSE_AT){ closed = true; closedAtQuestion = i+1; }
+  }
+  if (closed){
+    return { questions: qs, closed:true, closedAtQuestion,
+      closeReason: `السؤال ${closedAtQuestion}: خصم ${fmtNum(qs[closedAtQuestion-1].deduction)} علامات`,
+      tajweed:null, performance:null, total:null, passed:false };
+  }
+  if (tajweed === null || isNaN(tajweed) || tajweed < 0 || tajweed > TAJWEED_MAX) return { error:"علامة التجويد يجب أن تكون من 0 إلى 20" };
+  if (performance === null || isNaN(performance) || performance < 0 || performance > PERF_MAX) return { error:"علامة الأداء يجب أن تكون من 0 إلى 5" };
+  const total = qs.reduce((a,q)=>a+q.score,0) + tajweed + performance;
+  return { questions: qs, closed:false, closedAtQuestion:null, closeReason:null,
+    tajweed, performance, total, passed: total >= PASS_MARK };
+}
+
+// ===== Firebase =====
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const S = { halaqat:[], students:[], examiners:[], exams:[], settings:{} };
+let unsubs = [];
+const $ = id => document.getElementById(id);
+
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2500);
+}
+function halaqaName(id){ return (S.halaqat.find(h=>h.id===id)||{}).name || ""; }
+function sortAr(arr, key="name"){ return arr.sort((a,b)=>(a[key]||"").localeCompare(b[key]||"","ar")); }
+
+// ===== الدخول =====
+$("loginBtn").onclick = async () => {
+  $("loginErr").textContent = "";
+  try { await signInWithEmailAndPassword(auth, ADMIN_EMAIL, $("loginPass").value); }
+  catch(e){ $("loginErr").textContent = "كلمة السر غير صحيحة"; }
+};
+$("loginPass").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
+$("logoutBtn").onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, user => {
+  $("loading").classList.add("hidden");
+  unsubs.forEach(u=>u()); unsubs = [];
+  if (user && user.email === ADMIN_EMAIL){
+    $("login").classList.add("hidden"); $("app").classList.remove("hidden");
+    startListeners();
+  } else {
+    if (user) signOut(auth);
+    $("app").classList.add("hidden"); $("login").classList.remove("hidden");
+    $("loginPass").value = ""; $("loginPass").focus();
+  }
+});
+
+function listen(name, cb){
+  unsubs.push(onSnapshot(collection(db, name), snap => {
+    S[name] = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    cb && cb();
+    renderAll();
+  }, err => { console.error(err); toast("خطأ في تحميل " + name); }));
+}
+function startListeners(){
+  listen("halaqat"); listen("students"); listen("examiners"); listen("exams");
+  unsubs.push(onSnapshot(doc(db, "settings", "app"), d => {
+    S.settings = d.exists() ? d.data() : {};
+    $("curAppPass").value = S.settings.password || "(لم تُحدد بعد)";
+  }));
+}
+
+// ===== التبويبات =====
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+  $("tab-"+b.dataset.tab).classList.remove("hidden");
+});
+
+// ===== النافذة =====
+function openDialog(title, bodyHtml, buttons){
+  $("dlgTitle").textContent = title;
+  $("dlgBody").innerHTML = bodyHtml;
+  const f = $("dlgFoot"); f.innerHTML = "";
+  buttons.forEach(b => {
+    const el = document.createElement("button");
+    el.textContent = b.text; if (b.cls) el.className = b.cls;
+    el.onclick = async () => { if (b.onClick){ const keep = await b.onClick(); if (keep === false) return; } $("dlg").close(); };
+    f.appendChild(el);
+  });
+  $("dlg").showModal();
+}
+function confirmDlg(msg, onYes){
+  openDialog("تأكيد", `<p>${esc(msg)}</p>`, [
+    { text:"نعم", cls:"primary danger", onClick:onYes }, { text:"إلغاء" }
+  ]);
+}
+
+// ===== رسم الكل =====
+function renderAll(){
+  fillSelects();
+  renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers();
+}
+
+function fillSelect(sel, items, allText){
+  const cur = sel.value;
+  sel.innerHTML = (allText !== null ? `<option value="">${allText}</option>` : "") +
+    items.map(i=>`<option value="${esc(i.value)}">${esc(i.text)}</option>`).join("");
+  if ([...sel.options].some(o=>o.value===cur)) sel.value = cur;
+}
+function fillSelects(){
+  const hs = sortAr([...S.halaqat]).map(h=>({value:h.id,text:h.name}));
+  fillSelect($("fHalaqa"), hs, "الكل");
+  fillSelect($("sHalaqa"), hs, "الكل");
+  fillSelect($("newStudentHalaqa"), hs, null);
+  const exNames = [...new Set(S.exams.map(e=>e.examinerName).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+  fillSelect($("fExaminer"), exNames.map(n=>({value:n,text:n})), "الكل");
+  fillSelect($("fType"), Object.entries(TYPES).map(([k,v])=>({value:k,text:v})), "الكل");
+}
+
+// ===== الاختبارات =====
+["fStudent","fHalaqa","fExaminer","fType","fResult","fRetest","fFrom","fTo"].forEach(id => $(id).addEventListener("input", renderExams));
+$("fClear").onclick = () => { ["fStudent","fHalaqa","fExaminer","fType","fResult","fRetest","fFrom","fTo"].forEach(id=>$(id).value=""); renderExams(); };
+
+function filteredExams(){
+  const q = $("fStudent").value.trim();
+  const h = $("fHalaqa").value, ex = $("fExaminer").value, t = $("fType").value;
+  const r = $("fResult").value, rt = $("fRetest").value;
+  const from = $("fFrom").value ? new Date($("fFrom").value + "T00:00:00") : null;
+  const to = $("fTo").value ? new Date($("fTo").value + "T23:59:59") : null;
+  return S.exams.filter(e => {
+    if (q && !(e.studentName||"").includes(q)) return false;
+    if (h && e.halaqaId !== h) return false;
+    if (ex && e.examinerName !== ex) return false;
+    if (t && String(e.type) !== t) return false;
+    if (r && resultOf(e) !== r) return false;
+    if (rt === "1" && !e.isRetest) return false;
+    if (rt === "0" && e.isRetest) return false;
+    const d = examDate(e);
+    if (from && (!d || d < from)) return false;
+    if (to && (!d || d > to)) return false;
+    return true;
+  }).sort((a,b) => (examDate(b)||0) - (examDate(a)||0));
+}
+
+function renderExams(){
+  const list = filteredExams();
+  const pass = list.filter(e=>resultOf(e)==="pass").length;
+  const closed = list.filter(e=>resultOf(e)==="closed").length;
+  $("examStats").innerHTML = `<span>عدد الاختبارات: <b>${list.length}</b></span>
+    <span>ناجح: <b class="pass">${pass}</b></span>
+    <span>راسب: <b class="fail">${list.length-pass}</b></span>
+    <span>منها أُغلق: <b class="closed">${closed}</b></span>`;
+  $("examsBody").innerHTML = list.length ? list.map(e => `
+    <tr>
+      <td>${esc(dateText(e))}</td>
+      <td>${esc(e.studentName)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td>
+      <td>${esc(e.halaqaName)}</td>
+      <td>${esc(TYPES[e.type]||e.type)}</td>
+      <td class="muted">${esc(juzLabel(e))}</td>
+      <td>${esc(e.examinerName)}</td>
+      <td><b>${e.closed ? "—" : fmtNum(e.total)}</b></td>
+      <td class="${resultOf(e)}">${resultText(e)}</td>
+      <td class="actions">
+        <button class="small" data-view="${e.id}">عرض</button>
+        <button class="small" data-edit="${e.id}">تعديل</button>
+        <button class="small danger" data-del="${e.id}">حذف</button>
+      </td>
+    </tr>`).join("") : `<tr><td colspan="9" class="muted" style="text-align:center">لا توجد اختبارات</td></tr>`;
+}
+$("examsBody").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  if (b.dataset.view) viewExam(b.dataset.view);
+  if (b.dataset.edit) editExam(b.dataset.edit);
+  if (b.dataset.del) {
+    const e = S.exams.find(x=>x.id===b.dataset.del);
+    confirmDlg(`حذف اختبار الطالب ${e.studentName}؟ لا يمكن التراجع.`, async () => {
+      await deleteDoc(doc(db,"exams",e.id)); toast("تم الحذف");
+    });
+  }
+});
+
+function viewExam(id){
+  const e = S.exams.find(x=>x.id===id);
+  const qRows = (e.questions||[]).map((q,i) => q ? `<tr><td>السؤال ${i+1}</td>
+    <td>أخطاء: ${q.errors} · تنبيهات: ${q.alerts} · خصم: ${fmtNum(q.deduction)} · <b>العلامة: ${fmtNum(q.score)} / ${Q_MAX}</b></td></tr>`
+    : `<tr><td>السؤال ${i+1}</td><td class="muted">لم يُختبر (أُغلق الاختبار)</td></tr>`).join("");
+  openDialog("تفاصيل الاختبار", `
+    <table class="detail">
+      <tr><td>الطالب</td><td><b>${esc(e.studentName)}</b>${e.isRetest?' (إعادة)':''}</td></tr>
+      <tr><td>الحلقة</td><td>${esc(e.halaqaName)}</td></tr>
+      <tr><td>نوع الاختبار</td><td>${esc(TYPES[e.type]||e.type)}</td></tr>
+      <tr><td>الأجزاء</td><td>${esc(juzLabel(e))}</td></tr>
+      <tr><td>المختبر</td><td>${esc(e.examinerName)}</td></tr>
+      <tr><td>اليوم والتاريخ</td><td>${esc(dateText(e))}</td></tr>
+      ${qRows}
+      <tr><td>أحكام التجويد</td><td>${e.closed?'—':fmtNum(e.tajweed)+' / '+TAJWEED_MAX}</td></tr>
+      <tr><td>الأداء</td><td>${e.closed?'—':fmtNum(e.performance)+' / '+PERF_MAX}</td></tr>
+      <tr><td>المجموع</td><td><b>${e.closed?'—':fmtNum(e.total)+' / 100'}</b></td></tr>
+      <tr><td>النتيجة</td><td class="${resultOf(e)}">${resultText(e)}${e.closeReason?' — '+esc(e.closeReason):''}</td></tr>
+      <tr><td>ملاحظات</td><td>${esc(e.notes)||'<span class="muted">لا يوجد</span>'}</td></tr>
+    </table>`, [{ text:"إغلاق" }]);
+}
+
+function editExam(id){
+  const e = S.exams.find(x=>x.id===id);
+  const qs = e.questions || [];
+  const rows = Array.from({length:Q_COUNT}, (_,i) => {
+    const q = qs[i];
+    return `<tr><td>السؤال ${i+1}</td>
+      <td><input type="number" min="0" step="1" id="qe${i}" value="${q?q.errors:''}"></td>
+      <td><input type="number" min="0" step="1" id="qa${i}" value="${q?q.alerts:''}"></td></tr>`;
+  }).join("");
+  openDialog("تعديل الاختبار", `
+    <p class="muted">الطالب: <b>${esc(e.studentName)}</b> — ${esc(TYPES[e.type]||"")} — ${esc(juzLabel(e))}</p>
+    <table class="qtable"><thead><tr><th></th><th>الأخطاء</th><th>التنبيهات</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="muted">إذا وصل خصم سؤال إلى ${CLOSE_AT} علامات يُغلق الاختبار، واترك الأسئلة التي بعده فارغة.</p>
+    <div class="grid2">
+      <label>أحكام التجويد (من 20)<input type="number" step="0.5" id="eTaj" value="${e.tajweed ?? ''}"></label>
+      <label>الأداء (من 5)<input type="number" step="0.5" id="ePerf" value="${e.performance ?? ''}"></label>
+    </div>
+    <label style="display:block;margin:10px 0"><input type="checkbox" id="eRetest" ${e.isRetest?'checked':''}> اختبار إعادة</label>
+    <label class="muted">ملاحظات</label><textarea id="eNotes">${esc(e.notes)}</textarea>
+    <div class="err" id="eErr"></div>`, [
+    { text:"حفظ", cls:"primary", onClick: async () => {
+      const questions = [];
+      for (let i=0;i<Q_COUNT;i++){
+        const ev = $("qe"+i).value, av = $("qa"+i).value;
+        questions.push(ev === "" && av === "" ? null : { errors: parseInt(ev||"0"), alerts: parseInt(av||"0") });
+      }
+      const num = v => v === "" ? null : parseFloat(v);
+      const r = computeExam(questions, num($("eTaj").value), num($("ePerf").value));
+      if (r.error){ $("eErr").textContent = r.error; return false; }
+      await updateDoc(doc(db,"exams",id), { ...r, isRetest: $("eRetest").checked,
+        notes: $("eNotes").value.trim(), editedAt: serverTimestamp() });
+      toast("تم الحفظ");
+    }},
+    { text:"إلغاء" }
+  ]);
+}
+
+$("exportBtn").onclick = () => {
+  const list = filteredExams();
+  if (!list.length){ toast("لا توجد بيانات للتصدير"); return; }
+  const rows = list.map(e => {
+    const r = { "اليوم والتاريخ": dateText(e), "اسم الطالب": e.studentName, "الحلقة": e.halaqaName,
+      "نوع الاختبار": TYPES[e.type]||e.type, "الأجزاء": juzLabel(e), "اسم المختبر": e.examinerName,
+      "إعادة": e.isRetest ? "نعم" : "لا" };
+    for (let i=0;i<Q_COUNT;i++){ const q=(e.questions||[])[i]; r[`السؤال ${i+1}`] = q ? q.score : ""; }
+    r["أحكام التجويد"] = e.closed ? "" : e.tajweed;
+    r["الأداء"] = e.closed ? "" : e.performance;
+    r["المجموع"] = e.closed ? "" : e.total;
+    r["النتيجة"] = resultText(e);
+    r["سبب الإغلاق"] = e.closeReason || "";
+    r["ملاحظات"] = e.notes || "";
+    return r;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = Object.keys(rows[0]).map(k => ({ wch: Math.max(10, k.length + 4) }));
+  const wb = XLSX.utils.book_new();
+  wb.Workbook = { Views: [{ RTL: true }] };
+  XLSX.utils.book_append_sheet(wb, ws, "الاختبارات");
+  const d = new Date();
+  XLSX.writeFile(wb, `اختبارات-مركز-التقوى-${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}.xlsx`);
+};
+
+// ===== طلاب جدد =====
+function examsOfStudent(id){ return S.exams.filter(e=>e.studentId===id); }
+function renderPending(){
+  const list = S.students.filter(s=>s.status==="pending");
+  $("pendingBadge").textContent = list.length;
+  $("pendingBadge").classList.toggle("hidden", !list.length);
+  $("pendingBody").innerHTML = list.length ? list.map(s => `
+    <tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
+    <td class="muted">${esc(s.createdBy||"")}</td><td>${examsOfStudent(s.id).length}</td>
+    <td class="actions">
+      <button class="small primary" data-approve="${s.id}">اعتماد</button>
+      <button class="small" data-merge="${s.id}">دمج مع طالب موجود</button>
+      <button class="small danger" data-reject="${s.id}">حذف</button>
+    </td></tr>`).join("") : `<tr><td colspan="5" class="muted" style="text-align:center">لا يوجد طلاب جدد</td></tr>`;
+}
+$("pendingBody").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  const id = b.dataset.approve || b.dataset.merge || b.dataset.reject;
+  const s = S.students.find(x=>x.id===id);
+  if (b.dataset.approve) editStudent(id, true);
+  if (b.dataset.merge) mergeStudent(s);
+  if (b.dataset.reject){
+    if (examsOfStudent(id).length){ toast("للطالب اختبارات — ادمجه مع طالب موجود بدل الحذف"); return; }
+    confirmDlg(`حذف الطالب ${s.name}؟`, async () => { await deleteDoc(doc(db,"students",id)); toast("تم الحذف"); });
+  }
+});
+function mergeStudent(s){
+  const options = sortAr(S.students.filter(x=>x.status!=="pending"))
+    .map(x => `<option value="${x.id}" ${x.halaqaId===s.halaqaId?'':''}>${esc(x.name)} — ${esc(halaqaName(x.halaqaId))}</option>`).join("");
+  openDialog("دمج مع طالب موجود", `
+    <p>الطالب الجديد: <b>${esc(s.name)}</b> (${esc(halaqaName(s.halaqaId))})</p>
+    <label class="muted">اختر الطالب الموجود</label>
+    <select id="mergeTarget" style="width:100%;margin-top:6px">${options}</select>
+    <p class="muted">ستنتقل ${examsOfStudent(s.id).length} اختبارات للطالب المختار ويُحذف الاسم الجديد.</p>`, [
+    { text:"دمج", cls:"primary", onClick: async () => {
+      const t = S.students.find(x=>x.id===$("mergeTarget").value);
+      if (!t) return false;
+      const batch = writeBatch(db);
+      examsOfStudent(s.id).forEach(e => batch.update(doc(db,"exams",e.id),
+        { studentId:t.id, studentName:t.name, halaqaId:t.halaqaId, halaqaName:halaqaName(t.halaqaId) }));
+      batch.delete(doc(db,"students",s.id));
+      await batch.commit(); toast("تم الدمج");
+    }},
+    { text:"إلغاء" }
+  ]);
+}
+
+// ===== الطلاب =====
+["sSearch","sHalaqa"].forEach(id => $(id).addEventListener("input", renderStudents));
+function renderStudents(){
+  const q = $("sSearch").value.trim(), h = $("sHalaqa").value;
+  const list = sortAr(S.students.filter(s => s.status!=="pending" && (!q || s.name.includes(q)) && (!h || s.halaqaId===h)));
+  $("studentsCount").textContent = `${list.length} طالب`;
+  $("studentsBody").innerHTML = list.map(s => `
+    <tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td><td>${examsOfStudent(s.id).length}</td>
+    <td class="actions"><button class="small" data-edit="${s.id}">تعديل</button>
+    <button class="small danger" data-del="${s.id}">حذف</button></td></tr>`).join("");
+}
+$("studentsBody").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  if (b.dataset.edit) editStudent(b.dataset.edit, false);
+  if (b.dataset.del){
+    const s = S.students.find(x=>x.id===b.dataset.del);
+    if (examsOfStudent(s.id).length){ toast("لا يمكن حذف طالب له اختبارات"); return; }
+    confirmDlg(`حذف الطالب ${s.name}؟`, async () => { await deleteDoc(doc(db,"students",s.id)); toast("تم الحذف"); });
+  }
+});
+function editStudent(id, approving){
+  const s = S.students.find(x=>x.id===id);
+  const hs = sortAr([...S.halaqat]).map(h=>`<option value="${h.id}" ${h.id===s.halaqaId?'selected':''}>${esc(h.name)}</option>`).join("");
+  openDialog(approving ? "اعتماد طالب جديد" : "تعديل طالب", `
+    <div class="grid2">
+      <label>الاسم<input id="esName" value="${esc(s.name)}"></label>
+      <label>الحلقة<select id="esHalaqa">${hs}</select></label>
+    </div>`, [
+    { text: approving ? "اعتماد" : "حفظ", cls:"primary", onClick: async () => {
+      const name = $("esName").value.trim(), halaqaId = $("esHalaqa").value;
+      if (!name) return false;
+      const batch = writeBatch(db);
+      batch.update(doc(db,"students",id), { name, halaqaId, status:"approved" });
+      examsOfStudent(id).forEach(e => batch.update(doc(db,"exams",e.id),
+        { studentName:name, halaqaId, halaqaName:halaqaName(halaqaId) }));
+      await batch.commit(); toast("تم الحفظ");
+    }},
+    { text:"إلغاء" }
+  ]);
+}
+$("addStudentBtn").onclick = async () => {
+  const name = $("newStudentName").value.trim(), halaqaId = $("newStudentHalaqa").value;
+  if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة (أضف حلقة أولاً إن لم توجد)"); return; }
+  if (S.students.some(s=>s.name===name && s.halaqaId===halaqaId)){ toast("الطالب موجود بنفس الحلقة"); return; }
+  await addDoc(collection(db,"students"), { name, halaqaId, status:"approved", createdBy:"الإدارة", createdAt: serverTimestamp() });
+  $("newStudentName").value = ""; $("newStudentName").focus(); toast("تمت الإضافة");
+};
+$("newStudentName").addEventListener("keydown", e => { if (e.key==="Enter") $("addStudentBtn").click(); });
+
+$("importBtn").onclick = async () => {
+  const file = $("importFile").files[0];
+  if (!file){ toast("اختر ملفاً أولاً"); return; }
+  const wb = XLSX.read(await file.arrayBuffer());
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, defval:"" }).slice(1);
+  const halaqaByName = new Map(S.halaqat.map(h=>[h.name.trim(), h.id]));
+  const existing = new Set(S.students.map(s=>s.name.trim()+"|"+s.halaqaId));
+  const ops = []; let added = 0, skipped = 0, newH = 0;
+  for (const r of rows){
+    const name = String(r[0]||"").trim(), hName = String(r[1]||"").trim();
+    if (!name || !hName){ skipped++; continue; }
+    let hid = halaqaByName.get(hName);
+    if (!hid){
+      const ref = doc(collection(db,"halaqat")); hid = ref.id; halaqaByName.set(hName, hid);
+      ops.push(b => b.set(ref, { name:hName, createdAt: serverTimestamp() })); newH++;
+    }
+    const key = name+"|"+hid;
+    if (existing.has(key)){ skipped++; continue; }
+    existing.add(key);
+    const ref = doc(collection(db,"students"));
+    ops.push(b => b.set(ref, { name, halaqaId:hid, status:"approved", createdBy:"استيراد", createdAt: serverTimestamp() }));
+    added++;
+  }
+  for (let i=0;i<ops.length;i+=400){
+    const b = writeBatch(db); ops.slice(i,i+400).forEach(f=>f(b)); await b.commit();
+  }
+  $("importFile").value = "";
+  openDialog("نتيجة الاستيراد", `<p>طلاب أُضيفوا: <b>${added}</b><br>حلقات جديدة: <b>${newH}</b><br>صفوف تم تجاهلها (فارغة أو مكررة): <b>${skipped}</b></p>`, [{text:"تم", cls:"primary"}]);
+};
+
+// ===== الحلقات =====
+function renderHalaqat(){
+  $("halaqatBody").innerHTML = sortAr([...S.halaqat]).map(h => `
+    <tr><td>${esc(h.name)}</td>
+    <td>${S.students.filter(s=>s.halaqaId===h.id).length}</td>
+    <td>${S.exams.filter(e=>e.halaqaId===h.id).length}</td>
+    <td class="actions"><button class="small" data-edit="${h.id}">تعديل الاسم</button>
+    <button class="small danger" data-del="${h.id}">حذف</button></td></tr>`).join("");
+}
+$("addHalaqaBtn").onclick = async () => {
+  const name = $("newHalaqaName").value.trim(); if (!name) return;
+  if (S.halaqat.some(h=>h.name===name)){ toast("الحلقة موجودة"); return; }
+  await addDoc(collection(db,"halaqat"), { name, createdAt: serverTimestamp() });
+  $("newHalaqaName").value = ""; toast("تمت الإضافة");
+};
+$("newHalaqaName").addEventListener("keydown", e => { if (e.key==="Enter") $("addHalaqaBtn").click(); });
+$("halaqatBody").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  const h = S.halaqat.find(x=>x.id===(b.dataset.edit||b.dataset.del));
+  if (b.dataset.edit){
+    openDialog("تعديل اسم الحلقة", `<input id="ehName" style="width:100%" value="${esc(h.name)}">`, [
+      { text:"حفظ", cls:"primary", onClick: async () => {
+        const name = $("ehName").value.trim(); if (!name) return false;
+        const batch = writeBatch(db);
+        batch.update(doc(db,"halaqat",h.id), { name });
+        S.exams.filter(e=>e.halaqaId===h.id).forEach(e => batch.update(doc(db,"exams",e.id), { halaqaName:name }));
+        await batch.commit(); toast("تم الحفظ");
+      }}, { text:"إلغاء" }]);
+  }
+  if (b.dataset.del){
+    if (S.students.some(s=>s.halaqaId===h.id)){ toast("لا يمكن حذف حلقة فيها طلاب"); return; }
+    confirmDlg(`حذف حلقة ${h.name}؟`, async () => { await deleteDoc(doc(db,"halaqat",h.id)); toast("تم الحذف"); });
+  }
+});
+
+// ===== المختبرين =====
+function renderExaminers(){
+  $("examinersBody").innerHTML = sortAr([...S.examiners]).map(x => `
+    <tr><td>${esc(x.name)}</td><td class="actions"><button class="small danger" data-del="${x.id}">حذف</button></td></tr>`).join("");
+}
+$("addExaminerBtn").onclick = async () => {
+  const name = $("newExaminerName").value.trim(); if (!name) return;
+  if (S.examiners.some(x=>x.name===name)){ toast("الاسم موجود"); return; }
+  await addDoc(collection(db,"examiners"), { name });
+  $("newExaminerName").value = ""; toast("تمت الإضافة");
+};
+$("newExaminerName").addEventListener("keydown", e => { if (e.key==="Enter") $("addExaminerBtn").click(); });
+$("examinersBody").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  const x = S.examiners.find(y=>y.id===b.dataset.del);
+  confirmDlg(`حذف ${x.name} من القائمة؟ (اختباراته السابقة تبقى)`, async () => { await deleteDoc(doc(db,"examiners",x.id)); toast("تم الحذف"); });
+});
+
+// ===== الإعدادات =====
+$("saveAppPassBtn").onclick = async () => {
+  const p = $("newAppPass").value.trim();
+  if (p.length < 4){ toast("كلمة السر 4 خانات على الأقل"); return; }
+  await setDoc(doc(db,"settings","app"), { password:p, updatedAt: serverTimestamp() }, { merge:true });
+  $("newAppPass").value = ""; toast("تم حفظ كلمة السر");
+};
+</script>
+</body>
+</html>
