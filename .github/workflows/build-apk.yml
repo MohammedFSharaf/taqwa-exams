@@ -1,13 +1,26 @@
 name: Build APK
 
+# push to main      -> Shorebird patch (silent update for installed apps)
+# Run workflow + release -> full new APK (needed after native/plugin changes, or the first time)
+
 on:
   push:
     branches: [main]
-    paths: ['app/**', '.github/workflows/**']
+    paths: ['app/**']
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'release = new APK, patch = silent update'
+        type: choice
+        options: [patch, release]
+        default: patch
 
 permissions:
   contents: write
+
+env:
+  SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+  FLUTTER_VERSION: '3.24.5'
 
 jobs:
   build:
@@ -25,35 +38,66 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+
+      - uses: shorebirdtech/setup-shorebird@v1
 
       - name: Generate Android project
         run: |
           flutter create --platforms=android --org com.taqwa --project-name taqwa_exams .
           rm -rf test
-          # Android settings: minSdk 23, newer Kotlin/AGP/Gradle for Firebase
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' android/app/build.gradle
           sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
           sed -i 's/id "com.android.application" version "[^"]*"/id "com.android.application" version "8.1.4"/' android/settings.gradle
           sed -i 's#gradle-[0-9.]*-all.zip#gradle-8.3-all.zip#' android/gradle/wrapper/gradle-wrapper.properties
-          # App name and internet permission
-          sed -i 's/android:label="[^"]*"/android:label="اختبارات التقوى"/' android/app/src/main/AndroidManifest.xml
-          sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
-          cat android/settings.gradle android/app/build.gradle
+          M=android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="[^"]*"/android:label="اختبارات التقوى"/' $M
+          sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries>\n    <application#' $M
 
-      - run: flutter pub get
-      - run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
-      - run: flutter build apk --release
+      - name: Shorebird app setup (first time only)
+        id: init
+        run: |
+          if [ -f shorebird.yaml ]; then echo "created=false" >> $GITHUB_OUTPUT; exit 0; fi
+          shorebird init --force --display-name "Taqwa Exams" || shorebird init --force
+          cat shorebird.yaml
+          grep -q "shorebird.yaml" pubspec.yaml || printf "  assets:\n    - shorebird.yaml\n" >> pubspec.yaml
+          echo "created=true" >> $GITHUB_OUTPUT
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: taqwa-exams-apk
-          path: app/build/app/outputs/flutter-apk/app-release.apk
+      - name: Decide mode
+        id: mode
+        run: |
+          MODE="${{ inputs.mode }}"
+          [ -z "$MODE" ] && MODE=patch
+          [ "${{ steps.init.outputs.created }}" = "true" ] && MODE=release
+          BUILD=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
+          echo "mode=$MODE" >> $GITHUB_OUTPUT
+          echo "build=$BUILD" >> $GITHUB_OUTPUT
+          echo "Mode: $MODE  Build: $BUILD"
 
-      - name: Publish APK as release
+      - name: Shorebird release (new APK)
+        if: steps.mode.outputs.mode == 'release'
+        run: shorebird release android --flutter-version=${{ env.FLUTTER_VERSION }} --artifact=apk --no-confirm
+
+      - name: Shorebird patch (silent update)
+        if: steps.mode.outputs.mode == 'patch'
+        run: shorebird patch android --no-confirm
+
+      - name: Save Shorebird config to repo
+        if: steps.init.outputs.created == 'true'
+        working-directory: .
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add app/shorebird.yaml app/pubspec.yaml
+          git commit -m "Add Shorebird config"
+          git push
+
+      - name: Publish APK as GitHub release
+        if: steps.mode.outputs.mode == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: اختبارات التقوى ${{ github.run_number }}
+          tag_name: build-${{ steps.mode.outputs.build }}
+          name: اختبارات التقوى - نسخة ${{ steps.mode.outputs.build }}
+          make_latest: true
           files: app/build/app/outputs/flutter-apk/app-release.apk

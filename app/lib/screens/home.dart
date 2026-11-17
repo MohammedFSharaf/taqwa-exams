@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../repo.dart';
+import '../update_check.dart';
 import 'examiner.dart';
 import 'my_exams.dart';
 import 'new_exam.dart';
@@ -15,6 +16,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => checkForUpdate(context));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

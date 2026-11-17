@@ -134,7 +134,7 @@ class _ExamScreenState extends State<ExamScreen> {
     final s = widget.setup;
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         if (await _confirmExit() && context.mounted) Navigator.of(context).pop();
       },
