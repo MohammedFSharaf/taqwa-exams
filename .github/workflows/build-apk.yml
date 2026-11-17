@@ -77,11 +77,11 @@ jobs:
 
       - name: Shorebird release (new APK)
         if: steps.mode.outputs.mode == 'release'
-        run: shorebird release android --flutter-version=${{ env.FLUTTER_VERSION }} --artifact=apk --target-platform=android-arm,android-arm64 --no-confirm
+        run: shorebird release android --flutter-version=${{ env.FLUTTER_VERSION }} --artifact=apk --no-confirm
 
       - name: Shorebird patch (silent update)
         if: steps.mode.outputs.mode == 'patch'
-        run: shorebird patch android --target-platform=android-arm,android-arm64 --no-confirm
+        run: shorebird patch android --no-confirm
 
       - name: Save Shorebird config to repo
         if: steps.init.outputs.created == 'true'
