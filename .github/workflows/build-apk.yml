@@ -71,6 +71,8 @@ jobs:
           [ -z "$MODE" ] && MODE=patch
           [ "${{ steps.init.outputs.created }}" = "true" ] && MODE=release
           BUILD=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "mode=$MODE" >> $GITHUB_OUTPUT
           echo "build=$BUILD" >> $GITHUB_OUTPUT
           echo "Mode: $MODE  Build: $BUILD"
@@ -81,7 +83,7 @@ jobs:
 
       - name: Shorebird patch (silent update)
         if: steps.mode.outputs.mode == 'patch'
-        run: shorebird patch android --no-confirm
+        run: shorebird patch android --release-version=${{ steps.mode.outputs.version }} --no-confirm
 
       - name: Save Shorebird config to repo
         if: steps.init.outputs.created == 'true'
