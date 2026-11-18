@@ -163,8 +163,7 @@ class _ExamScreenState extends State<ExamScreen> {
               padding: const EdgeInsetsDirectional.only(end: 14),
               child: Row(
                 children: [
-                  const Icon(Icons.timer_outlined, size: 20),
-                  const SizedBox(width: 4),
+                  const Text('الوقت ', style: TextStyle(fontSize: 14)),
                   Text(fmtDuration(DateTime.now().difference(s.createdAt).inSeconds),
                       style: const TextStyle(fontSize: 16, fontFeatures: [FontFeature.tabularFigures()])),
                 ],
