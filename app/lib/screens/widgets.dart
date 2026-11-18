@@ -25,12 +25,15 @@ class AppHeader extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
+              color: Colors.white,
               shape: BoxShape.circle,
               border: Border.all(color: brandGold, width: 2),
             ),
-            child: const Icon(Icons.menu_book_rounded, color: brandGold, size: 40),
+            child: ClipOval(
+              child: Image.asset('assets/logo.png', width: 110, height: 110, fit: BoxFit.contain),
+            ),
           ),
           const SizedBox(height: 14),
           const Text(

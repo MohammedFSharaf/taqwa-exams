@@ -52,6 +52,7 @@ jobs:
           sed -i 's/id "com.android.application" version "[^"]*"/id "com.android.application" version "8.1.4"/' android/settings.gradle
           sed -i 's#gradle-[0-9.]*-all.zip#gradle-8.3-all.zip#' android/gradle/wrapper/gradle-wrapper.properties
           M=android/app/src/main/AndroidManifest.xml
+          cp -r branding/res/. android/app/src/main/res/
           sed -i 's/android:label="[^"]*"/android:label="اختبارات التقوى"/' $M
           sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries>\n    <application#' $M
 
