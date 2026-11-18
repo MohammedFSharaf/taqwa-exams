@@ -610,8 +610,8 @@ $("examsBody").addEventListener("click", ev => {
 
 function viewExam(id){
   const e = S.exams.find(x=>x.id===id);
-  const qRows = (e.questions||[]).map((q,i) => q ? `<tr><td>السؤال ${i+1}</td>
-    <td>أخطاء: ${q.errors} · تنبيهات: ${q.alerts} · خصم: ${fmtNum(q.deduction)} · <b>العلامة: ${fmtNum(q.score)} / ${Q_MAX}</b></td></tr>`
+  const qRows = (e.questions||[]).map((q,i) => q ? `<tr><td>السؤال ${i+1} (من 15)</td>
+    <td>أخطاء: ${q.errors} · تنبيهات: ${q.alerts} · خصم: ${fmtNum(q.deduction)} · <b>العلامة: ${fmtNum(q.score)}</b></td></tr>`
     : `<tr><td>السؤال ${i+1}</td><td class="muted">لم يُختبر (أُغلق الاختبار)</td></tr>`).join("");
   openDialog("تفاصيل الاختبار", `
     <table class="detail">
@@ -623,9 +623,9 @@ function viewExam(id){
       <tr><td>اليوم والتاريخ</td><td>${esc(dateText(e))}</td></tr>
       <tr><td>مدة الاختبار</td><td>${fmtDur(e.durationSeconds) || '<span class="muted">—</span>'}</td></tr>
       ${qRows}
-      <tr><td>أحكام التجويد</td><td>${e.closed?'—':fmtNum(e.tajweed)+' / '+TAJWEED_MAX}</td></tr>
-      <tr><td>الأداء</td><td>${e.closed?'—':fmtNum(e.performance)+' / '+PERF_MAX}</td></tr>
-      <tr><td>المجموع</td><td><b>${e.closed?'—':fmtNum(e.total)+' / 100'}</b></td></tr>
+      <tr><td>أحكام التجويد (من 20)</td><td>${e.closed?'—':fmtNum(e.tajweed)}</td></tr>
+      <tr><td>الأداء (من 5)</td><td>${e.closed?'—':fmtNum(e.performance)}</td></tr>
+      <tr><td>المجموع (من 100)</td><td><b>${e.closed?'—':fmtNum(e.total)}</b></td></tr>
       <tr><td>النتيجة</td><td class="${resultOf(e)}">${resultText(e)}${e.closeReason?' — '+esc(e.closeReason):''}</td></tr>
       <tr><td>ملاحظات</td><td>${esc(e.notes)||'<span class="muted">لا يوجد</span>'}</td></tr>
     </table>`, [{ text:"إغلاق" }]);

@@ -60,12 +60,12 @@ class _FinishScreenState extends State<FinishScreen> {
               line('الأجزاء', s.startJuz == s.endJuz ? 'الجزء ${s.startJuz}' : 'من ${s.startJuz} إلى ${s.endJuz}'),
               const Divider(),
               for (var i = 0; i < qCount; i++)
-                line('السؤال ${i + 1}',
-                    i < widget.questions.length ? '${fmt(widget.questions[i].score)} / ${fmt(qMax)}' : '—'),
+                line('السؤال ${i + 1} (من 15)',
+                    i < widget.questions.length ? fmt(widget.questions[i].score) : '—'),
               if (!_closed) ...[
-                line('أحكام التجويد', '${fmt(_tajV)} / ${fmt(tajweedMax)}'),
-                line('الأداء', '${fmt(_perfV)} / ${fmt(perfMax)}'),
-                line('المجموع', '${fmt(total)} / 100', bold: true),
+                line('أحكام التجويد (من 20)', fmt(_tajV)),
+                line('الأداء (من 5)', fmt(_perfV)),
+                line('المجموع (من 100)', fmt(total), bold: true),
               ],
               line('النتيجة', _closed ? 'راسب – أُغلق الاختبار' : (passed ? 'ناجح' : 'راسب'),
                   bold: true, color: passed ? brandGreen : Colors.red.shade700),
@@ -171,8 +171,8 @@ class _FinishScreenState extends State<FinishScreen> {
                   _row('التاريخ', dateText(s.createdAt)),
                   const Divider(),
                   for (var i = 0; i < qCount; i++)
-                    _row('السؤال ${i + 1}',
-                        i < widget.questions.length ? '${fmt(widget.questions[i].score)} / ${fmt(qMax)}' : '—'),
+                    _row('السؤال ${i + 1} (من 15)',
+                        i < widget.questions.length ? fmt(widget.questions[i].score) : '—'),
                 ],
               ),
             ),
@@ -228,7 +228,7 @@ class _FinishScreenState extends State<FinishScreen> {
               ),
               child: Column(
                 children: [
-                  Text(total == null ? 'المجموع: —' : 'المجموع: ${fmt(total)} / 100',
+                  Text(total == null ? 'المجموع: —' : 'المجموع: ${fmt(total)}',
                       style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   if (total != null)
                     Text(passed ? 'ناجح' : 'راسب',
