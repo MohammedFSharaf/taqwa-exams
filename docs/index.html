@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>إدارة اختبارات مركز التقوى</title>
+<link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -16,6 +17,9 @@
   body{margin:0;font-family:'Cairo',Tahoma,sans-serif;background:var(--bg);color:var(--text);font-size:15px}
   header{background:var(--green);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
   header h1{margin:0;font-size:19px;font-weight:700}
+  header .brand{display:flex;align-items:center;gap:12px}
+  header .brand img{width:46px;height:46px;object-fit:contain;background:#fff;border-radius:50%;padding:2px}
+  #login .logo{width:130px;height:130px;object-fit:contain;margin-bottom:6px}
   header button{background:transparent;border:1px solid rgba(255,255,255,.6);color:#fff}
   nav{background:#fff;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;padding:0 12px}
   nav button{background:none;border:none;border-bottom:3px solid transparent;border-radius:0;padding:12px 14px;color:var(--muted);font-weight:600}
@@ -80,6 +84,7 @@
 
 <!-- شاشة الدخول -->
 <div id="login" class="card hidden">
+  <img class="logo" src="logo.png" alt="">
   <h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1>
   <div class="muted">لوحة إدارة الاختبارات</div>
   <input id="loginPass" type="password" placeholder="كلمة السر" autocomplete="current-password">
@@ -92,7 +97,7 @@
 <!-- اللوحة -->
 <div id="app" class="hidden">
   <header>
-    <h1>إدارة اختبارات مركز التقوى</h1>
+    <div class="brand"><img src="logo.png" alt=""><h1>إدارة اختبارات مركز التقوى</h1></div>
     <button id="logoutBtn">خروج</button>
   </header>
   <nav id="tabs">
