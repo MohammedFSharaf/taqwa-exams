@@ -40,6 +40,12 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // أذونات إعادة اختبار ناجح: الإدارة فقط تكتب، والتطبيق يقرأ
+    match /permits/{id} {
+      allow read: if isApp();
+      allow write: if isAdmin();
+    }
+
     // الاختبارات: التطبيق يقرأ الكل (لمعرفة الإعادة) ويضيف فقط، والتعديل والحذف للإدارة
     match /exams/{id} {
       allow read: if isApp();

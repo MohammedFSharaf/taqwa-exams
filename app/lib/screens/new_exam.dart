@@ -25,6 +25,8 @@ class _NewExamScreenState extends State<NewExamScreen> {
   bool _overridden = false; // المختبر غيّر الاختبار المقترح يدوياً
   StreamSubscription? _sub;
   List<Map<String, dynamic>>? _sExams; // كل اختبارات الطالب المختار
+  StreamSubscription? _permSub;
+  List<Map<String, dynamic>> _permits = []; // أذونات الإدارة لإعادة اختبار ناجح
 
   /// آخر اختبار سابق لنفس الطالب بنفس النوع والأجزاء
   Map<String, dynamic>? get _prev {
@@ -40,7 +42,23 @@ class _NewExamScreenState extends State<NewExamScreen> {
   }
 
   bool get _forcedRetest => _prev != null && _prev!['passed'] != true;
-  bool get _isRetest => _forcedRetest || _retest;
+
+  static int _ms(dynamic t) => t is Timestamp ? t.millisecondsSinceEpoch : 0;
+  Iterable<Map<String, dynamic>> get _sameExams =>
+      (_sExams ?? []).where((e) => e['type'] == _type && e['startJuz'] == _startJuz);
+
+  /// الطالب نجح سابقاً بهذا الاختبار (نفس النوع والأجزاء)
+  bool get _passedBefore => _sameExams.any((e) => e['passed'] == true);
+
+  /// إذن من الإدارة لم يُستخدم بعد (أحدث من آخر محاولة)
+  bool get _permitted {
+    final last = _sameExams.fold<int>(0, (m, e) => _ms(e['createdAt']) > m ? _ms(e['createdAt']) : m);
+    return _permits.any((p) =>
+        p['type'] == _type && p['startJuz'] == _startJuz && ((p['grantedAtMs'] ?? 0) as num) > last);
+  }
+
+  bool get _blocked => _passedBefore && !_permitted;
+  bool get _isRetest => _forcedRetest || (_passedBefore && _permitted) || _retest;
 
   bool get _pathKnown => _student != null && _sExams != null;
   PathStep? get _suggested {
@@ -74,7 +92,13 @@ class _NewExamScreenState extends State<NewExamScreen> {
     _sExams = null;
     _overridden = false;
     _retest = false;
+    _permSub?.cancel();
+    _permSub = null;
+    _permits = [];
     if (_student == null) return;
+    _permSub = Repo.I.permitsFor(_student!.id).listen((list) {
+      if (mounted) setState(() => _permits = list);
+    }, onError: (_) {});
     _sub = Repo.I.studentExams(_student!.id).listen((list) {
       if (!mounted) return;
       setState(() => _sExams = list);
@@ -85,11 +109,12 @@ class _NewExamScreenState extends State<NewExamScreen> {
   @override
   void dispose() {
     _sub?.cancel();
+    _permSub?.cancel();
     super.dispose();
   }
 
   int? get _endJuz => (_type == null || _startJuz == null) ? null : _startJuz! + _type! - 1;
-  bool get _ready => _halaqa != null && _student != null && _type != null && _startJuz != null;
+  bool get _ready => _halaqa != null && _student != null && _type != null && _startJuz != null && !_blocked;
 
   void _setType(int t) {
     setState(() {
@@ -149,25 +174,35 @@ class _NewExamScreenState extends State<NewExamScreen> {
     final failed = p['passed'] != true;
     final result = p['closed'] == true ? 'راسب – أُغلق الاختبار' : (failed ? 'راسب' : 'ناجح');
     final total = p['closed'] == true ? '' : ' (${fmt(p['total'])})';
+    final details = 'آخر نتيجة: $result$total — ${p['createdAtText'] ?? ''} — المختبر: ${p['examinerName'] ?? ''}';
+    final String head;
+    final Color bg, fg;
+    final IconData icon;
+    if (_passedBefore && !_permitted) {
+      head = 'الطالب ناجح سابقاً بهذا الاختبار، ولا يمكن إعادته إلا بإذن من الإدارة.\n';
+      bg = Colors.red.shade50;
+      fg = Colors.red.shade800;
+      icon = Icons.warning_amber;
+    } else if (_passedBefore && _permitted) {
+      head = 'إعادة بإذن الإدارة لاختبار ناجح سابقاً.\n';
+      bg = const Color(0xFFFFF4DE);
+      fg = const Color(0xFF9A6700);
+      icon = Icons.replay;
+    } else {
+      head = 'هذا اختبار إعادة. ';
+      bg = Colors.red.shade50;
+      fg = Colors.red.shade700;
+      icon = Icons.replay;
+    }
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: failed ? Colors.red.shade50 : const Color(0xFFFFF4DE),
-        borderRadius: BorderRadius.circular(10),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
       child: Row(
         children: [
-          Icon(failed ? Icons.replay : Icons.warning_amber,
-              color: failed ? Colors.red.shade700 : const Color(0xFF9A6700)),
+          Icon(icon, color: fg),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              (failed ? 'هذا اختبار إعادة. ' : 'تنبيه: الطالب ناجح سابقاً بهذا الاختبار. ') +
-                  'آخر نتيجة: $result$total — ${p['createdAtText'] ?? ''} — المختبر: ${p['examinerName'] ?? ''}',
-              style: const TextStyle(height: 1.5),
-            ),
-          ),
+          Expanded(child: Text(head + details, style: TextStyle(height: 1.5, color: fg))),
         ],
       ),
     );
@@ -331,10 +366,12 @@ class _NewExamScreenState extends State<NewExamScreen> {
           const SizedBox(height: 16),
           BigButton(icon: Icons.play_arrow, text: 'بدء الاختبار', onPressed: _ready ? _start : null),
           if (!_ready)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('أكمل كل البيانات لبدء الاختبار',
-                  textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                  _blocked ? 'لا يمكن بدء الاختبار: الطالب ناجح فيه سابقاً، ويحتاج إذن الإدارة.' : 'أكمل كل البيانات لبدء الاختبار',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: _blocked ? Colors.red.shade700 : Colors.grey)),
             ),
         ],
       ),

@@ -57,7 +57,7 @@ class Repo {
   /// يبقي القوائم محدّثة في ذاكرة الجهاز كلما توفر الإنترنت
   void startSync() {
     if (_subs.isNotEmpty) return;
-    for (final c in ['halaqat', 'students', 'examiners', 'exams']) {
+    for (final c in ['halaqat', 'students', 'examiners', 'exams', 'permits']) {
       _subs.add(db.collection(c).snapshots().listen((_) {}, onError: (_) {}));
     }
     _subs.add(db.collection('settings').doc('app').snapshots().listen((d) {
@@ -148,6 +148,13 @@ class Repo {
   /// اختبارات طالب معيّن من كل الأجهزة (لمعرفة الإعادة)
   Stream<List<Map<String, dynamic>>> studentExams(String studentId) => db
       .collection('exams')
+      .where('studentId', isEqualTo: studentId)
+      .snapshots()
+      .map((s) => s.docs.map((d) => d.data()).toList());
+
+  /// أذونات الإدارة لإعادة اختبار ناجح لطالب معيّن
+  Stream<List<Map<String, dynamic>>> permitsFor(String studentId) => db
+      .collection('permits')
       .where('studentId', isEqualTo: studentId)
       .snapshots()
       .map((s) => s.docs.map((d) => d.data()).toList());
