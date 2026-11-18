@@ -328,7 +328,7 @@ const ERR_VAL = 1, ALERT_VAL = 0.5;
 function juzLabel(e){
   if (!e.startJuz) return "";
   if (e.startJuz === e.endJuz) return `الجزء ${e.startJuz}: ${JUZ[e.startJuz]}`;
-  return `الأجزاء ${e.startJuz}–${e.endJuz}: ${JUZ_FROM[e.startJuz]} ← ${JUZ_TO[e.endJuz]}`;
+  return `من الجزء ${e.startJuz} إلى الجزء ${e.endJuz}`;
 }
 function resultOf(e){ return e.closed ? "closed" : (e.passed ? "pass" : "fail"); }
 function resultText(e){
@@ -365,7 +365,7 @@ function pathStatus(dir, start, passed){
 function stepLabel(st){
   if (st.type === 1) return `الجزء ${st.start}: ${JUZ[st.start]}`;
   if (st.type === 30) return "المصحف كاملاً (30 جزءاً)";
-  return `${TYPES[st.type]} (${st.start}–${st.end}): ${JUZ_FROM[st.start]} ← ${JUZ_TO[st.end]}`;
+  return `${TYPES[st.type]}: من الجزء ${st.start} إلى الجزء ${st.end}`;
 }
 function stepShort(st){ return st.type === 1 ? String(st.start) : st.type === 30 ? "المصحف" : `م${st.type}`; }
 function sDir(s){ return s && s.pathDir === "asc" ? "asc" : "desc"; }

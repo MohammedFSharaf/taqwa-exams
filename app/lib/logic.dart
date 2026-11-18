@@ -35,7 +35,7 @@ const double alertVal = 0.5;
 
 String juzLabel(int start, int end) {
   if (start == end) return 'الجزء $start: ${juzNames[start]}';
-  return 'الأجزاء $start–$end: ${juzFrom[start]} ← ${juzTo[end]}';
+  return 'من الجزء $start إلى الجزء $end';
 }
 
 class QuestionMark {
@@ -106,7 +106,7 @@ class PathStep {
   String get label {
     if (type == 1) return 'الجزء $start: ${juzNames[start]}';
     if (type == 30) return 'المصحف كاملاً (30 جزءاً)';
-    return '${examTypes[type]} ($start–$end): ${juzFrom[start]} ← ${juzTo[end]}';
+    return '${examTypes[type]}: من الجزء $start إلى الجزء $end';
   }
 }
 
