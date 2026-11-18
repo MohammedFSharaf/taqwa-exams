@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,6 @@ class _NewExamScreenState extends State<NewExamScreen> {
   int? _type;
   int? _startJuz;
   bool _retest = false;
-  bool _overridden = false; // المختبر غيّر الاختبار المقترح يدوياً
   StreamSubscription? _sub;
   List<Map<String, dynamic>>? _sExams; // كل اختبارات الطالب المختار
   StreamSubscription? _permSub;
@@ -70,19 +70,34 @@ class _NewExamScreenState extends State<NewExamScreen> {
     return nextPathStep(_student!.pathDir, _student!.pathStart, passed);
   }
 
-  bool get _isHafiz => _pathKnown && _suggested == null;
-  bool get _offPath {
-    final s = _suggested;
-    return s != null && _type != null && _startJuz != null && (s.type != _type || s.start != _startJuz);
+  /// اختبارات ناجحة سابقاً معها إذن إعادة من الإدارة لم يُستخدم بعد
+  List<PathStep> get _permittedSteps {
+    if (_sExams == null) return [];
+    final out = <PathStep>[];
+    for (final p in _permits) {
+      final t = p['type'], st = p['startJuz'];
+      if (t is! num || st is! num) continue;
+      final ti = t.toInt(), si = st.toInt();
+      final same = _sExams!.where((e) => e['type'] == ti && e['startJuz'] == si).toList();
+      if (!same.any((e) => e['passed'] == true)) continue;
+      final last = same.fold<int>(0, (m, e) => max(m, _ms(e['createdAt'])));
+      if (((p['grantedAtMs'] ?? 0) as num) > last && !out.any((x) => x.type == ti && x.start == si)) {
+        out.add(PathStep(ti, si));
+      }
+    }
+    return out;
   }
 
+  /// الاختبارات المسموحة فقط: التالي في المسار + إعادة بإذن الإدارة
+  List<PathStep> get _options => [if (_suggested != null) _suggested!, ..._permittedSteps];
+  bool get _selectedAllowed => _options.any((o) => o.type == _type && o.start == _startJuz);
+
   void _applySuggestion() {
-    final s = _suggested;
-    if (s == null) return;
+    if (_selectedAllowed) return;
+    final opts = _options;
     setState(() {
-      _type = s.type;
-      _startJuz = s.start;
-      _overridden = false;
+      _type = opts.isEmpty ? null : opts.first.type;
+      _startJuz = opts.isEmpty ? null : opts.first.start;
     });
   }
 
@@ -90,19 +105,22 @@ class _NewExamScreenState extends State<NewExamScreen> {
     _sub?.cancel();
     _sub = null;
     _sExams = null;
-    _overridden = false;
+    _type = null;
+    _startJuz = null;
     _retest = false;
     _permSub?.cancel();
     _permSub = null;
     _permits = [];
     if (_student == null) return;
     _permSub = Repo.I.permitsFor(_student!.id).listen((list) {
-      if (mounted) setState(() => _permits = list);
+      if (!mounted) return;
+      setState(() => _permits = list);
+      _applySuggestion();
     }, onError: (_) {});
     _sub = Repo.I.studentExams(_student!.id).listen((list) {
       if (!mounted) return;
       setState(() => _sExams = list);
-      if (!_overridden) _applySuggestion();
+      _applySuggestion();
     }, onError: (_) {});
   }
 
@@ -114,19 +132,8 @@ class _NewExamScreenState extends State<NewExamScreen> {
   }
 
   int? get _endJuz => (_type == null || _startJuz == null) ? null : _startJuz! + _type! - 1;
-  bool get _ready => _halaqa != null && _student != null && _type != null && _startJuz != null && !_blocked;
-
-  void _setType(int t) {
-    setState(() {
-      _type = t;
-      if (_student != null) _overridden = true;
-      if (t == 30) {
-        _startJuz = 1;
-      } else if (_startJuz != null && _startJuz! + t - 1 > 30) {
-        _startJuz = null;
-      }
-    });
-  }
+  bool get _ready =>
+      _halaqa != null && _student != null && _type != null && _startJuz != null && _selectedAllowed && !_blocked;
 
   Future<void> _pickStudent() async {
     final res = await showModalBottomSheet<Student>(
@@ -221,7 +228,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
     if (s == null) {
       bg = const Color(0xFFE8F3EC);
       fg = brandGreen;
-      text = 'الطالب حافظ للقرآن الكريم — أتمّ المسار.\nأي اختبار الآن يكون مراجعة، اختر نوعه يدوياً.';
+      text = 'الطالب حافظ للقرآن الكريم — أتمّ المسار.\nأي اختبار الآن يكون مراجعة بإذن من الإدارة.';
     } else {
       final failedBefore = _sExams!.any((e) => e['type'] == s.type && e['startJuz'] == s.start && e['passed'] != true);
       bg = failedBefore ? Colors.red.shade50 : const Color(0xFFE8F3EC);
@@ -236,12 +243,6 @@ class _NewExamScreenState extends State<NewExamScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 15, height: 1.5)),
-          if (_offPath) ...[
-            const SizedBox(height: 6),
-            const Text('تنبيه: الاختبار المختار غير الاختبار المحدد للطالب حسب المسار.',
-                style: TextStyle(color: Color(0xFF9A6700))),
-            TextButton(onPressed: _applySuggestion, child: const Text('رجوع للاختبار المحدد')),
-          ],
         ],
       ),
     );
@@ -316,42 +317,30 @@ class _NewExamScreenState extends State<NewExamScreen> {
             ),
           ),
           if (_student != null) _pathBox(),
-          _label('نوع الاختبار'),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final e in examTypes.entries)
-                ChoiceChip(
-                  label: Text(e.value),
-                  selected: _type == e.key,
-                  onSelected: (_) => _setType(e.key),
-                ),
-            ],
-          ),
-          if (_type != null) ...[
-            _label(_type == 1 ? 'الجزء' : 'جزء البداية'),
-            if (_type == 30)
-              const Text('القرآن كاملاً: من الجزء 1 إلى الجزء 30', style: TextStyle(fontSize: 16))
+          if (_pathKnown) ...[
+            _label('الاختبار'),
+            if (_options.isEmpty)
+              Text(
+                'لا يوجد اختبار متاح لهذا الطالب الآن: أتمّ المسار، واختبار المراجعة يحتاج إذناً من الإدارة.',
+                style: TextStyle(color: Colors.red.shade700, height: 1.6),
+              )
             else
-              DropdownButtonFormField<int>(
-                value: _startJuz,
-                isExpanded: true,
-                hint: const Text('اختر الجزء'),
-                items: [
-                  for (var i = 1; i <= 31 - _type!; i++)
-                    DropdownMenuItem(value: i, child: Text('الجزء $i — ${juzNames[i]}')),
-                ],
-                onChanged: (v) => setState(() {
-                  _startJuz = v;
-                  if (_student != null) _overridden = true;
-                }),
-              ),
-            if (_startJuz != null && _type! > 1 && _type != 30)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(juzLabel(_startJuz!, _endJuz!), style: const TextStyle(color: Colors.black54)),
-              ),
+              for (final o in _options)
+                RadioListTile<String>(
+                  value: o.key,
+                  groupValue: (_type == null || _startJuz == null) ? null : '$_type|$_startJuz',
+                  onChanged: (_) => setState(() {
+                    _type = o.type;
+                    _startJuz = o.start;
+                  }),
+                  title: Text(o.label),
+                  subtitle: (_suggested != null && o.key == _suggested!.key)
+                      ? const Text('حسب ترتيب المسار')
+                      : const Text('إعادة اختبار ناجح بإذن الإدارة'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+            const Text('الترتيب ثابت حسب مسار الطالب، ولا يمكن اختيار جزء آخر.',
+                style: TextStyle(color: Colors.black54, fontSize: 13)),
           ],
           const SizedBox(height: 12),
           if (_prev != null) _prevBox(),
@@ -369,7 +358,9 @@ class _NewExamScreenState extends State<NewExamScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                  _blocked ? 'لا يمكن بدء الاختبار: الطالب ناجح فيه سابقاً، ويحتاج إذن الإدارة.' : 'أكمل كل البيانات لبدء الاختبار',
+                  _blocked
+                      ? 'لا يمكن بدء الاختبار: الطالب ناجح فيه سابقاً، ويحتاج إذن الإدارة.'
+                      : (_student == null ? 'اختر الطالب لبدء الاختبار' : 'لا يوجد اختبار متاح لبدئه'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: _blocked ? Colors.red.shade700 : Colors.grey)),
             ),
