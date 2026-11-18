@@ -18,8 +18,10 @@
   header{background:var(--green);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
   header h1{margin:0;font-size:19px;font-weight:700}
   header .brand{display:flex;align-items:center;gap:12px}
-  header .brand img{width:46px;height:46px;object-fit:contain;background:#fff;border-radius:50%;padding:2px}
+  header .brand > img{width:46px;height:46px;object-fit:contain;background:#fff;border-radius:50%;padding:2px}
   #login .logo{width:130px;height:130px;object-fit:contain;margin-bottom:6px}
+  #login .slogan{width:260px;max-width:90%;margin:4px auto 8px;display:block}
+  header .brand .slogan{height:30px;width:auto;display:block;margin-top:3px;background:none;border-radius:0;padding:0}
   header button{background:transparent;border:1px solid rgba(255,255,255,.6);color:#fff}
   nav{background:#fff;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;padding:0 12px}
   nav button{background:none;border:none;border-bottom:3px solid transparent;border-radius:0;padding:12px 14px;color:var(--muted);font-weight:600}
@@ -86,6 +88,7 @@
 <div id="login" class="card hidden">
   <img class="logo" src="logo.png" alt="">
   <h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1>
+  <img class="slogan" src="slogan_dark.png" alt="نحو مدرسة قرآنية">
   <div class="muted">لوحة إدارة الاختبارات</div>
   <input id="loginPass" type="password" placeholder="كلمة السر" autocomplete="current-password">
   <div class="err" id="loginErr"></div>
@@ -97,7 +100,7 @@
 <!-- اللوحة -->
 <div id="app" class="hidden">
   <header>
-    <div class="brand"><img src="logo.png" alt=""><h1>إدارة اختبارات مركز التقوى</h1></div>
+    <div class="brand"><img src="logo.png" alt=""><div><h1>إدارة اختبارات مركز التقوى</h1><img class="slogan" src="slogan_gold.png" alt="نحو مدرسة قرآنية"></div></div>
     <button id="logoutBtn">خروج</button>
   </header>
   <nav id="tabs">
@@ -716,6 +719,7 @@ function printDoc(title, inner){
   const w = window.open("", "_blank");
   if (!w){ toast("اسمح للمتصفح بفتح النوافذ المنبثقة للطباعة"); return; }
   const logo = new URL("logo.png", location.href).href;
+  const slogan = new URL("slogan_dark.png", location.href).href;
   w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title>
   <style>
     body{font-family:Tahoma,Arial,sans-serif;color:#111;margin:24px;font-size:13px}
@@ -729,7 +733,7 @@ function printDoc(title, inner){
     .muted{color:#666}
     .pass{color:#1f5f46;font-weight:bold}.fail{color:#b42318;font-weight:bold}.closed{color:#9a6700;font-weight:bold}
   </style></head><body>
-  <div class="hdr"><img src="${logo}"><div><h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1><div>${esc(title)}</div></div></div>
+  <div class="hdr"><img src="${logo}"><div><h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1><img src="${slogan}" style="width:190px;height:auto;display:block;margin:2px 0 4px"><div>${esc(title)}</div></div></div>
   ${inner}
   <p class="muted">تاريخ الطباعة: ${dayKey(new Date())}</p>
   <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`);
