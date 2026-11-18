@@ -35,7 +35,58 @@ class _FinishScreenState extends State<FinishScreen> {
       ? 'السؤال ${widget.closedAt}: خصم ${fmt(widget.questions[widget.closedAt! - 1].deduction)} علامات'
       : null;
 
-  void _save() {
+  Future<bool> _confirm(int durationSec) async {
+    final s = widget.setup;
+    final total = _closed ? null : _total;
+    final passed = !_closed && total != null && total >= passMark;
+    Widget line(String a, String b, {bool bold = false, Color? color}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(children: [
+            Expanded(child: Text(a, style: const TextStyle(color: Colors.black54))),
+            Text(b, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal, color: color)),
+          ]),
+        );
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تأكيد حفظ الاختبار'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              line('الطالب', s.studentName + (s.isRetest ? ' (إعادة)' : ''), bold: true),
+              line('الحلقة', s.halaqaName),
+              line('النوع', examTypes[s.type] ?? ''),
+              line('الأجزاء', s.startJuz == s.endJuz ? 'الجزء ${s.startJuz}' : 'من ${s.startJuz} إلى ${s.endJuz}'),
+              const Divider(),
+              for (var i = 0; i < qCount; i++)
+                line('السؤال ${i + 1}',
+                    i < widget.questions.length ? '${fmt(widget.questions[i].score)} / ${fmt(qMax)}' : '—'),
+              if (!_closed) ...[
+                line('أحكام التجويد', '${fmt(_tajV)} / ${fmt(tajweedMax)}'),
+                line('الأداء', '${fmt(_perfV)} / ${fmt(perfMax)}'),
+                line('المجموع', '${fmt(total)} / 100', bold: true),
+              ],
+              line('النتيجة', _closed ? 'راسب – أُغلق الاختبار' : (passed ? 'ناجح' : 'راسب'),
+                  bold: true, color: passed ? brandGreen : Colors.red.shade700),
+              line('مدة الاختبار', fmtDuration(durationSec)),
+              if (_notes.text.trim().isNotEmpty) line('ملاحظات', _notes.text.trim()),
+              const SizedBox(height: 8),
+              const Text('بعد الحفظ لا يمكن التعديل إلا من الإدارة.',
+                  style: TextStyle(color: Colors.black54, fontSize: 13)),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('رجوع للتعديل')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأكيد الحفظ')),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
+  Future<void> _save() async {
     if (_saved) return;
     if (!_closed && (!_tajOk || !_perfOk)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -43,6 +94,10 @@ class _FinishScreenState extends State<FinishScreen> {
       );
       return;
     }
+    final finishedAt = DateTime.now();
+    final durationSec = finishedAt.difference(widget.setup.createdAt).inSeconds;
+    if (!await _confirm(durationSec) || !mounted) return;
+    if (_saved) return;
     _saved = true;
     final s = widget.setup;
     final total = _closed ? null : _total;
@@ -71,6 +126,8 @@ class _FinishScreenState extends State<FinishScreen> {
       'notes': _notes.text.trim(),
       'createdAt': Timestamp.fromDate(s.createdAt),
       'createdAtText': dateText(s.createdAt),
+      'finishedAt': Timestamp.fromDate(finishedAt),
+      'durationSeconds': durationSec,
       'syncedAt': FieldValue.serverTimestamp(),
     };
     Repo.I.saveExam(const Uuid().v4(), data);

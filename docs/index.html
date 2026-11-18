@@ -60,6 +60,12 @@
   .grid2 label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
   .qtable input{width:70px}
   .detail td:first-child{color:var(--muted);width:150px}
+  dialog.wide{width:min(950px,96vw)}
+  .bar{background:#eef0f1;height:8px;border-radius:4px;width:140px;display:inline-block;vertical-align:middle;margin-left:6px}
+  .bar span{display:block;height:100%;background:var(--green);border-radius:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:4px}
+  .chips span{border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:13px}
+  .chips span.on{background:var(--green);color:#fff;border-color:var(--green)}
   .toast{position:fixed;bottom:20px;left:20px;background:#222;color:#fff;padding:10px 16px;border-radius:6px;opacity:0;transition:.3s}
   .toast.show{opacity:1}
 </style>
@@ -85,6 +91,8 @@
   </header>
   <nav id="tabs">
     <button data-tab="exams" class="active">الاختبارات</button>
+    <button data-tab="retests">بانتظار الإعادة <span class="badge hidden" id="retestBadge"></span></button>
+    <button data-tab="stats">الإحصائيات والتقارير</button>
     <button data-tab="pending">طلاب جدد <span class="badge hidden" id="pendingBadge"></span></button>
     <button data-tab="students">الطلاب</button>
     <button data-tab="halaqat">الحلقات</button>
@@ -125,6 +133,48 @@
           <tbody id="examsBody"></tbody>
         </table>
       </div>
+    </section>
+
+    <!-- بانتظار الإعادة -->
+    <section id="tab-retests" class="hidden">
+      <div class="card">
+        <h2>طلاب بانتظار الإعادة</h2>
+        <p class="muted">آخر نتيجة للطالب في نفس الاختبار (نفس النوع والأجزاء) راسب، ولم يُعَد له بنجاح بعد.</p>
+        <div class="row" style="margin-bottom:10px">
+          <label>الحلقة<select id="rHalaqa"></select></label>
+          <span class="muted" id="retestsCount"></span>
+        </div>
+        <table>
+          <thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>الأجزاء</th><th>آخر محاولة</th>
+          <th>منذ</th><th>المحاولات</th><th>النتيجة</th><th></th></tr></thead>
+          <tbody id="retestsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- الإحصائيات والتقارير -->
+    <section id="tab-stats" class="hidden">
+      <div class="card">
+        <div class="row">
+          <label>من تاريخ<input type="date" id="stFrom"></label>
+          <label>إلى تاريخ<input type="date" id="stTo"></label>
+          <button id="stThisMonth">هذا الشهر</button>
+          <button id="stAll">كل الفترات</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>التقرير الشهري</h2>
+        <div class="row">
+          <label>الشهر<input type="month" id="repMonth"></label>
+          <button class="primary" id="repExcel">تصدير Excel</button>
+          <button id="repPrint">طباعة / PDF</button>
+        </div>
+      </div>
+      <div class="stats" id="stSummary"></div>
+      <div class="card"><h2>حسب الحلقة</h2><div id="stByHalaqa"></div></div>
+      <div class="card"><h2>حسب المختبر</h2><div id="stByExaminer"></div></div>
+      <div class="card"><h2>حسب نوع الاختبار</h2><div id="stByType"></div></div>
+      <div class="card"><h2>حسب الشهر</h2><div id="stByMonth"></div></div>
     </section>
 
     <!-- طلاب جدد -->
@@ -370,7 +420,8 @@ document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
 });
 
 // ===== النافذة =====
-function openDialog(title, bodyHtml, buttons){
+function openDialog(title, bodyHtml, buttons, wide){
+  $("dlg").classList.toggle("wide", !!wide);
   $("dlgTitle").textContent = title;
   $("dlgBody").innerHTML = bodyHtml;
   const f = $("dlgFoot"); f.innerHTML = "";
@@ -391,7 +442,7 @@ function confirmDlg(msg, onYes){
 // ===== رسم الكل =====
 function renderAll(){
   fillSelects();
-  renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers();
+  renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers(); renderRetests(); renderStats();
 }
 
 function fillSelect(sel, items, allText){
@@ -404,6 +455,7 @@ function fillSelects(){
   const hs = sortAr([...S.halaqat]).map(h=>({value:h.id,text:h.name}));
   fillSelect($("fHalaqa"), hs, "الكل");
   fillSelect($("sHalaqa"), hs, "الكل");
+  fillSelect($("rHalaqa"), hs, "الكل");
   fillSelect($("newStudentHalaqa"), hs, null);
   const exNames = [...new Set(S.exams.map(e=>e.examinerName).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
   fillSelect($("fExaminer"), exNames.map(n=>({value:n,text:n})), "الكل");
@@ -485,6 +537,7 @@ function viewExam(id){
       <tr><td>الأجزاء</td><td>${esc(juzLabel(e))}</td></tr>
       <tr><td>المختبر</td><td>${esc(e.examinerName)}</td></tr>
       <tr><td>اليوم والتاريخ</td><td>${esc(dateText(e))}</td></tr>
+      <tr><td>مدة الاختبار</td><td>${fmtDur(e.durationSeconds) || '<span class="muted">—</span>'}</td></tr>
       ${qRows}
       <tr><td>أحكام التجويد</td><td>${e.closed?'—':fmtNum(e.tajweed)+' / '+TAJWEED_MAX}</td></tr>
       <tr><td>الأداء</td><td>${e.closed?'—':fmtNum(e.performance)+' / '+PERF_MAX}</td></tr>
@@ -531,29 +584,232 @@ function editExam(id){
   ]);
 }
 
+function examRow(e){
+  const r = { "اليوم والتاريخ": dateText(e), "اسم الطالب": e.studentName, "الحلقة": e.halaqaName,
+    "نوع الاختبار": TYPES[e.type]||e.type, "الأجزاء": juzLabel(e), "اسم المختبر": e.examinerName,
+    "إعادة": e.isRetest ? "نعم" : "لا" };
+  for (let i=0;i<Q_COUNT;i++){ const q=(e.questions||[])[i]; r[`السؤال ${i+1}`] = q ? q.score : ""; }
+  r["أحكام التجويد"] = e.closed ? "" : e.tajweed;
+  r["الأداء"] = e.closed ? "" : e.performance;
+  r["المجموع"] = e.closed ? "" : e.total;
+  r["النتيجة"] = resultText(e);
+  r["سبب الإغلاق"] = e.closeReason || "";
+  r["مدة الاختبار"] = fmtDur(e.durationSeconds);
+  r["ملاحظات"] = e.notes || "";
+  return r;
+}
+function addSheet(wb, rows, name){
+  const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ "": "لا توجد بيانات" }]);
+  if (rows.length) ws["!cols"] = Object.keys(rows[0]).map(k => ({ wch: Math.max(10, k.length + 4) }));
+  XLSX.utils.book_append_sheet(wb, ws, name);
+}
+function newBook(){ const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] }; return wb; }
+
 $("exportBtn").onclick = () => {
   const list = filteredExams();
   if (!list.length){ toast("لا توجد بيانات للتصدير"); return; }
-  const rows = list.map(e => {
-    const r = { "اليوم والتاريخ": dateText(e), "اسم الطالب": e.studentName, "الحلقة": e.halaqaName,
-      "نوع الاختبار": TYPES[e.type]||e.type, "الأجزاء": juzLabel(e), "اسم المختبر": e.examinerName,
-      "إعادة": e.isRetest ? "نعم" : "لا" };
-    for (let i=0;i<Q_COUNT;i++){ const q=(e.questions||[])[i]; r[`السؤال ${i+1}`] = q ? q.score : ""; }
-    r["أحكام التجويد"] = e.closed ? "" : e.tajweed;
-    r["الأداء"] = e.closed ? "" : e.performance;
-    r["المجموع"] = e.closed ? "" : e.total;
-    r["النتيجة"] = resultText(e);
-    r["سبب الإغلاق"] = e.closeReason || "";
-    r["ملاحظات"] = e.notes || "";
-    return r;
-  });
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws["!cols"] = Object.keys(rows[0]).map(k => ({ wch: Math.max(10, k.length + 4) }));
-  const wb = XLSX.utils.book_new();
-  wb.Workbook = { Views: [{ RTL: true }] };
-  XLSX.utils.book_append_sheet(wb, ws, "الاختبارات");
+  const wb = newBook();
+  addSheet(wb, list.map(examRow), "الاختبارات");
   const d = new Date();
   XLSX.writeFile(wb, `اختبارات-مركز-التقوى-${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}.xlsx`);
+};
+
+// ===== أدوات مشتركة =====
+function fmtDur(sec){
+  if (sec === null || sec === undefined || isNaN(sec)) return "";
+  const m = Math.floor(sec/60), x = sec%60, p = n => String(n).padStart(2,"0");
+  return m >= 60 ? `${Math.floor(m/60)}:${p(m%60)}:${p(x)}` : `${p(m)}:${p(x)}`;
+}
+function pct(a,b){ return b ? Math.round(a*1000/b)/10 : 0; }
+function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+function dayKey(d){ const p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+
+function printDoc(title, inner){
+  const w = window.open("", "_blank");
+  if (!w){ toast("اسمح للمتصفح بفتح النوافذ المنبثقة للطباعة"); return; }
+  const logo = new URL("logo.png", location.href).href;
+  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title>
+  <style>
+    body{font-family:Tahoma,Arial,sans-serif;color:#111;margin:24px;font-size:13px}
+    .hdr{display:flex;align-items:center;gap:14px;border-bottom:2px solid #1f5f46;padding-bottom:10px;margin-bottom:14px}
+    .hdr img{width:72px;height:72px;object-fit:contain}
+    .hdr h1{font-size:18px;margin:0 0 4px}
+    h2{font-size:15px;margin:18px 0 6px}
+    table{width:100%;border-collapse:collapse;margin-bottom:10px}
+    th,td{border:1px solid #bbb;padding:5px 6px;text-align:right}
+    th{background:#f0f0f0}
+    .muted{color:#666}
+    .pass{color:#1f5f46;font-weight:bold}.fail{color:#b42318;font-weight:bold}.closed{color:#9a6700;font-weight:bold}
+  </style></head><body>
+  <div class="hdr"><img src="${logo}"><div><h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1><div>${esc(title)}</div></div></div>
+  ${inner}
+  <p class="muted">تاريخ الطباعة: ${dayKey(new Date())}</p>
+  <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`);
+  w.document.close();
+}
+
+// ===== بانتظار الإعادة =====
+function pendingRetests(){
+  const groups = new Map();
+  for (const e of S.exams){
+    const k = e.studentId + "|" + e.type + "|" + e.startJuz;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(e);
+  }
+  const out = [];
+  for (const arr of groups.values()){
+    arr.sort((a,b)=>(examDate(a)||0)-(examDate(b)||0));
+    const last = arr[arr.length-1];
+    if (!last.passed) out.push({ last, attempts: arr.length });
+  }
+  return out.sort((a,b)=>(examDate(a.last)||0)-(examDate(b.last)||0));
+}
+function daysSince(e){ const d = examDate(e); return d ? Math.floor((Date.now()-d)/86400000) : ""; }
+function renderRetests(){
+  const all = pendingRetests();
+  $("retestBadge").textContent = all.length;
+  $("retestBadge").classList.toggle("hidden", !all.length);
+  const h = $("rHalaqa").value;
+  const list = all.filter(r => !h || r.last.halaqaId === h);
+  $("retestsCount").textContent = `${list.length} طالب`;
+  $("retestsBody").innerHTML = list.length ? list.map(({last:e, attempts}) => `
+    <tr><td>${esc(e.studentName)}</td><td>${esc(e.halaqaName)}</td><td>${esc(TYPES[e.type]||e.type)}</td>
+    <td class="muted">${esc(juzLabel(e))}</td><td>${esc(dateText(e))}</td><td>${daysSince(e)} يوم</td>
+    <td>${attempts}</td><td class="${resultOf(e)}">${resultText(e)}</td>
+    <td class="actions"><button class="small" data-rec="${e.studentId}">سجل الطالب</button></td></tr>`).join("")
+    : `<tr><td colspan="9" class="muted" style="text-align:center">لا يوجد طلاب بانتظار الإعادة</td></tr>`;
+}
+$("rHalaqa").addEventListener("input", renderRetests);
+$("retestsBody").addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && b.dataset.rec) studentRecord(b.dataset.rec); });
+
+// ===== سجل الطالب =====
+function passedJuz(sid){
+  const set = new Set();
+  S.exams.filter(e=>e.studentId===sid && e.passed).forEach(e => { for (let j=e.startJuz;j<=e.endJuz;j++) set.add(j); });
+  return set;
+}
+function studentRecordHtml(sid, forPrint){
+  const st = S.students.find(x=>x.id===sid) || {};
+  const exams = S.exams.filter(e=>e.studentId===sid).sort((a,b)=>(examDate(b)||0)-(examDate(a)||0));
+  const name = st.name || (exams[0]||{}).studentName || "";
+  const hName = halaqaName(st.halaqaId) || (exams[0]||{}).halaqaName || "";
+  const done = passedJuz(sid);
+  const pass = exams.filter(e=>e.passed).length;
+  const juzChips = Array.from({length:30},(_,i)=>i+1).map(j => forPrint
+      ? (done.has(j) ? `${j}` : null) : `<span class="${done.has(j)?'on':''}" title="${JUZ[j]}">${j}</span>`).filter(Boolean);
+  return `
+    <table class="detail">
+      <tr><td>الطالب</td><td><b>${esc(name)}</b></td></tr>
+      <tr><td>الحلقة</td><td>${esc(hName)}</td></tr>
+      <tr><td>عدد الاختبارات</td><td>${exams.length} (ناجح ${pass}، راسب ${exams.length-pass})</td></tr>
+      <tr><td>الأجزاء المجتازة</td><td>${done.size} من 30 — المتبقي ${30-done.size}</td></tr>
+    </table>
+    ${forPrint ? `<p>الأجزاء المجتازة: ${juzChips.join("، ") || "لا يوجد"}</p>` : `<div class="chips" style="margin:10px 0">${juzChips.join("")}</div>`}
+    <h2>الاختبارات</h2>
+    <table>
+      <thead><tr><th>التاريخ</th><th>النوع</th><th>الأجزاء</th><th>المختبر</th><th>المجموع</th><th>النتيجة</th><th>ملاحظات</th></tr></thead>
+      <tbody>${exams.map(e => `<tr><td>${esc(dateText(e))}</td><td>${esc(TYPES[e.type]||e.type)}${e.isRetest?' (إعادة)':''}</td>
+        <td>${esc(juzLabel(e))}</td><td>${esc(e.examinerName)}</td><td>${e.closed?'—':fmtNum(e.total)}</td>
+        <td class="${resultOf(e)}">${resultText(e)}</td><td>${esc(e.notes)}</td></tr>`).join("")
+        || `<tr><td colspan="7" class="muted">لا توجد اختبارات</td></tr>`}</tbody>
+    </table>`;
+}
+function studentRecord(sid){
+  const st = S.students.find(x=>x.id===sid) || {};
+  openDialog("سجل الطالب", studentRecordHtml(sid, false), [
+    { text:"طباعة", cls:"primary", onClick: () => { printDoc(`سجل الطالب: ${st.name||""}`, studentRecordHtml(sid, true)); return false; } },
+    { text:"إغلاق" }
+  ], true);
+}
+
+// ===== الإحصائيات والتقارير =====
+function statsRange(){
+  const from = $("stFrom").value ? new Date($("stFrom").value+"T00:00:00") : null;
+  const to = $("stTo").value ? new Date($("stTo").value+"T23:59:59") : null;
+  return S.exams.filter(e => { const d = examDate(e); if (from && (!d||d<from)) return false; if (to && (!d||d>to)) return false; return true; });
+}
+function groupStats(list, keyFn){
+  const m = new Map();
+  for (const e of list){
+    const k = keyFn(e) || "—";
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(e);
+  }
+  return [...m.entries()].map(([label, arr]) => {
+    const pass = arr.filter(e=>e.passed).length;
+    const totals = arr.filter(e=>!e.closed && typeof e.total==="number").map(e=>e.total);
+    const durs = arr.filter(e=>typeof e.durationSeconds==="number").map(e=>e.durationSeconds);
+    return { label, count: arr.length, pass, fail: arr.length-pass, closed: arr.filter(e=>e.closed).length,
+      retest: arr.filter(e=>e.isRetest).length, rate: pct(pass, arr.length), avgTotal: avg(totals), avgDur: avg(durs) };
+  });
+}
+function statsTable(rows, labelTitle){
+  if (!rows.length) return `<p class="muted">لا توجد بيانات</p>`;
+  return `<table><thead><tr><th>${labelTitle}</th><th>الاختبارات</th><th>ناجح</th><th>راسب</th><th>منها أُغلق</th>
+    <th>إعادة</th><th>نسبة النجاح</th><th>متوسط المجموع</th><th>متوسط المدة</th></tr></thead><tbody>${
+    rows.map(r => `<tr><td>${esc(r.label)}</td><td>${r.count}</td><td class="pass">${r.pass}</td><td class="fail">${r.fail}</td>
+      <td>${r.closed}</td><td>${r.retest}</td>
+      <td><span class="bar"><span style="width:${r.rate}%"></span></span>${r.rate}%</td>
+      <td>${r.avgTotal===null?'—':fmtNum(r.avgTotal)}</td><td>${r.avgDur===null?'—':fmtDur(Math.round(r.avgDur))}</td></tr>`).join("")}</tbody></table>`;
+}
+function statRowsForExcel(rows, labelTitle){
+  return rows.map(r => ({ [labelTitle]: r.label, "الاختبارات": r.count, "ناجح": r.pass, "راسب": r.fail, "منها أُغلق": r.closed,
+    "إعادة": r.retest, "نسبة النجاح %": r.rate, "متوسط المجموع": r.avgTotal===null?"":Math.round(r.avgTotal*10)/10,
+    "متوسط المدة": r.avgDur===null?"":fmtDur(Math.round(r.avgDur)) }));
+}
+const byCount = (a,b) => b.count - a.count;
+function renderStats(){
+  const list = statsRange();
+  const all = groupStats(list, () => "الكل")[0] || { count:0, pass:0, fail:0, closed:0, retest:0, rate:0, avgTotal:null, avgDur:null };
+  $("stSummary").innerHTML = `<span>الاختبارات: <b>${all.count}</b></span><span>ناجح: <b class="pass">${all.pass}</b></span>
+    <span>راسب: <b class="fail">${all.fail}</b></span><span>نسبة النجاح: <b>${all.rate}%</b></span>
+    <span>متوسط المجموع: <b>${all.avgTotal===null?'—':fmtNum(all.avgTotal)}</b></span>
+    <span>متوسط مدة الاختبار: <b>${all.avgDur===null?'—':fmtDur(Math.round(all.avgDur))}</b></span>
+    <span>بانتظار الإعادة الآن: <b>${pendingRetests().length}</b></span>`;
+  $("stByHalaqa").innerHTML = statsTable(groupStats(list, e=>e.halaqaName).sort(byCount), "الحلقة");
+  $("stByExaminer").innerHTML = statsTable(groupStats(list, e=>e.examinerName).sort(byCount), "المختبر");
+  $("stByType").innerHTML = statsTable(groupStats(list, e=>TYPES[e.type]||e.type).sort(byCount), "النوع");
+  $("stByMonth").innerHTML = statsTable(groupStats(list, e=>{ const d=examDate(e); return d ? dayKey(d).slice(0,7) : "—"; })
+    .sort((a,b)=>b.label.localeCompare(a.label)), "الشهر");
+}
+["stFrom","stTo"].forEach(id => $(id).addEventListener("input", renderStats));
+$("stThisMonth").onclick = () => { const d=new Date(); $("stFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("stTo").value = dayKey(d); renderStats(); };
+$("stAll").onclick = () => { $("stFrom").value = ""; $("stTo").value = ""; renderStats(); };
+(() => { const d = new Date(); $("repMonth").value = dayKey(d).slice(0,7); })();
+
+function monthExams(){
+  const m = $("repMonth").value;
+  if (!m){ toast("اختر الشهر"); return null; }
+  return { m, list: S.exams.filter(e => { const d = examDate(e); return d && dayKey(d).slice(0,7) === m; })
+    .sort((a,b)=>(examDate(a)||0)-(examDate(b)||0)) };
+}
+$("repExcel").onclick = () => {
+  const r = monthExams(); if (!r) return;
+  const all = groupStats(r.list, () => "الشهر كاملاً");
+  const wb = newBook();
+  addSheet(wb, [...statRowsForExcel(all, "البند"),
+    ...statRowsForExcel(groupStats(r.list, e=>e.halaqaName).sort(byCount), "البند")], "الملخص وحسب الحلقة");
+  addSheet(wb, statRowsForExcel(groupStats(r.list, e=>e.examinerName).sort(byCount), "المختبر"), "حسب المختبر");
+  addSheet(wb, statRowsForExcel(groupStats(r.list, e=>TYPES[e.type]||e.type).sort(byCount), "النوع"), "حسب النوع");
+  addSheet(wb, r.list.map(examRow), "اختبارات الشهر");
+  addSheet(wb, pendingRetests().map(({last:e, attempts}) => ({ "الطالب": e.studentName, "الحلقة": e.halaqaName,
+    "الاختبار": TYPES[e.type]||e.type, "الأجزاء": juzLabel(e), "آخر محاولة": dateText(e), "منذ (يوم)": daysSince(e),
+    "المحاولات": attempts, "النتيجة": resultText(e) })), "بانتظار الإعادة");
+  XLSX.writeFile(wb, `التقرير-الشهري-مركز-التقوى-${r.m}.xlsx`);
+};
+$("repPrint").onclick = () => {
+  const r = monthExams(); if (!r) return;
+  const all = groupStats(r.list, () => "الشهر كاملاً");
+  const pr = pendingRetests();
+  printDoc(`التقرير الشهري — ${r.m}`, `
+    <h2>الملخص</h2>${statsTable(all, "البند")}
+    <h2>حسب الحلقة</h2>${statsTable(groupStats(r.list, e=>e.halaqaName).sort(byCount), "الحلقة")}
+    <h2>حسب المختبر</h2>${statsTable(groupStats(r.list, e=>e.examinerName).sort(byCount), "المختبر")}
+    <h2>حسب نوع الاختبار</h2>${statsTable(groupStats(r.list, e=>TYPES[e.type]||e.type).sort(byCount), "النوع")}
+    <h2>طلاب بانتظار الإعادة (${pr.length})</h2>
+    <table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>الأجزاء</th><th>آخر محاولة</th><th>المحاولات</th></tr></thead>
+    <tbody>${pr.map(({last:e, attempts}) => `<tr><td>${esc(e.studentName)}</td><td>${esc(e.halaqaName)}</td><td>${esc(TYPES[e.type]||e.type)}</td>
+      <td>${esc(juzLabel(e))}</td><td>${esc(dateText(e))}</td><td>${attempts}</td></tr>`).join("") || `<tr><td colspan="6">لا يوجد</td></tr>`}</tbody></table>`);
 };
 
 // ===== طلاب جدد =====
@@ -611,11 +867,13 @@ function renderStudents(){
   $("studentsCount").textContent = `${list.length} طالب`;
   $("studentsBody").innerHTML = list.map(s => `
     <tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td><td>${examsOfStudent(s.id).length}</td>
-    <td class="actions"><button class="small" data-edit="${s.id}">تعديل</button>
+    <td class="actions"><button class="small primary" data-rec="${s.id}">السجل</button>
+    <button class="small" data-edit="${s.id}">تعديل</button>
     <button class="small danger" data-del="${s.id}">حذف</button></td></tr>`).join("");
 }
 $("studentsBody").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
+  if (b.dataset.rec) studentRecord(b.dataset.rec);
   if (b.dataset.edit) editStudent(b.dataset.edit, false);
   if (b.dataset.del){
     const s = S.students.find(x=>x.id===b.dataset.del);

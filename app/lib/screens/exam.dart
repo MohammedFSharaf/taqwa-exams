@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../logic.dart';
@@ -17,6 +19,21 @@ class _ExamScreenState extends State<ExamScreen> {
   final List<QuestionMark> _qs = List.generate(qCount, (_) => QuestionMark());
   final List<List<String>> _history = List.generate(qCount, (_) => <String>[]);
   int _idx = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   QuestionMark get _q => _qs[_idx];
 
@@ -139,7 +156,22 @@ class _ExamScreenState extends State<ExamScreen> {
         if (await _confirmExit() && context.mounted) Navigator.of(context).pop();
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(s.studentName)),
+        appBar: AppBar(
+          title: Text(s.studentName),
+          actions: [
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 14),
+              child: Row(
+                children: [
+                  const Icon(Icons.timer_outlined, size: 20),
+                  const SizedBox(width: 4),
+                  Text(fmtDuration(DateTime.now().difference(s.createdAt).inSeconds),
+                      style: const TextStyle(fontSize: 16, fontFeatures: [FontFeature.tabularFigures()])),
+                ],
+              ),
+            ),
+          ],
+        ),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [

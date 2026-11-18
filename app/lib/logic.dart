@@ -84,3 +84,9 @@ String dayName(DateTime d) => _days[d.weekday - 1];
 String two(int n) => n.toString().padLeft(2, '0');
 String dateText(DateTime d) =>
     '${dayName(d)} ${d.year}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}';
+
+String fmtDuration(int seconds) {
+  final m = seconds ~/ 60, sec = seconds % 60;
+  if (m >= 60) return '${m ~/ 60}:${two(m % 60)}:${two(sec)}';
+  return '${two(m)}:${two(sec)}';
+}
