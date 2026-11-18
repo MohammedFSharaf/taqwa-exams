@@ -104,7 +104,7 @@ jobs:
 
       - name: Shorebird patch (silent update)
         if: steps.mode.outputs.mode == 'patch'
-        run: shorebird patch android --target-platform=android-arm,android-arm64 --release-version=${{ steps.mode.outputs.version }} --no-confirm
+        run: shorebird patch android --release-version=${{ steps.mode.outputs.version }} --no-confirm
 
       - name: Save Shorebird config to repo
         if: steps.init.outputs.created == 'true'
