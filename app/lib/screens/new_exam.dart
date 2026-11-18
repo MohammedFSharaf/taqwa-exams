@@ -339,6 +339,21 @@ class _NewExamScreenState extends State<NewExamScreen> {
                       : const Text('إعادة اختبار ناجح بإذن الإدارة'),
                   contentPadding: EdgeInsets.zero,
                 ),
+            const SizedBox(height: 6),
+            // نوع الاختبار للعرض فقط (يُحدد تلقائياً حسب المسار)
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final e in examTypes.entries)
+                  ChoiceChip(
+                    label: Text(e.value),
+                    selected: _type == e.key,
+                    onSelected: null,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
             const Text('الترتيب ثابت حسب مسار الطالب، ولا يمكن اختيار جزء آخر.',
                 style: TextStyle(color: Colors.black54, fontSize: 13)),
           ],
