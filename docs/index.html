@@ -66,6 +66,12 @@
   .chips{display:flex;flex-wrap:wrap;gap:4px}
   .chips span{border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:13px}
   .chips span.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .chips span.cur{border:2px solid #9a6700;color:#9a6700;font-weight:700}
+  .chips span.ex{opacity:.4}
+  .chips span.big{font-weight:700}
+  .hafiz{color:var(--green);font-weight:700}
+  .progress{background:#eef0f1;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}
+  .progress span{display:block;height:100%;background:var(--green)}
   .toast{position:fixed;bottom:20px;left:20px;background:#222;color:#fff;padding:10px 16px;border-radius:6px;opacity:0;transition:.3s}
   .toast.show{opacity:1}
 </style>
@@ -170,6 +176,7 @@
           <button id="repPrint">طباعة / PDF</button>
         </div>
       </div>
+      <div class="card"><h2>تقدّم الطلاب في المسار</h2><div id="stPath"></div></div>
       <div class="stats" id="stSummary"></div>
       <div class="card"><h2>حسب الحلقة</h2><div id="stByHalaqa"></div></div>
       <div class="card"><h2>حسب المختبر</h2><div id="stByExaminer"></div></div>
@@ -196,12 +203,14 @@
         <div class="row">
           <label>اسم الطالب<input id="newStudentName" style="min-width:260px"></label>
           <label>الحلقة<select id="newStudentHalaqa"></select></label>
+          <label>الاتجاه<select id="newDir"></select></label>
+          <label>جزء البداية<select id="newStart"></select></label>
           <button class="primary" id="addStudentBtn">إضافة</button>
         </div>
       </div>
       <div class="card">
         <h2>استيراد من Excel</h2>
-        <p class="muted">ملف فيه عمودين: <b>اسم الطالب</b> و<b>اسم الحلقة</b> (الصف الأول عناوين). الحلقات غير الموجودة تُضاف تلقائياً، والأسماء المكررة بنفس الحلقة تُتجاهل.</p>
+        <p class="muted">ملف فيه عمودين: <b>اسم الطالب</b> و<b>اسم الحلقة</b>، ويمكن إضافة عمودين اختياريين: <b>الاتجاه</b> (من الناس / من البقرة) و<b>جزء البداية</b> (رقم). الصف الأول عناوين. الحلقات غير الموجودة تُضاف تلقائياً، والأسماء المكررة بنفس الحلقة تُتجاهل.</p>
         <div class="row">
           <input type="file" id="importFile" accept=".xlsx,.xls,.csv">
           <button class="primary" id="importBtn">استيراد</button>
@@ -214,7 +223,7 @@
           <span class="muted" id="studentsCount"></span>
         </div>
         <table>
-          <thead><tr><th>الاسم</th><th>الحلقة</th><th>عدد الاختبارات</th><th></th></tr></thead>
+          <thead><tr><th>الاسم</th><th>الحلقة</th><th>المسار</th><th>الاختبار التالي</th><th>الاختبارات</th><th></th></tr></thead>
           <tbody id="studentsBody"></tbody>
         </table>
       </div>
@@ -253,6 +262,14 @@
 
     <!-- الإعدادات -->
     <section id="tab-settings" class="hidden">
+      <div class="card">
+        <h2>مدة التوقف</h2>
+        <p class="muted">الطالب الذي يبقى على نفس الاختبار في المسار أكثر من هذه المدة يظهر في قائمة "المتوقفين" في الإحصائيات.</p>
+        <div class="row">
+          <label>عدد الأيام<input type="number" id="stallDays" min="1" style="width:110px"></label>
+          <button class="primary" id="saveStallBtn">حفظ</button>
+        </div>
+      </div>
       <div class="card">
         <h2>كلمة سر التطبيق</h2>
         <p class="muted">كلمة سر موحدة يكتبها المختبر لفتح التطبيق. التغيير يصل للجوالات عند اتصالها بالإنترنت.</p>
@@ -310,6 +327,62 @@ function resultOf(e){ return e.closed ? "closed" : (e.passed ? "pass" : "fail");
 function resultText(e){
   return e.closed ? "راسب – أُغلق الاختبار" : (e.passed ? "ناجح" : "راسب");
 }
+// ===== مسار الحفظ =====
+const DIRS = { desc: "من الناس (30 ← 1)", asc: "من البقرة (1 ← 30)" };
+const DEFAULT_STALL_DAYS = 60;
+function buildPath(dir){
+  const s = [], P = (type, start) => ({ type, start, end: start + type - 1, key: type + "|" + start });
+  if (dir === "asc"){
+    for (const b of [1, 11, 21]){
+      s.push(P(1,b), P(1,b+1), P(1,b+2), P(3,b), P(1,b+3), P(1,b+4), P(5,b));
+      for (let j=b+5;j<=b+9;j++) s.push(P(1,j));
+      s.push(P(10,b));
+    }
+  } else {
+    for (const t of [30, 20, 10]){
+      s.push(P(1,t), P(1,t-1), P(1,t-2), P(3,t-2), P(1,t-3), P(1,t-4), P(5,t-4));
+      for (let j=t-5;j>=t-9;j--) s.push(P(1,j));
+      s.push(P(10,t-9));
+    }
+  }
+  s.push(P(30,1));
+  return s;
+}
+function pathStatus(dir, start, passed){
+  const steps = buildPath(dir);
+  let first = steps.findIndex(x => x.type === 1 && x.start === start);
+  if (first < 0) first = 0;
+  for (let i=first;i<steps.length;i++) if (!passed.has(steps[i].key)) return { steps, first, next: i, hafiz: false };
+  return { steps, first, next: null, hafiz: true };
+}
+function stepLabel(st){
+  if (st.type === 1) return `الجزء ${st.start} (${JUZ[st.start]})`;
+  if (st.type === 30) return "المصحف كاملاً (30 جزءاً)";
+  return `${TYPES[st.type]} (${st.start}–${st.end})`;
+}
+function stepShort(st){ return st.type === 1 ? String(st.start) : st.type === 30 ? "المصحف" : `م${st.type}`; }
+function sDir(s){ return s && s.pathDir === "asc" ? "asc" : "desc"; }
+function sStart(s){ const v = parseInt(s && s.pathStart); return v >= 1 && v <= 30 ? v : (sDir(s) === "asc" ? 1 : 30); }
+function passedKeys(sid){ return new Set(S.exams.filter(e=>e.studentId===sid && e.passed).map(e=>e.type+"|"+e.startJuz)); }
+function studentPath(s){ return pathStatus(sDir(s), sStart(s), passedKeys(s.id)); }
+function nextText(s){ const p = studentPath(s); return p.hafiz ? "حافظ للقرآن" : stepLabel(p.steps[p.next]); }
+function blockName(p){
+  if (p.hafiz) return "حافظ للقرآن";
+  if (p.next === 39) return "اختبار المصحف كاملاً";
+  return ["العشرة الأولى","العشرة الثانية","العشرة الثالثة"][Math.floor(p.next/13)];
+}
+function stallDays(){ const v = parseInt(S.settings && S.settings.stallDays); return v > 0 ? v : DEFAULT_STALL_DAYS; }
+function pathFields(dir, start, idp){
+  return `<label>الاتجاه<select id="${idp}Dir">${Object.entries(DIRS).map(([k,v])=>`<option value="${k}" ${k===dir?'selected':''}>${v}</option>`).join("")}</select></label>
+  <label>جزء البداية<select id="${idp}Start">${Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}" ${j===start?'selected':''}>${j} — ${JUZ[j]}</option>`).join("")}</select></label>`;
+}
+function fillPathSelects(dirSel, startSel, dir, start){
+  dirSel.innerHTML = Object.entries(DIRS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+  startSel.innerHTML = Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}">${j} — ${JUZ[j]}</option>`).join("");
+  dirSel.value = dir; startSel.value = String(start);
+  dirSel.onchange = () => { startSel.value = dirSel.value === "asc" ? "1" : "30"; };
+}
+
 function fmtNum(n){ return (n === null || n === undefined) ? "" : (Math.round(n*100)/100).toString(); }
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function examDate(e){
@@ -408,6 +481,8 @@ function startListeners(){
   unsubs.push(onSnapshot(doc(db, "settings", "app"), d => {
     S.settings = d.exists() ? d.data() : {};
     $("curAppPass").value = S.settings.password || "(لم تُحدد بعد)";
+    $("stallDays").value = stallDays();
+    renderStats();
   }));
 }
 
@@ -557,7 +632,11 @@ function editExam(id){
       <td><input type="number" min="0" step="1" id="qa${i}" value="${q?q.alerts:''}"></td></tr>`;
   }).join("");
   openDialog("تعديل الاختبار", `
-    <p class="muted">الطالب: <b>${esc(e.studentName)}</b> — ${esc(TYPES[e.type]||"")} — ${esc(juzLabel(e))}</p>
+    <p class="muted">الطالب: <b>${esc(e.studentName)}</b></p>
+    <div class="grid2" style="margin-bottom:10px">
+      <label>نوع الاختبار<select id="eType">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${+k===e.type?'selected':''}>${v}</option>`).join("")}</select></label>
+      <label>من الجزء<select id="eStart">${Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}" ${j===e.startJuz?'selected':''}>${j} — ${JUZ[j]}</option>`).join("")}</select></label>
+    </div>
     <table class="qtable"><thead><tr><th></th><th>الأخطاء</th><th>التنبيهات</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="muted">إذا وصل خصم سؤال إلى ${CLOSE_AT} علامات يُغلق الاختبار، واترك الأسئلة التي بعده فارغة.</p>
     <div class="grid2">
@@ -573,10 +652,13 @@ function editExam(id){
         const ev = $("qe"+i).value, av = $("qa"+i).value;
         questions.push(ev === "" && av === "" ? null : { errors: parseInt(ev||"0"), alerts: parseInt(av||"0") });
       }
+      const type = parseInt($("eType").value);
+      let startJuz = type === 30 ? 1 : parseInt($("eStart").value);
+      if (startJuz + type - 1 > 30){ $("eErr").textContent = `الأجزاء تتجاوز 30: أقصى جزء بداية لهذا النوع هو ${31-type}`; return false; }
       const num = v => v === "" ? null : parseFloat(v);
       const r = computeExam(questions, num($("eTaj").value), num($("ePerf").value));
       if (r.error){ $("eErr").textContent = r.error; return false; }
-      await updateDoc(doc(db,"exams",id), { ...r, isRetest: $("eRetest").checked,
+      await updateDoc(doc(db,"exams",id), { ...r, type, startJuz, endJuz: startJuz + type - 1, isRetest: $("eRetest").checked,
         notes: $("eNotes").value.trim(), editedAt: serverTimestamp() });
       toast("تم الحفظ");
     }},
@@ -695,12 +777,31 @@ function studentRecordHtml(sid, forPrint){
   const hName = halaqaName(st.halaqaId) || (exams[0]||{}).halaqaName || "";
   const done = passedJuz(sid);
   const pass = exams.filter(e=>e.passed).length;
+  const p = st.id ? studentPath(st) : null;
+  let pathHtml = "";
+  if (p){
+    const passed = passedKeys(sid);
+    const total = p.steps.length - p.first;
+    const doneSteps = p.steps.slice(p.first).filter(x => passed.has(x.key)).length;
+    const stage = p.hafiz ? `<span class="hafiz">أتمّ المسار — حافظ للقرآن الكريم</span>` : `المرحلة ${p.next+1} من ${p.steps.length}`;
+    const chips = p.steps.map((x,i) => {
+      const cls = i < p.first ? "ex" : passed.has(x.key) ? "on" : i === p.next ? "cur" : "";
+      return `<span class="${cls} ${x.type>1?'big':''}" title="${i+1}. ${esc(stepLabel(x))}">${stepShort(x)}</span>`;
+    }).join("");
+    pathHtml = `
+      <tr><td>المسار</td><td>${DIRS[sDir(st)]} — بدأ من الجزء ${sStart(st)}</td></tr>
+      <tr><td>المرحلة</td><td>${stage}<div class="progress"><span style="width:${pct(doneSteps,total)}%"></span></div></td></tr>
+      <tr><td>الاختبار التالي</td><td><b>${p.hafiz ? "—" : esc(stepLabel(p.steps[p.next]))}</b></td></tr>
+      ${forPrint ? "" : `<tr><td>خريطة المراحل</td><td><div class="chips">${chips}</div>
+        <div class="muted" style="margin-top:4px">أخضر: ناجح · إطار بني: الحالي · باهت: معفى (قبل نقطة البداية) · م3/م5/م10: مجمّع</div></td></tr>`}`;
+  }
   const juzChips = Array.from({length:30},(_,i)=>i+1).map(j => forPrint
       ? (done.has(j) ? `${j}` : null) : `<span class="${done.has(j)?'on':''}" title="${JUZ[j]}">${j}</span>`).filter(Boolean);
   return `
     <table class="detail">
       <tr><td>الطالب</td><td><b>${esc(name)}</b></td></tr>
       <tr><td>الحلقة</td><td>${esc(hName)}</td></tr>
+      ${pathHtml}
       <tr><td>عدد الاختبارات</td><td>${exams.length} (ناجح ${pass}، راسب ${exams.length-pass})</td></tr>
       <tr><td>الأجزاء المجتازة</td><td>${done.size} من 30 — المتبقي ${30-done.size}</td></tr>
     </table>
@@ -758,7 +859,47 @@ function statRowsForExcel(rows, labelTitle){
     "متوسط المدة": r.avgDur===null?"":fmtDur(Math.round(r.avgDur)) }));
 }
 const byCount = (a,b) => b.count - a.count;
+function renderPathStats(){
+  const studs = S.students.filter(s=>s.status!=="pending");
+  const blocks = new Map([["العشرة الأولى",0],["العشرة الثانية",0],["العشرة الثالثة",0],["اختبار المصحف كاملاً",0],["حافظ للقرآن",0]]);
+  const hafiz = [], stalled = [];
+  const N = stallDays(), now = Date.now();
+  const durs = [[],[],[]];
+  for (const s of studs){
+    const p = studentPath(s);
+    blocks.set(blockName(p), blocks.get(blockName(p)) + 1);
+    const ex = S.exams.filter(e=>e.studentId===s.id);
+    // مدة إنهاء كل عشرة
+    for (let b=0;b<3;b++){
+      const bSteps = p.steps.slice(b*13, b*13+13), bKeys = new Set(bSteps.map(x=>x.key));
+      const endExam = ex.filter(e=>e.passed && e.type+"|"+e.startJuz === bSteps[12].key).map(examDate).filter(Boolean).sort((a,b)=>a-b)[0];
+      const startD = ex.filter(e=>bKeys.has(e.type+"|"+e.startJuz)).map(examDate).filter(Boolean).sort((a,b)=>a-b)[0];
+      if (endExam && startD) durs[b].push((endExam - startD)/86400000);
+    }
+    if (p.hafiz){ hafiz.push(s); continue; }
+    const keys = new Set(p.steps.map(x=>x.key));
+    const lastPass = ex.filter(e=>e.passed && keys.has(e.type+"|"+e.startJuz)).map(examDate).filter(Boolean).sort((a,b)=>b-a)[0];
+    const since = lastPass || (s.createdAt && s.createdAt.toDate ? s.createdAt.toDate() : null);
+    if (since){ const d = Math.floor((now - since)/86400000); if (d > N) stalled.push({ s, d, step: p.steps[p.next] }); }
+  }
+  stalled.sort((a,b)=>b.d-a.d);
+  const durTxt = ["الأولى","الثانية","الثالثة"].map((n,i) => `<span>متوسط مدة إنهاء العشرة ${n}: <b>${durs[i].length ? Math.round(avg(durs[i])) + " يوم" : "—"}</b> ${durs[i].length ? `<span class="muted">(${durs[i].length} طالب)</span>` : ""}</span>`).join("");
+  $("stPath").innerHTML = `
+    <table><thead><tr><th>المرحلة</th><th>عدد الطلاب</th></tr></thead><tbody>
+    ${[...blocks.entries()].map(([k,v]) => `<tr><td>${k === "حافظ للقرآن" ? `<span class="hafiz">${k}</span>` : k}</td><td>${v}</td></tr>`).join("")}
+    </tbody></table>
+    <div class="stats" style="margin-top:10px">${durTxt}</div>
+    <h2 style="margin-top:16px">المتوقفون (أكثر من ${N} يوماً على نفس الاختبار) — ${stalled.length}</h2>
+    ${stalled.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار الحالي</th><th>منذ</th><th></th></tr></thead><tbody>
+      ${stalled.map(x => `<tr><td>${esc(x.s.name)}</td><td>${esc(halaqaName(x.s.halaqaId))}</td><td>${esc(stepLabel(x.step))}</td>
+      <td>${x.d} يوم</td><td><button class="small" data-rec="${x.s.id}">سجل الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`}
+    <h2 style="margin-top:16px">الحفّاظ — ${hafiz.length}</h2>
+    ${hafiz.length ? `<p>${hafiz.map(s=>`${esc(s.name)} <span class="muted">(${esc(halaqaName(s.halaqaId))})</span>`).join("، ")}</p>` : `<p class="muted">لا يوجد بعد</p>`}`;
+}
+$("stPath").addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && b.dataset.rec) studentRecord(b.dataset.rec); });
+
 function renderStats(){
+  renderPathStats();
   const list = statsRange();
   const all = groupStats(list, () => "الكل")[0] || { count:0, pass:0, fail:0, closed:0, retest:0, rate:0, avgTotal:null, avgDur:null };
   $("stSummary").innerHTML = `<span>الاختبارات: <b>${all.count}</b></span><span>ناجح: <b class="pass">${all.pass}</b></span>
@@ -866,7 +1007,10 @@ function renderStudents(){
   const list = sortAr(S.students.filter(s => s.status!=="pending" && (!q || s.name.includes(q)) && (!h || s.halaqaId===h)));
   $("studentsCount").textContent = `${list.length} طالب`;
   $("studentsBody").innerHTML = list.map(s => `
-    <tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td><td>${examsOfStudent(s.id).length}</td>
+    <tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
+    <td class="muted">${sDir(s)==="asc"?"من البقرة":"من الناس"} · من الجزء ${sStart(s)}</td>
+    <td>${(() => { const t = nextText(s); return t === "حافظ للقرآن" ? `<span class="hafiz">حافظ للقرآن</span>` : esc(t); })()}</td>
+    <td>${examsOfStudent(s.id).length}</td>
     <td class="actions"><button class="small primary" data-rec="${s.id}">السجل</button>
     <button class="small" data-edit="${s.id}">تعديل</button>
     <button class="small danger" data-del="${s.id}">حذف</button></td></tr>`).join("");
@@ -888,27 +1032,32 @@ function editStudent(id, approving){
     <div class="grid2">
       <label>الاسم<input id="esName" value="${esc(s.name)}"></label>
       <label>الحلقة<select id="esHalaqa">${hs}</select></label>
+      ${pathFields(sDir(s), sStart(s), "es")}
     </div>`, [
     { text: approving ? "اعتماد" : "حفظ", cls:"primary", onClick: async () => {
       const name = $("esName").value.trim(), halaqaId = $("esHalaqa").value;
       if (!name) return false;
       const batch = writeBatch(db);
-      batch.update(doc(db,"students",id), { name, halaqaId, status:"approved" });
+      batch.update(doc(db,"students",id), { name, halaqaId, status:"approved",
+        pathDir: $("esDir").value, pathStart: parseInt($("esStart").value) });
       examsOfStudent(id).forEach(e => batch.update(doc(db,"exams",e.id),
         { studentName:name, halaqaId, halaqaName:halaqaName(halaqaId) }));
       await batch.commit(); toast("تم الحفظ");
     }},
     { text:"إلغاء" }
   ]);
+  $("esDir").onchange = () => { $("esStart").value = $("esDir").value === "asc" ? "1" : "30"; };
 }
 $("addStudentBtn").onclick = async () => {
   const name = $("newStudentName").value.trim(), halaqaId = $("newStudentHalaqa").value;
   if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة (أضف حلقة أولاً إن لم توجد)"); return; }
   if (S.students.some(s=>s.name===name && s.halaqaId===halaqaId)){ toast("الطالب موجود بنفس الحلقة"); return; }
-  await addDoc(collection(db,"students"), { name, halaqaId, status:"approved", createdBy:"الإدارة", createdAt: serverTimestamp() });
+  await addDoc(collection(db,"students"), { name, halaqaId, status:"approved", createdBy:"الإدارة", createdAt: serverTimestamp(),
+    pathDir: $("newDir").value, pathStart: parseInt($("newStart").value) });
   $("newStudentName").value = ""; $("newStudentName").focus(); toast("تمت الإضافة");
 };
 $("newStudentName").addEventListener("keydown", e => { if (e.key==="Enter") $("addStudentBtn").click(); });
+fillPathSelects($("newDir"), $("newStart"), "desc", 30);
 
 $("importBtn").onclick = async () => {
   const file = $("importFile").files[0];
@@ -920,6 +1069,9 @@ $("importBtn").onclick = async () => {
   const ops = []; let added = 0, skipped = 0, newH = 0;
   for (const r of rows){
     const name = String(r[0]||"").trim(), hName = String(r[1]||"").trim();
+    const pathDir = String(r[2]||"").includes("بقر") ? "asc" : "desc";
+    let pathStart = parseInt(String(r[3]||"").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+    if (!(pathStart >= 1 && pathStart <= 30)) pathStart = pathDir === "asc" ? 1 : 30;
     if (!name || !hName){ skipped++; continue; }
     let hid = halaqaByName.get(hName);
     if (!hid){
@@ -930,7 +1082,7 @@ $("importBtn").onclick = async () => {
     if (existing.has(key)){ skipped++; continue; }
     existing.add(key);
     const ref = doc(collection(db,"students"));
-    ops.push(b => b.set(ref, { name, halaqaId:hid, status:"approved", createdBy:"استيراد", createdAt: serverTimestamp() }));
+    ops.push(b => b.set(ref, { name, halaqaId:hid, status:"approved", createdBy:"استيراد", createdAt: serverTimestamp(), pathDir, pathStart }));
     added++;
   }
   for (let i=0;i<ops.length;i+=400){
@@ -994,6 +1146,12 @@ $("examinersBody").addEventListener("click", ev => {
 });
 
 // ===== الإعدادات =====
+$("saveStallBtn").onclick = async () => {
+  const v = parseInt($("stallDays").value);
+  if (!(v > 0)){ toast("أدخل عدد أيام صحيح"); return; }
+  await setDoc(doc(db,"settings","app"), { stallDays: v }, { merge:true });
+  toast("تم الحفظ");
+};
 $("saveAppPassBtn").onclick = async () => {
   const p = $("newAppPass").value.trim();
   if (p.length < 4){ toast("كلمة السر 4 خانات على الأقل"); return; }

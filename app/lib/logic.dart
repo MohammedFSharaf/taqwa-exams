@@ -90,3 +90,54 @@ String fmtDuration(int seconds) {
   if (m >= 60) return '${m ~/ 60}:${two(m % 60)}:${two(sec)}';
   return '${two(m)}:${two(sec)}';
 }
+
+// ===== مسار الحفظ =====
+const pathDirs = <String, String>{'desc': 'من الناس (30 ← 1)', 'asc': 'من البقرة (1 ← 30)'};
+
+class PathStep {
+  final int type, start;
+  const PathStep(this.type, this.start);
+  int get end => start + type - 1;
+  String get key => '$type|$start';
+  String get label {
+    if (type == 1) return 'الجزء $start (${juzNames[start]})';
+    if (type == 30) return 'المصحف كاملاً (30 جزءاً)';
+    return '${examTypes[type]} ($start–$end)';
+  }
+}
+
+List<PathStep> buildPath(String dir) {
+  final s = <PathStep>[];
+  if (dir == 'asc') {
+    for (final b in [1, 11, 21]) {
+      s.addAll([PathStep(1, b), PathStep(1, b + 1), PathStep(1, b + 2), PathStep(3, b),
+        PathStep(1, b + 3), PathStep(1, b + 4), PathStep(5, b)]);
+      for (var j = b + 5; j <= b + 9; j++) {
+        s.add(PathStep(1, j));
+      }
+      s.add(PathStep(10, b));
+    }
+  } else {
+    for (final t in [30, 20, 10]) {
+      s.addAll([PathStep(1, t), PathStep(1, t - 1), PathStep(1, t - 2), PathStep(3, t - 2),
+        PathStep(1, t - 3), PathStep(1, t - 4), PathStep(5, t - 4)]);
+      for (var j = t - 5; j >= t - 9; j--) {
+        s.add(PathStep(1, j));
+      }
+      s.add(PathStep(10, t - 9));
+    }
+  }
+  s.add(const PathStep(30, 1));
+  return s;
+}
+
+/// الاختبار التالي للطالب، أو null إذا أتمّ المسار (حافظ)
+PathStep? nextPathStep(String dir, int start, Set<String> passedKeys) {
+  final steps = buildPath(dir);
+  var first = steps.indexWhere((x) => x.type == 1 && x.start == start);
+  if (first < 0) first = 0;
+  for (var i = first; i < steps.length; i++) {
+    if (!passedKeys.contains(steps[i].key)) return steps[i];
+  }
+  return null;
+}

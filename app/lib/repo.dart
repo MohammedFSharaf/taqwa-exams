@@ -13,7 +13,18 @@ class Halaqa {
 class Student {
   final String id, name, halaqaId;
   final bool pending;
-  Student(this.id, this.name, this.halaqaId, this.pending);
+  final String pathDir; // desc = من الناس، asc = من البقرة
+  final int pathStart;
+  Student(this.id, this.name, this.halaqaId, this.pending, {this.pathDir = 'desc', int? pathStart})
+      : pathStart = pathStart ?? (pathDir == 'asc' ? 1 : 30);
+
+  static Student fromDoc(String id, Map<String, dynamic> d) {
+    final dir = d['pathDir'] == 'asc' ? 'asc' : 'desc';
+    final st = d['pathStart'];
+    final start = (st is num && st >= 1 && st <= 30) ? st.toInt() : null;
+    return Student(id, (d['name'] ?? '').toString(), (d['halaqaId'] ?? '').toString(), d['status'] == 'pending',
+        pathDir: dir, pathStart: start);
+  }
 }
 
 /// كل التعامل مع Firebase والتخزين المحلي
@@ -89,8 +100,7 @@ class Repo {
           .snapshots()
           .map((s) {
         final l = s.docs
-            .map((d) => Student(d.id, (d.data()['name'] ?? '').toString(),
-                (d.data()['halaqaId'] ?? '').toString(), d.data()['status'] == 'pending'))
+            .map((d) => Student.fromDoc(d.id, d.data()))
             .toList();
         l.sort((a, b) => a.name.compareTo(b.name));
         return l;
@@ -99,8 +109,7 @@ class Repo {
   /// كل الطلاب من كل الحلقات (للبحث السريع)
   Stream<List<Student>> allStudents() => db.collection('students').snapshots().map((s) {
         final l = s.docs
-            .map((d) => Student(d.id, (d.data()['name'] ?? '').toString(),
-                (d.data()['halaqaId'] ?? '').toString(), d.data()['status'] == 'pending'))
+            .map((d) => Student.fromDoc(d.id, d.data()))
             .toList();
         l.sort((a, b) => a.name.compareTo(b.name));
         return l;
@@ -117,16 +126,18 @@ class Repo {
       });
 
   /// طالب جديد يضيفه المختبر — يُحفظ فوراً على الجهاز ويُرفع عند توفر الإنترنت
-  Student addPendingStudent(String name, String halaqaId) {
+  Student addPendingStudent(String name, String halaqaId, String pathDir, int pathStart) {
     final ref = db.collection('students').doc();
     ref.set({
       'name': name,
       'halaqaId': halaqaId,
       'status': 'pending',
+      'pathDir': pathDir,
+      'pathStart': pathStart,
       'createdBy': examinerName ?? '',
       'createdAt': FieldValue.serverTimestamp(),
     }).then((_) {}, onError: (Object e) {});
-    return Student(ref.id, name, halaqaId, true);
+    return Student(ref.id, name, halaqaId, true, pathDir: pathDir, pathStart: pathStart);
   }
 
   /// حفظ الاختبار — لا ننتظر السيرفر، Firestore يرفعه تلقائياً عند الاتصال

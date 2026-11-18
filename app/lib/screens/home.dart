@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../repo.dart';
 import '../update_check.dart';
 import 'examiner.dart';
+import 'guide.dart';
 import 'my_exams.dart';
 import 'new_exam.dart';
 import 'widgets.dart';
@@ -66,7 +67,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () =>
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyExamsScreen())),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GuideScreen())),
+                    child: const Text('نظام الاختبارات ومسار الحفظ', style: TextStyle(fontSize: 16)),
+                  ),
+                  const SizedBox(height: 16),
                   const SyncStatus(),
                 ],
               ),

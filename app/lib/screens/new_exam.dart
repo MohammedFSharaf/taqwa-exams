@@ -22,32 +22,69 @@ class _NewExamScreenState extends State<NewExamScreen> {
   int? _type;
   int? _startJuz;
   bool _retest = false;
-  StreamSubscription? _prevSub;
-  Map<String, dynamic>? _prev; // آخر اختبار سابق لنفس الطالب بنفس النوع والأجزاء
+  bool _overridden = false; // المختبر غيّر الاختبار المقترح يدوياً
+  StreamSubscription? _sub;
+  List<Map<String, dynamic>>? _sExams; // كل اختبارات الطالب المختار
+
+  /// آخر اختبار سابق لنفس الطالب بنفس النوع والأجزاء
+  Map<String, dynamic>? get _prev {
+    if (_sExams == null || _type == null || _startJuz == null) return null;
+    final m = _sExams!.where((e) => e['type'] == _type && e['startJuz'] == _startJuz).toList();
+    if (m.isEmpty) return null;
+    m.sort((a, b) {
+      final ta = a['createdAt'], tb = b['createdAt'];
+      if (ta is Timestamp && tb is Timestamp) return tb.compareTo(ta);
+      return 0;
+    });
+    return m.first;
+  }
 
   bool get _forcedRetest => _prev != null && _prev!['passed'] != true;
   bool get _isRetest => _forcedRetest || _retest;
 
-  void _watchPrev() {
-    _prevSub?.cancel();
-    _prevSub = null;
-    _prev = null;
-    if (_student == null || _type == null || _startJuz == null) return;
-    final type = _type, start = _startJuz;
-    _prevSub = Repo.I.studentExams(_student!.id).listen((list) {
-      final m = list.where((e) => e['type'] == type && e['startJuz'] == start).toList();
-      m.sort((a, b) {
-        final ta = a['createdAt'], tb = b['createdAt'];
-        if (ta is Timestamp && tb is Timestamp) return tb.compareTo(ta);
-        return 0;
-      });
-      if (mounted) setState(() => _prev = m.isEmpty ? null : m.first);
+  bool get _pathKnown => _student != null && _sExams != null;
+  PathStep? get _suggested {
+    if (!_pathKnown) return null;
+    final passed = {
+      for (final e in _sExams!)
+        if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
+    };
+    return nextPathStep(_student!.pathDir, _student!.pathStart, passed);
+  }
+
+  bool get _isHafiz => _pathKnown && _suggested == null;
+  bool get _offPath {
+    final s = _suggested;
+    return s != null && _type != null && _startJuz != null && (s.type != _type || s.start != _startJuz);
+  }
+
+  void _applySuggestion() {
+    final s = _suggested;
+    if (s == null) return;
+    setState(() {
+      _type = s.type;
+      _startJuz = s.start;
+      _overridden = false;
+    });
+  }
+
+  void _watchStudent() {
+    _sub?.cancel();
+    _sub = null;
+    _sExams = null;
+    _overridden = false;
+    _retest = false;
+    if (_student == null) return;
+    _sub = Repo.I.studentExams(_student!.id).listen((list) {
+      if (!mounted) return;
+      setState(() => _sExams = list);
+      if (!_overridden) _applySuggestion();
     }, onError: (_) {});
   }
 
   @override
   void dispose() {
-    _prevSub?.cancel();
+    _sub?.cancel();
     super.dispose();
   }
 
@@ -57,13 +94,13 @@ class _NewExamScreenState extends State<NewExamScreen> {
   void _setType(int t) {
     setState(() {
       _type = t;
+      if (_student != null) _overridden = true;
       if (t == 30) {
         _startJuz = 1;
       } else if (_startJuz != null && _startJuz! + t - 1 > 30) {
         _startJuz = null;
       }
     });
-    _watchPrev();
   }
 
   Future<void> _pickStudent() async {
@@ -74,7 +111,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
     );
     if (res != null) {
       setState(() => _student = res);
-      _watchPrev();
+      _watchStudent();
     }
   }
 
@@ -89,7 +126,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
       _student = res.$1;
       _halaqa = res.$2;
     });
-    _watchPrev();
+    _watchStudent();
   }
 
   void _start() {
@@ -131,6 +168,45 @@ class _NewExamScreenState extends State<NewExamScreen> {
               style: const TextStyle(height: 1.5),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pathBox() {
+    if (!_pathKnown) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 14),
+        child: Text('جارٍ تحديد الاختبار التالي للطالب...', style: TextStyle(color: Colors.grey)),
+      );
+    }
+    final Color bg, fg;
+    final String text;
+    final s = _suggested;
+    if (s == null) {
+      bg = const Color(0xFFE8F3EC);
+      fg = brandGreen;
+      text = 'الطالب حافظ للقرآن الكريم — أتمّ المسار.\nأي اختبار الآن يكون مراجعة، اختر نوعه يدوياً.';
+    } else {
+      final failedBefore = _sExams!.any((e) => e['type'] == s.type && e['startJuz'] == s.start && e['passed'] != true);
+      bg = failedBefore ? Colors.red.shade50 : const Color(0xFFE8F3EC);
+      fg = failedBefore ? Colors.red.shade800 : brandGreen;
+      text = (failedBefore ? 'إعادة: ' : 'الاختبار التالي حسب المسار: ') + s.label;
+    }
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 15, height: 1.5)),
+          if (_offPath) ...[
+            const SizedBox(height: 6),
+            const Text('تنبيه: الاختبار المختار غير الاختبار المحدد للطالب حسب المسار.',
+                style: TextStyle(color: Color(0xFF9A6700))),
+            TextButton(onPressed: _applySuggestion, child: const Text('رجوع للاختبار المحدد')),
+          ],
         ],
       ),
     );
@@ -185,7 +261,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
                     _halaqa = list.firstWhere((h) => h.id == id);
                     _student = null;
                   });
-                  _watchPrev();
+                  _watchStudent();
                 },
               );
             },
@@ -204,6 +280,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
               backgroundColor: Colors.white,
             ),
           ),
+          if (_student != null) _pathBox(),
           _label('نوع الاختبار'),
           Wrap(
             spacing: 8,
@@ -230,10 +307,10 @@ class _NewExamScreenState extends State<NewExamScreen> {
                   for (var i = 1; i <= 31 - _type!; i++)
                     DropdownMenuItem(value: i, child: Text('الجزء $i — ${juzNames[i]}')),
                 ],
-                onChanged: (v) {
-                  setState(() => _startJuz = v);
-                  _watchPrev();
-                },
+                onChanged: (v) => setState(() {
+                  _startJuz = v;
+                  if (_student != null) _overridden = true;
+                }),
               ),
             if (_startJuz != null && _type! > 1 && _type != 30)
               Padding(
@@ -279,26 +356,58 @@ class _StudentPickerState extends State<StudentPicker> {
 
   Future<void> _addNew() async {
     final ctrl = TextEditingController();
-    final name = await showDialog<String>(
+    var dir = 'desc';
+    var start = 30;
+    final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('طالب جديد'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('سيُضاف إلى حلقة ${widget.halaqa.name}، وتراجعه الإدارة لاحقاً.'),
-            const SizedBox(height: 12),
-            TextField(controller: ctrl, autofocus: true, decoration: const InputDecoration(labelText: 'اسم الطالب رباعياً')),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setD) => AlertDialog(
+          title: const Text('طالب جديد'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('سيُضاف إلى حلقة ${widget.halaqa.name}، وتراجعه الإدارة لاحقاً.'),
+                const SizedBox(height: 12),
+                TextField(
+                    controller: ctrl,
+                    autofocus: true,
+                    decoration: const InputDecoration(labelText: 'اسم الطالب رباعياً')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: dir,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'الاتجاه'),
+                  items: [for (final e in pathDirs.entries) DropdownMenuItem(value: e.key, child: Text(e.value))],
+                  onChanged: (v) => setD(() {
+                    dir = v ?? 'desc';
+                    start = dir == 'asc' ? 1 : 30;
+                  }),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  value: start,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'جزء البداية'),
+                  items: [
+                    for (var j = 1; j <= 30; j++) DropdownMenuItem(value: j, child: Text('الجزء $j — ${juzNames[j]}')),
+                  ],
+                  onChanged: (v) => setD(() => start = v ?? start),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('إضافة')),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text('إضافة')),
-        ],
       ),
     );
-    if (name == null || name.isEmpty || !mounted) return;
-    final s = Repo.I.addPendingStudent(name, widget.halaqa.id);
+    final name = ctrl.text.trim();
+    if (ok != true || name.isEmpty || !mounted) return;
+    final s = Repo.I.addPendingStudent(name, widget.halaqa.id, dir, start);
     Navigator.pop(context, s);
   }
 
