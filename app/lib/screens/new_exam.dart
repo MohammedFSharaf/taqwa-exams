@@ -434,7 +434,7 @@ class _StudentPickerState extends State<StudentPicker> {
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'جزء البداية'),
                   items: [
-                    for (var j = 1; j <= 30; j++) DropdownMenuItem(value: j, child: Text('الجزء $j — ${juzNames[j]}')),
+                    for (var j = 1; j <= 30; j++) DropdownMenuItem(value: j, child: Text('الجزء $j: ${juzNames[j]}')),
                   ],
                   onChanged: (v) => setD(() => start = v ?? start),
                 ),

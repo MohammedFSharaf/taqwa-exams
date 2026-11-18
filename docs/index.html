@@ -318,18 +318,17 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "admin@taqwa.com";
 
 // ===== ثوابت الاختبار =====
-const JUZ = ["", "الم", "سيقول", "تلك الرسل", "لن تنالوا", "والمحصنات", "لا يحب الله", "وإذا سمعوا",
-  "ولو أننا", "قال الملأ", "واعلموا", "يعتذرون", "وما من دابة", "وما أبرئ", "ربما", "سبحان الذي",
-  "قال ألم", "اقترب للناس", "قد أفلح", "وقال الذين", "أمّن خلق", "اتل ما أوحي", "ومن يقنت", "وما لي",
-  "فمن أظلم", "إليه يرد", "حم", "قال فما خطبكم", "قد سمع الله", "تبارك", "عمّ"];
+const JUZ = ["", "الفاتحة ← البقرة 141", "البقرة 142–252", "البقرة 253 ← آل عمران 92", "آل عمران 93 ← النساء 23", "النساء 24–147", "النساء 148 ← المائدة 81", "المائدة 82 ← الأنعام 110", "الأنعام 111 ← الأعراف 87", "الأعراف 88 ← الأنفال 40", "الأنفال 41 ← التوبة 92", "التوبة 93 ← هود 5", "هود 6 ← يوسف 52", "يوسف 53 ← إبراهيم", "الحجر ← النحل", "الإسراء ← الكهف 74", "الكهف 75 ← طه", "الأنبياء ← الحج", "المؤمنون ← النور", "الفرقان ← الشعراء", "النمل ← القصص", "العنكبوت ← السجدة", "الأحزاب ← فاطر", "يس ← ص", "الزمر ← غافر", "فصلت ← الجاثية", "الأحقاف ← ق", "الذاريات ← الحديد", "المجادلة ← التحريم", "الملك ← المرسلات", "النبأ ← الناس"];
+const JUZ_FROM = ["", "الفاتحة", "البقرة 142", "البقرة 253", "آل عمران 93", "النساء 24", "النساء 148", "المائدة 82", "الأنعام 111", "الأعراف 88", "الأنفال 41", "التوبة 93", "هود 6", "يوسف 53", "الحجر", "الإسراء", "الكهف 75", "الأنبياء", "المؤمنون", "الفرقان", "النمل", "العنكبوت", "الأحزاب", "يس", "الزمر", "فصلت", "الأحقاف", "الذاريات", "المجادلة", "الملك", "النبأ"];
+const JUZ_TO = ["", "البقرة 141", "البقرة 252", "آل عمران 92", "النساء 23", "النساء 147", "المائدة 81", "الأنعام 110", "الأعراف 87", "الأنفال 40", "التوبة 92", "هود 5", "يوسف 52", "إبراهيم", "النحل", "الكهف 74", "طه", "الحج", "النور", "الشعراء", "القصص", "السجدة", "فاطر", "ص", "غافر", "الجاثية", "ق", "الحديد", "التحريم", "المرسلات", "الناس"];
 const TYPES = {1:"اختبار جزء", 3:"اختبار 3 أجزاء", 5:"اختبار 5 أجزاء", 10:"اختبار 10 أجزاء", 30:"اختبار 30 جزءاً"};
 const Q_COUNT = 5, Q_MAX = 15, TAJWEED_MAX = 20, PERF_MAX = 5, PASS_MARK = 85, CLOSE_AT = 9;
 const ERR_VAL = 1, ALERT_VAL = 0.5;
 
 function juzLabel(e){
   if (!e.startJuz) return "";
-  if (e.startJuz === e.endJuz) return `الجزء ${e.startJuz} (${JUZ[e.startJuz]})`;
-  return `من ${e.startJuz} (${JUZ[e.startJuz]}) إلى ${e.endJuz} (${JUZ[e.endJuz]})`;
+  if (e.startJuz === e.endJuz) return `الجزء ${e.startJuz}: ${JUZ[e.startJuz]}`;
+  return `الأجزاء ${e.startJuz}–${e.endJuz}: ${JUZ_FROM[e.startJuz]} ← ${JUZ_TO[e.endJuz]}`;
 }
 function resultOf(e){ return e.closed ? "closed" : (e.passed ? "pass" : "fail"); }
 function resultText(e){
@@ -364,9 +363,9 @@ function pathStatus(dir, start, passed){
   return { steps, first, next: null, hafiz: true };
 }
 function stepLabel(st){
-  if (st.type === 1) return `الجزء ${st.start} (${JUZ[st.start]})`;
+  if (st.type === 1) return `الجزء ${st.start}: ${JUZ[st.start]}`;
   if (st.type === 30) return "المصحف كاملاً (30 جزءاً)";
-  return `${TYPES[st.type]} (${st.start}–${st.end})`;
+  return `${TYPES[st.type]} (${st.start}–${st.end}): ${JUZ_FROM[st.start]} ← ${JUZ_TO[st.end]}`;
 }
 function stepShort(st){ return st.type === 1 ? String(st.start) : st.type === 30 ? "المصحف" : `م${st.type}`; }
 function sDir(s){ return s && s.pathDir === "asc" ? "asc" : "desc"; }
@@ -382,11 +381,11 @@ function blockName(p){
 function stallDays(){ const v = parseInt(S.settings && S.settings.stallDays); return v > 0 ? v : DEFAULT_STALL_DAYS; }
 function pathFields(dir, start, idp){
   return `<label>الاتجاه<select id="${idp}Dir">${Object.entries(DIRS).map(([k,v])=>`<option value="${k}" ${k===dir?'selected':''}>${v}</option>`).join("")}</select></label>
-  <label>جزء البداية<select id="${idp}Start">${Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}" ${j===start?'selected':''}>${j} — ${JUZ[j]}</option>`).join("")}</select></label>`;
+  <label>جزء البداية<select id="${idp}Start">${Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}" ${j===start?'selected':''}>${j}: ${JUZ[j]}</option>`).join("")}</select></label>`;
 }
 function fillPathSelects(dirSel, startSel, dir, start){
   dirSel.innerHTML = Object.entries(DIRS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
-  startSel.innerHTML = Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}">${j} — ${JUZ[j]}</option>`).join("");
+  startSel.innerHTML = Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}">${j}: ${JUZ[j]}</option>`).join("");
   dirSel.value = dir; startSel.value = String(start);
   dirSel.onchange = () => { startSel.value = dirSel.value === "asc" ? "1" : "30"; };
 }
@@ -644,7 +643,7 @@ function editExam(id){
     <p class="muted">الطالب: <b>${esc(e.studentName)}</b></p>
     <div class="grid2" style="margin-bottom:10px">
       <label>نوع الاختبار<select id="eType">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${+k===e.type?'selected':''}>${v}</option>`).join("")}</select></label>
-      <label>من الجزء<select id="eStart">${Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}" ${j===e.startJuz?'selected':''}>${j} — ${JUZ[j]}</option>`).join("")}</select></label>
+      <label>من الجزء<select id="eStart">${Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}" ${j===e.startJuz?'selected':''}>${j}: ${JUZ[j]}</option>`).join("")}</select></label>
     </div>
     <table class="qtable"><thead><tr><th></th><th>الأخطاء</th><th>التنبيهات</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="muted">إذا وصل خصم سؤال إلى ${CLOSE_AT} علامات يُغلق الاختبار، واترك الأسئلة التي بعده فارغة.</p>
