@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 14),
                   BigButton(
                     icon: Icons.list_alt,
-                    text: 'اختباراتي',
+                    text: 'الاختبارات',
                     filled: false,
                     onPressed: () =>
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyExamsScreen())),

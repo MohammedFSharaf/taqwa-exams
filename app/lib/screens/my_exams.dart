@@ -12,7 +12,7 @@ class MyExamsScreen extends StatelessWidget {
   static String resultText(Map<String, dynamic> e) =>
       e['closed'] == true ? 'راسب – أُغلق' : (e['passed'] == true ? 'ناجح' : 'راسب');
 
-  void _details(BuildContext context, Map<String, dynamic> e) {
+  static void _details(BuildContext context, Map<String, dynamic> e) {
     final qs = (e['questions'] as List?) ?? [];
     showDialog(
       context: context,
@@ -27,6 +27,7 @@ class MyExamsScreen extends StatelessWidget {
               Text(juzLabel(e['startJuz'] ?? 1, e['endJuz'] ?? 1)),
               Text('${e['createdAtText'] ?? ''}'),
               Text('الحلقة: ${e['halaqaName'] ?? ''}'),
+              Text('المختبر: ${e['examinerName'] ?? ''}'),
               const Divider(),
               for (var i = 0; i < qs.length; i++)
                 Text(qs[i] == null
@@ -53,55 +54,124 @@ class MyExamsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('اختباراتي')),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: Repo.I.myExams(),
-        builder: (context, snap) {
-          if (snap.hasError) {
-            return const Center(child: Text('تعذّر عرض الاختبارات'));
-          }
-          if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-          final docs = [...snap.data!.docs];
-          docs.sort((a, b) {
-            final ta = a.data()['createdAt'], tb = b.data()['createdAt'];
-            if (ta is Timestamp && tb is Timestamp) return tb.compareTo(ta);
-            return 0;
-          });
-          if (docs.isEmpty) {
-            return const Center(child: Text('لا توجد اختبارات بعد', style: TextStyle(color: Colors.grey)));
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(12),
-            itemCount: docs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 6),
-            itemBuilder: (_, i) {
-              final e = docs[i].data();
-              final pending = docs[i].metadata.hasPendingWrites;
-              final passed = e['passed'] == true;
-              return Card(
-                child: ListTile(
-                  onTap: () => _details(context, e),
-                  leading: Icon(pending ? Icons.cloud_upload : Icons.cloud_done,
-                      color: pending ? const Color(0xFF9A6700) : brandGreen),
-                  title: Text('${e['studentName'] ?? ''}${e['isRetest'] == true ? ' (إعادة)' : ''}'),
-                  subtitle: Text('${examTypes[e['type']] ?? ''} · ${e['createdAtText'] ?? ''}'
-                      '${pending ? '\nبانتظار الرفع' : ''}'),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (e['closed'] != true)
-                        Text(fmt(e['total']), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text(resultText(e),
-                          style: TextStyle(color: passed ? brandGreen : Colors.red.shade700, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('الاختبارات'),
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: [Tab(text: 'اختباراتي'), Tab(text: 'كل الاختبارات')],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            ExamList(stream: Repo.I.myExams(), searchable: false),
+            ExamList(stream: Repo.I.allExams(), searchable: true),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// قائمة اختبارات مع بحث اختياري باسم الطالب أو المختبر
+class ExamList extends StatefulWidget {
+  final Stream<QuerySnapshot<Map<String, dynamic>>> stream;
+  final bool searchable;
+  const ExamList({super.key, required this.stream, required this.searchable});
+
+  @override
+  State<ExamList> createState() => _ExamListState();
+}
+
+class _ExamListState extends State<ExamList> with AutomaticKeepAliveClientMixin {
+  String _q = '';
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> _stream = widget.stream;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Column(
+      children: [
+        if (widget.searchable)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: TextField(
+              decoration: const InputDecoration(
+                labelText: 'بحث باسم الطالب أو المختبر',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (v) => setState(() => _q = v.trim()),
+            ),
+          ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: _stream,
+            builder: (context, snap) {
+              if (snap.hasError) {
+                return const Center(child: Text('تعذّر عرض الاختبارات'));
+              }
+              if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+              final docs = snap.data!.docs.where((d) {
+                if (_q.isEmpty) return true;
+                final e = d.data();
+                return (e['studentName'] ?? '').toString().contains(_q) ||
+                    (e['examinerName'] ?? '').toString().contains(_q);
+              }).toList();
+              docs.sort((a, b) {
+                final ta = a.data()['createdAt'], tb = b.data()['createdAt'];
+                if (ta is Timestamp && tb is Timestamp) return tb.compareTo(ta);
+                return 0;
+              });
+              if (docs.isEmpty) {
+                return Center(
+                  child: Text(_q.isEmpty ? 'لا توجد اختبارات بعد' : 'لا توجد نتائج',
+                      style: const TextStyle(color: Colors.grey)),
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.all(12),
+                itemCount: docs.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 6),
+                itemBuilder: (_, i) {
+                  final e = docs[i].data();
+                  final pending = docs[i].metadata.hasPendingWrites;
+                  final passed = e['passed'] == true;
+                  return Card(
+                    child: ListTile(
+                      onTap: () => MyExamsScreen._details(context, e),
+                      leading: Icon(pending ? Icons.cloud_upload : Icons.cloud_done,
+                          color: pending ? const Color(0xFF9A6700) : brandGreen),
+                      title: Text('${e['studentName'] ?? ''}${e['isRetest'] == true ? ' (إعادة)' : ''}'),
+                      subtitle: Text('${examTypes[e['type']] ?? ''} · ${e['createdAtText'] ?? ''}'
+                          '${widget.searchable ? '\nالمختبر: ${e['examinerName'] ?? ''}' : ''}'
+                          '${pending ? '\nبانتظار الرفع' : ''}'),
+                      isThreeLine: widget.searchable || pending,
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (e['closed'] != true)
+                            Text(fmt(e['total']),
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(MyExamsScreen.resultText(e),
+                              style: TextStyle(
+                                  color: passed ? brandGreen : Colors.red.shade700, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
             },
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 }

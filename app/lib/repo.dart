@@ -96,6 +96,20 @@ class Repo {
         return l;
       });
 
+  /// كل الطلاب من كل الحلقات (للبحث السريع)
+  Stream<List<Student>> allStudents() => db.collection('students').snapshots().map((s) {
+        final l = s.docs
+            .map((d) => Student(d.id, (d.data()['name'] ?? '').toString(),
+                (d.data()['halaqaId'] ?? '').toString(), d.data()['status'] == 'pending'))
+            .toList();
+        l.sort((a, b) => a.name.compareTo(b.name));
+        return l;
+      });
+
+  /// كل اختبارات المركز
+  Stream<QuerySnapshot<Map<String, dynamic>>> allExams() =>
+      db.collection('exams').snapshots(includeMetadataChanges: true);
+
   Stream<List<String>> examiners() => db.collection('examiners').snapshots().map((s) {
         final l = s.docs.map((d) => (d.data()['name'] ?? '').toString()).where((n) => n.isNotEmpty).toList();
         l.sort();

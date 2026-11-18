@@ -78,6 +78,20 @@ class _NewExamScreenState extends State<NewExamScreen> {
     }
   }
 
+  Future<void> _quickSearch() async {
+    final res = await showModalBottomSheet<(Student, Halaqa)>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const GlobalStudentPicker(),
+    );
+    if (res == null) return;
+    setState(() {
+      _student = res.$1;
+      _halaqa = res.$2;
+    });
+    _watchPrev();
+  }
+
   void _start() {
     final setup = ExamSetup(
       halaqaId: _halaqa!.id,
@@ -134,6 +148,19 @@ class _NewExamScreenState extends State<NewExamScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          OutlinedButton.icon(
+            onPressed: _quickSearch,
+            icon: const Icon(Icons.search),
+            label: const Text('بحث سريع عن الطالب (من كل الحلقات)', style: TextStyle(fontSize: 16)),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(54),
+              backgroundColor: Colors.white,
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('أو اختر الحلقة ثم الطالب:', style: TextStyle(color: Colors.black54)),
+          ),
           _label('الحلقة'),
           StreamBuilder<List<Halaqa>>(
             stream: Repo.I.halaqat(),
@@ -312,6 +339,81 @@ class _StudentPickerState extends State<StudentPicker> {
                       subtitle: list[i].pending ? const Text('جديد — بانتظار اعتماد الإدارة') : null,
                       onTap: () => Navigator.pop(context, list[i]),
                     ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// بحث عن طالب في كل الحلقات
+class GlobalStudentPicker extends StatefulWidget {
+  const GlobalStudentPicker({super.key});
+
+  @override
+  State<GlobalStudentPicker> createState() => _GlobalStudentPickerState();
+}
+
+class _GlobalStudentPickerState extends State<GlobalStudentPicker> {
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.85,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'اكتب اسم الطالب', prefixIcon: Icon(Icons.search)),
+                onChanged: (v) => setState(() => _q = v.trim()),
+              ),
+            ),
+            Expanded(
+              child: StreamBuilder<List<Halaqa>>(
+                stream: Repo.I.halaqat(),
+                builder: (context, hs) {
+                  final names = {for (final h in hs.data ?? <Halaqa>[]) h.id: h.name};
+                  return StreamBuilder<List<Student>>(
+                    stream: Repo.I.allStudents(),
+                    builder: (context, snap) {
+                      if (_q.isEmpty) {
+                        return const Center(
+                            child: Text('اكتب جزءاً من اسم الطالب', style: TextStyle(color: Colors.grey)));
+                      }
+                      final list = (snap.data ?? []).where((s) => s.name.contains(_q)).toList();
+                      if (list.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'لا يوجد طالب بهذا الاسم.\nلإضافة طالب جديد: اختر الحلقة ثم "إضافة طالب جديد".',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, height: 1.6),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        itemCount: list.length,
+                        itemBuilder: (_, i) {
+                          final s = list[i];
+                          final hName = names[s.halaqaId] ?? '';
+                          return ListTile(
+                            leading: const Icon(Icons.person),
+                            title: Text(s.name),
+                            subtitle: Text(hName + (s.pending ? ' — جديد بانتظار الاعتماد' : '')),
+                            onTap: () => Navigator.pop(context, (s, Halaqa(s.halaqaId, hName))),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
