@@ -20,6 +20,7 @@ permissions:
 
 env:
   SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+  KS_PASS: ${{ secrets.KS_PASS }}
   FLUTTER_VERSION: '3.24.5'
 
 jobs:
@@ -53,6 +54,25 @@ jobs:
           sed -i 's#gradle-[0-9.]*-all.zip#gradle-8.3-all.zip#' android/gradle/wrapper/gradle-wrapper.properties
           M=android/app/src/main/AndroidManifest.xml
           cp -r branding/res/. android/app/src/main/res/
+          # Fixed signing key so updates install over the old app
+          cp branding/upload.jks android/app/upload.jks
+          python3 - <<'PY'
+          p='android/app/build.gradle'; s=open(p).read()
+          block = '''    signingConfigs {
+                  release {
+                      storeFile file("upload.jks")
+                      storePassword System.getenv("KS_PASS")
+                      keyAlias "taqwa"
+                      keyPassword System.getenv("KS_PASS")
+                  }
+              }
+
+              buildTypes {'''
+          s = s.replace('    buildTypes {', block, 1)
+          s = s.replace('signingConfig = signingConfigs.debug', 'signingConfig = signingConfigs.release')
+          open(p,'w').write(s)
+          PY
+          grep -n "signingConfig" android/app/build.gradle
           sed -i 's/android:label="[^"]*"/android:label="اختبارات التقوى"/' $M
           sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries>\n    <application#' $M
 
