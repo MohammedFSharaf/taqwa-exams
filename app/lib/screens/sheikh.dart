@@ -10,15 +10,15 @@ import '../update_check.dart';
 import 'gate.dart';
 import 'widgets.dart';
 
-// ===================== دخول الشيخ =====================
-class SheikhLoginScreen extends StatefulWidget {
-  const SheikhLoginScreen({super.key});
+// ===================== دخول الشيخ (نموذج داخل شاشة الدخول) =====================
+class SheikhLoginForm extends StatefulWidget {
+  const SheikhLoginForm({super.key});
 
   @override
-  State<SheikhLoginScreen> createState() => _SheikhLoginScreenState();
+  State<SheikhLoginForm> createState() => _SheikhLoginFormState();
 }
 
-class _SheikhLoginScreenState extends State<SheikhLoginScreen> {
+class _SheikhLoginFormState extends State<SheikhLoginForm> {
   String? _id = Repo.I.sheikhId;
   final _pin = TextEditingController();
   String? _error;
@@ -43,70 +43,65 @@ class _SheikhLoginScreenState extends State<SheikhLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const BrandTitle('دخول الشيخ')),
-      body: StreamBuilder<List<Halaqa>>(
-        stream: Repo.I.halaqat(),
-        builder: (context, hs) {
-          final hNames = {for (final h in hs.data ?? <Halaqa>[]) h.id: h.name};
-          return StreamBuilder<List<Map<String, dynamic>>>(
-            stream: Repo.I.sheikhs(),
-            builder: (context, snap) {
-              final list = [...(snap.data ?? <Map<String, dynamic>>[])]
-                ..sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
-              if (list.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      snap.connectionState == ConnectionState.waiting
-                          ? 'جارٍ التحميل...'
-                          : 'لا توجد حسابات مشايخ — تضيفها الإدارة من لوحة الإدارة.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                );
-              }
-              final valid = list.any((x) => x['id'] == _id) ? _id : null;
-              return ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: valid,
-                    isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'اسم الشيخ'),
-                    items: [
-                      for (final x in list)
-                        DropdownMenuItem(
-                          value: x['id'] as String,
-                          child: Text('${x['name'] ?? ''} — ${hNames[x['halaqaId']] ?? ''}'),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() => _id = v),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _pin,
-                    obscureText: true,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    decoration: const InputDecoration(labelText: 'رمز الدخول'),
-                    onSubmitted: (_) => _login(list),
-                  ),
-                  if (_error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-                    ),
-                  const SizedBox(height: 20),
-                  BigButton(icon: Icons.login, text: 'دخول', onPressed: () => _login(list)),
-                ],
+    return StreamBuilder<List<Halaqa>>(
+      stream: Repo.I.halaqat(),
+      builder: (context, hs) {
+        final hNames = {for (final h in hs.data ?? <Halaqa>[]) h.id: h.name};
+        return StreamBuilder<List<Map<String, dynamic>>>(
+          stream: Repo.I.sheikhs(),
+          builder: (context, snap) {
+            final list = [...(snap.data ?? <Map<String, dynamic>>[])]
+              ..sort((a, b) => (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+            if (list.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  snap.connectionState == ConnectionState.waiting
+                      ? 'جارٍ التحميل...'
+                      : 'لا توجد حسابات محفّظين — تضيفها الإدارة من لوحة الإدارة.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey),
+                ),
               );
-            },
-          );
-        },
-      ),
+            }
+            final valid = list.any((x) => x['id'] == _id) ? _id : null;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: valid,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'اسم المحفّظ'),
+                  items: [
+                    for (final x in list)
+                      DropdownMenuItem(
+                        value: x['id'] as String,
+                        child: Text('${x['name'] ?? ''} — ${hNames[x['halaqaId']] ?? ''}'),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _id = v),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _pin,
+                  obscureText: true,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  decoration: const InputDecoration(labelText: 'رمز الدخول', prefixIcon: Icon(Icons.lock_outline)),
+                  onSubmitted: (_) => _login(list),
+                ),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                  ),
+                const SizedBox(height: 18),
+                BigButton(icon: Icons.login, text: 'دخول', onPressed: () => _login(list)),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

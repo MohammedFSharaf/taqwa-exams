@@ -75,6 +75,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 16),
                   const SyncStatus(),
+                  const SizedBox(height: 16),
+                  const AyahLine(),
                 ],
               ),
             ),

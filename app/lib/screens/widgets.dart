@@ -7,7 +7,7 @@ import '../slogan.dart';
 const Color brandGreen = Color(0xFF1F5F46);
 const Color brandGold = Color(0xFFB8913A);
 
-/// الواجهة العلوية: اسم المركز وآية قرآنية
+/// الواجهة العلوية: شعار المركز واسمه وشعار «نحو مدرسة قرآنية»
 class AppHeader extends StatelessWidget {
   const AppHeader({super.key});
 
@@ -15,7 +15,7 @@ class AppHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 34, 20, 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF174A36), brandGreen],
@@ -27,52 +27,85 @@ class AppHeader extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
               border: Border.all(color: brandGold, width: 2),
             ),
             child: ClipOval(
-              child: Image.asset('assets/logo.png', width: 110, height: 110, fit: BoxFit.contain),
+              child: Image.asset('assets/logo.png', width: 96, height: 96, fit: BoxFit.contain),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           const Text(
             centerName,
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, height: 1.5),
           ),
           const SizedBox(height: 6),
-          Image.memory(sloganPng, height: 46, fit: BoxFit.contain, gaplessPlayback: true),
+          Image.memory(sloganPng, height: 44, fit: BoxFit.contain, gaplessPlayback: true),
           if (kBeta)
             Container(
-              margin: const EdgeInsets.only(top: 6),
+              margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
               decoration: BoxDecoration(color: brandGold, borderRadius: BorderRadius.circular(8)),
               child: const Text('نسخة تجريبية', style: TextStyle(color: Color(0xFF174A36), fontWeight: FontWeight.bold)),
             ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: brandGold.withOpacity(0.6)),
-            ),
-            child: Column(
-              children: const [
-                Text(
-                  '﴿ $ayahText ﴾',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFFF3E6C4), fontSize: 19, height: 1.9),
-                ),
-                SizedBox(height: 4),
-                Text(ayahRef, style: TextStyle(color: Colors.white70, fontSize: 12)),
-              ],
+        ],
+      ),
+    );
+  }
+}
+
+/// سطر الآية الكريمة بأسفل الشاشة
+class AyahLine extends StatelessWidget {
+  const AyahLine({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 14),
+      child: Text(
+        '﴿ $ayahText ﴾',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Color(0xFF8A7A4A), fontSize: 15, height: 1.6),
+      ),
+    );
+  }
+}
+
+/// زر اختيار بقسمين (بدون أيقونات)
+class TwoWaySwitch extends StatelessWidget {
+  final String first, second;
+  final bool firstSelected;
+  final ValueChanged<bool> onChanged;
+  const TwoWaySwitch(
+      {super.key, required this.first, required this.second, required this.firstSelected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget part(String t, bool on, bool isFirst) => Expanded(
+          child: InkWell(
+            onTap: () => onChanged(isFirst),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              color: on ? brandGreen : Colors.white,
+              alignment: Alignment.center,
+              child: Text(t,
+                  style: TextStyle(
+                      color: on ? Colors.white : Colors.black54, fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
-        ],
+        );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFCFD6D2)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(children: [part(first, firstSelected, true), part(second, !firstSelected, false)]),
       ),
     );
   }

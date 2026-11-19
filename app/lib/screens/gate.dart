@@ -68,87 +68,75 @@ class _GateScreenState extends State<GateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Widget body;
+    if (_loading) {
+      body = const Padding(
+        padding: EdgeInsets.only(top: 40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else if (_noNet) {
+      body = Column(
+        children: [
+          const Icon(Icons.wifi_off, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          const Text(
+            'أول تشغيل للتطبيق يحتاج اتصالاً بالإنترنت لتحميل القوائم.\nبعدها يعمل التطبيق بدون إنترنت.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, height: 1.7),
+          ),
+          const SizedBox(height: 20),
+          BigButton(icon: Icons.refresh, text: 'إعادة المحاولة', onPressed: _start),
+        ],
+      );
+    } else {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TwoWaySwitch(
+            first: 'الاختبارات',
+            second: 'التسميع اليومي',
+            firstSelected: _role != 'sheikh',
+            onChanged: (f) => setState(() {
+              _role = f ? 'examiner' : 'sheikh';
+              _error = null;
+            }),
+          ),
+          const SizedBox(height: 22),
+          if (_role == 'sheikh')
+            const SheikhLoginForm()
+          else ...[
+            TextField(
+              controller: _pass,
+              obscureText: true,
+              textAlign: TextAlign.center,
+              decoration: const InputDecoration(labelText: 'كلمة السر', prefixIcon: Icon(Icons.lock_outline)),
+              onSubmitted: (_) => _check(),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+              ),
+            const SizedBox(height: 18),
+            BigButton(icon: Icons.login, text: 'دخول', onPressed: _check),
+          ],
+        ],
+      );
+    }
     return Scaffold(
       body: SafeArea(
         top: false,
-        child: ListView(
+        child: Column(
           children: [
-            const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: _loading
-                  ? const Padding(
-                      padding: EdgeInsets.only(top: 40),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  : _noNet
-                      ? Column(
-                          children: [
-                            const Icon(Icons.wifi_off, size: 48, color: Colors.grey),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'أول تشغيل للتطبيق يحتاج اتصالاً بالإنترنت لتحميل القوائم.\nبعدها يعمل التطبيق بدون إنترنت.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 16, height: 1.7),
-                            ),
-                            const SizedBox(height: 20),
-                            BigButton(icon: Icons.refresh, text: 'إعادة المحاولة', onPressed: _start),
-                          ],
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: 10,
-                              children: [
-                                ChoiceChip(
-                                  label: const Text('مختبر', style: TextStyle(fontSize: 16)),
-                                  selected: _role == 'examiner',
-                                  onSelected: (_) => setState(() => _role = 'examiner'),
-                                ),
-                                ChoiceChip(
-                                  label: const Text('شيخ حلقة', style: TextStyle(fontSize: 16)),
-                                  selected: _role == 'sheikh',
-                                  onSelected: (_) => setState(() => _role = 'sheikh'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            if (_role == 'sheikh') ...[
-                              const Text('السجل اليومي للحلقة',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: brandGreen)),
-                              const SizedBox(height: 16),
-                              BigButton(
-                                icon: Icons.person,
-                                text: 'دخول الشيخ',
-                                onPressed: () => Navigator.of(context)
-                                    .push(MaterialPageRoute(builder: (_) => const SheikhLoginScreen())),
-                              ),
-                            ] else ...[
-                            const Text('اختبارات الحفظ',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: brandGreen)),
-                            const SizedBox(height: 20),
-                            TextField(
-                              controller: _pass,
-                              obscureText: true,
-                              textAlign: TextAlign.center,
-                              decoration: const InputDecoration(labelText: 'كلمة السر', prefixIcon: Icon(Icons.lock_outline)),
-                              onSubmitted: (_) => _check(),
-                            ),
-                            if (_error != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 10),
-                                child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-                              ),
-                            const SizedBox(height: 20),
-                            BigButton(icon: Icons.login, text: 'دخول', onPressed: _check),
-                            ],
-                          ],
-                        ),
+            Expanded(
+              child: ListView(
+                children: [
+                  const AppHeader(),
+                  Padding(padding: const EdgeInsets.fromLTRB(22, 22, 22, 10), child: body),
+                ],
+              ),
             ),
+            const AyahLine(),
           ],
         ),
       ),
