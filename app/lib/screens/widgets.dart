@@ -153,3 +153,47 @@ class BrandTitle extends StatelessWidget {
     );
   }
 }
+
+/// صف اختيارات متساوية (بدون أيقونات)
+class SegmentedRow extends StatelessWidget {
+  final List<String> items;
+  final int selected;
+  final ValueChanged<int> onChanged;
+  const SegmentedRow({super.key, required this.items, required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFCFD6D2)),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(children: [
+          for (var i = 0; i < items.length; i++)
+            Expanded(
+              child: InkWell(
+                onTap: () => onChanged(i),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: i == selected ? brandGreen : Colors.white,
+                    border: i < items.length - 1
+                        ? const BorderDirectional(end: BorderSide(color: Color(0xFFE3E6E4)))
+                        : null,
+                  ),
+                  child: Text(items[i],
+                      style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                          color: i == selected ? Colors.white : Colors.black54)),
+                ),
+              ),
+            ),
+        ]),
+      ),
+    );
+  }
+}

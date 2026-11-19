@@ -579,42 +579,65 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     );
   }
 
+  /// بيانات الطالب لشاشة التسجيل: الحالة محسوبة بدون تسجيل اليوم (حتى يظهر المطلوب لليوم نفسه عند التعديل)
+  DayCtx _ctx(Student s) {
+    final all = _logsOf(s.id);
+    final before = all.where((l) => (l['date'] ?? '').toString().compareTo(_today) < 0).toList()
+      ..sort((a, b) => (b['date'] ?? '').toString().compareTo((a['date'] ?? '').toString()));
+    final passed = {
+      for (final e in _exams)
+        if (e['studentId'] == s.id && e['passed'] == true) '${e['type']}|${e['startJuz']}'
+    };
+    final pr = _progress.where((p) => p['id'] == s.id);
+    final st = dailyStatus(s.pathDir, s.pathStart, passed, before, pr.isEmpty ? null : pr.first, _minNew);
+    return DayCtx(st, _todayLog(s.id), _base(s, st), before.take(5).toList());
+  }
+
   void _open(Student s, DailyStatus st, Map<String, dynamic>? l) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => StudentDayScreen(
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => _dayScreen(s)));
+  }
+
+  Widget _dayScreen(Student s) => StudentDayScreen(
         student: s,
-        status: st,
-        todayLog: l,
-        base: _base(s, st),
+        ctxFn: _ctx,
+        order: [..._students],
         halaqaId: _halaqaId,
         sheikhName: _sheikhName,
         minNew: _minNew,
         minReview: _minReview,
         date: _today,
-      ),
-    ));
-  }
+        builder: _dayScreen,
+      );
+}
+
+/// سياق تسجيل طالب
+class DayCtx {
+  final DailyStatus st;
+  final Map<String, dynamic>? todayLog;
+  final Map<String, dynamic> base;
+  final List<Map<String, dynamic>> recent; // آخر الجلسات قبل اليوم (الأحدث أولاً)
+  DayCtx(this.st, this.todayLog, this.base, this.recent);
 }
 
 // ===================== تسجيل طالب لليوم =====================
 class StudentDayScreen extends StatefulWidget {
   final Student student;
-  final DailyStatus status;
-  final Map<String, dynamic>? todayLog;
-  final Map<String, dynamic> base;
+  final DayCtx Function(Student) ctxFn;
+  final List<Student> order;
   final String halaqaId, sheikhName, date;
   final double minNew, minReview;
+  final Widget Function(Student) builder;
   const StudentDayScreen({
     super.key,
     required this.student,
-    required this.status,
-    required this.todayLog,
-    required this.base,
+    required this.ctxFn,
+    required this.order,
     required this.halaqaId,
     required this.sheikhName,
     required this.minNew,
     required this.minReview,
     required this.date,
+    required this.builder,
   });
 
   @override
@@ -622,6 +645,7 @@ class StudentDayScreen extends StatefulWidget {
 }
 
 class _StudentDayScreenState extends State<StudentDayScreen> {
+  late final DayCtx _c = widget.ctxFn(widget.student);
   String _att = 'recited';
   bool _hasNew = false;
   int? _from, _to;
@@ -632,12 +656,13 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   int? _startSurah, _startAyah;
 
   String get _dir => widget.student.pathDir;
-  DailyStatus get _st => widget.status;
+  DailyStatus get _st => _c.st;
+  MemOrder get _o => memOrder(_dir);
 
   @override
   void initState() {
     super.initState();
-    final l = widget.todayLog;
+    final l = _c.todayLog;
     if (l != null) {
       _att = (l['status'] ?? 'recited').toString();
       _notes.text = (l['notes'] ?? '').toString();
@@ -658,7 +683,6 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     }
   }
 
-  /// الجزء الذي يحفظ فيه الطالب الآن
   int get _juz => _from != null ? juzOfG(_from!) : _st.juz;
 
   bool get _surahReviewDone {
@@ -666,78 +690,113 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     return _reviews.any((r) => (r['fromG'] as num) <= _st.segFrom! && (r['toG'] as num) >= _st.segTo!);
   }
 
-  /// هل يُسمح بحفظ جديد في هذه الجلسة
   bool get _canNew {
-    if (widget.todayLog?['newMem'] is Map) return true;
+    if (_c.todayLog?['newMem'] is Map) return true;
     if (_st.mode == 'memorize') return true;
     return _st.mode == 'review_surah' && _surahReviewDone;
   }
 
   void _ensureNewAfterSurahReview() {
     if (_from != null || _st.mode != 'review_surah' || !_surahReviewDone) return;
-    final o = memOrder(_dir);
-    final p = o.pos[_st.segTo!] + 1;
+    final p = _o.pos[_st.segTo!] + 1;
     final j = _st.juz;
-    if (p > o.jEnd[j]) return;
-    _from = o.order[p];
+    if (p > _o.jEnd[j]) return;
+    _from = _o.order[p];
+    _to = _toForPages(widget.minNew);
+    _hasNew = true;
+  }
+
+  /// "إلى" بحيث يكون الحفظ بعدد صفحات معيّن (ضمن الجزء)
+  int _toForPages(double pages) {
+    final p = _o.pos[_from!];
+    final end = _o.jEnd[_juz];
     var t = 0.0;
     var toPos = p;
-    for (var i = p; i <= o.jEnd[j]; i++) {
-      t += ayahFrac(o.order[i]);
+    for (var i = p; i <= end; i++) {
+      t += ayahFrac(_o.order[i]);
       toPos = i;
-      if (t >= widget.minNew - 1e-9) break;
+      if (t >= pages - 1e-9) break;
     }
-    _to = o.order[toPos];
+    return _o.order[toPos];
   }
 
   double get _newPages => (_hasNew && _from != null && _to != null) ? memRangePages(_dir, _from!, _to!) : 0;
   double get _reviewPages => _reviews.fold(0.0, (a, r) => a + ((r['pages'] ?? 0) as num).toDouble());
 
-  /// الآيات المسموحة في سورة داخل جزء
   List<int> _ayahsIn(int s, int j) {
     final lo = qJuz[j - 1][0] > surahFirst(s) ? qJuz[j - 1][0] : surahFirst(s);
     final hi = qJuz[j - 1][1] < surahEnd(s) ? qJuz[j - 1][1] : surahEnd(s);
     return [for (var g = lo; g <= hi; g++) g];
   }
 
+  /// يقسم مجموعة آيات إلى مقاطع متصلة في المصحف
+  List<List<int>> _chunks(Iterable<int> gs) {
+    final l = gs.toList()..sort();
+    final out = <List<int>>[];
+    for (final g in l) {
+      if (out.isNotEmpty && out.last[1] + 1 == g) {
+        out.last[1] = g;
+      } else {
+        out.add([g, g]);
+      }
+    }
+    return out;
+  }
+
+  Map<String, dynamic> _rev(String kind, int a, int b, [String? label]) =>
+      {'kind': kind, 'fromG': a, 'toG': b, 'pages': pagesOfRange(a, b), 'label': label ?? rangeLabel(a, b)};
+
   Map<String, dynamic>? get _suggestedReview {
     if (_st.mode == 'review_exam') {
       final a = qJuz[_st.juzFrom - 1][0], b = qJuz[_st.juzTo - 1][1];
-      return {
-        'kind': 'juz',
-        'fromG': a,
-        'toG': b,
-        'pages': pagesOfRange(a, b),
-        'label': _st.juzFrom == _st.juzTo ? 'الجزء ${_st.juzFrom}' : 'الأجزاء ${_st.juzFrom}–${_st.juzTo}',
-      };
+      return _rev('juz', a, b, _st.juzFrom == _st.juzTo ? 'الجزء ${_st.juzFrom}' : 'الأجزاء ${_st.juzFrom}–${_st.juzTo}');
     }
-    if (_st.mode == 'review_surah') {
-      return {
-        'kind': 'surah',
-        'fromG': _st.segFrom,
-        'toG': _st.segTo,
-        'pages': pagesOfRange(_st.segFrom!, _st.segTo!),
-        'label': rangeLabel(_st.segFrom!, _st.segTo!),
-      };
-    }
+    if (_st.mode == 'review_surah') return _rev('surah', _st.segFrom!, _st.segTo!);
     return null;
   }
 
-  /// المطلوب من الطالب اليوم بالضبط
-  String? get _todayRequired {
-    if (_st.mode == 'memorize' && _st.fromG != null && _st.suggestToG != null) {
-      return 'الحفظ التالي: ${memRangeLabel(_dir, _st.fromG!, _st.suggestToG!)} '
-          '(${fmtPages(memRangePages(_dir, _st.fromG!, _st.suggestToG!))} صفحة)';
-    }
-    final r = _suggestedReview;
-    if (r != null) return 'المراجعة المطلوبة: ${r['label']} (${fmtPages((r['pages'] as num).toDouble())} صفحة)';
+  /// موضع آخر آية محفوظة قبل اليوم (في ترتيب الحفظ)
+  int? get _cursorPos {
+    if (_st.mode == 'memorize' && _st.fromG != null) return _o.pos[_st.fromG!] - 1;
+    if (_st.mode == 'review_surah') return _o.pos[_st.segTo!];
     return null;
+  }
+
+  /// مراجعات سريعة: آخر ما حفظه (5 صفحات) والجزء الحالي من أوله
+  List<MapEntry<String, List<Map<String, dynamic>>>> get _quickReviews {
+    final cp = _cursorPos;
+    if (cp == null) return [];
+    final j = _st.juz;
+    final js = _o.jStart[j];
+    if (cp < js) return [];
+    final last = <int>[];
+    var t = 0.0;
+    for (var i = cp; i >= js && t < 5 - 1e-9; i--) {
+      last.add(_o.order[i]);
+      t += ayahFrac(_o.order[i]);
+    }
+    final whole = [for (var i = js; i <= cp; i++) _o.order[i]];
+    List<Map<String, dynamic>> toRevs(List<int> gs) => [for (final c in _chunks(gs)) _rev('ayat', c[0], c[1])];
+    return [
+      MapEntry('آخر ما حفظه (${fmtPages(t)} ص)', toRevs(last)),
+      MapEntry('الجزء $j من أوله', toRevs(whole)),
+    ];
   }
 
   void _addReview(Map<String, dynamic> r) => setState(() {
         _reviews.add(r);
         _ensureNewAfterSurahReview();
       });
+
+  String? get _todayRequired {
+    if (_st.mode == 'memorize' && _st.fromG != null && _st.suggestToG != null) {
+      return 'المطلوب اليوم: ${memRangeLabel(_dir, _st.fromG!, _st.suggestToG!)} '
+          '(${fmtPages(memRangePages(_dir, _st.fromG!, _st.suggestToG!))} صفحة)';
+    }
+    final r = _suggestedReview;
+    if (r != null) return 'المطلوب اليوم: مراجعة ${r['label']} (${fmtPages((r['pages'] as num).toDouble())} صفحة)';
+    return null;
+  }
 
   Future<void> _reviewDialog(String kind) async {
     var s = 1, a1 = 1, a2 = qCounts[0], j1 = 30, j2 = 30;
@@ -828,12 +887,20 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     if (r != null) _addReview(r);
   }
 
-  void _save() {
+  int? get _nextIndex {
+    final i = widget.order.indexWhere((x) => x.id == widget.student.id);
+    for (var k = i + 1; k < widget.order.length; k++) {
+      if (widget.ctxFn(widget.order[k]).todayLog == null) return k;
+    }
+    return null;
+  }
+
+  void _save({bool next = false}) {
     final recited = _att == 'recited';
     final withNew = recited && _hasNew && _canNew && _from != null && _to != null;
     final np = withNew ? _newPages : 0.0;
     Repo.I.saveLog(widget.student.id, widget.date, {
-      ...widget.base,
+      ..._c.base,
       'status': _att,
       'newMem': withNew
           ? {'fromG': _from, 'toG': _to, 'pages': np, 'label': memRangeLabel(_dir, _from!, _to!)}
@@ -844,22 +911,185 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       'notes': _notes.text.trim(),
     });
     final messenger = ScaffoldMessenger.of(context);
-    Navigator.of(context).pop();
-    messenger.showSnackBar(const SnackBar(content: Text('تم الحفظ — يُرفع تلقائياً عند توفر الإنترنت')));
+    final ni = next ? _nextIndex : null;
+    if (ni != null) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => widget.builder(widget.order[ni])));
+    } else {
+      Navigator.of(context).pop();
+    }
+    messenger.showSnackBar(SnackBar(
+      content: Text('تم حفظ ${widget.student.name}'),
+      duration: const Duration(seconds: 2),
+    ));
   }
+
+  // ---------- عناصر التصميم ----------
+  Widget _card({required Widget child, String? title, Widget? trailing}) => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (title != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(children: [
+                  Expanded(
+                    child: Text(title,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: brandGreen)),
+                  ),
+                  if (trailing != null) trailing,
+                ]),
+              ),
+            child,
+          ],
+        ),
+      );
+
+  Widget _pill(String t, Color c) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(12)),
+        child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+      );
+
+  Widget _box(String text, Color bg, Color fg) => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+        child: Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, height: 1.5)),
+      );
 
   Widget _h(String t) => Padding(
         padding: const EdgeInsets.only(top: 16, bottom: 6),
         child: Text(t, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: brandGreen)),
       );
 
-  Widget _box(String text, Color bg, Color fg) => Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(top: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-        child: Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, height: 1.5)),
+  static const _blue = Color(0xFF1F4E8C);
+  static const _amber = Color(0xFF9A6700);
+
+  // ---------- المربع العلوي ----------
+  Widget _topCard() {
+    final j = _st.juz;
+    final cp = _cursorPos;
+    String? pctText;
+    double? pct;
+    if (j > 0 && cp != null) {
+      final js = _o.jStart[j];
+      var done = 0.0;
+      for (var i = js; i <= cp; i++) {
+        done += ayahFrac(_o.order[i]);
+      }
+      final total = pagesOfRange(qJuz[j - 1][0], qJuz[j - 1][1]);
+      pct = total == 0 ? 0 : (done / total).clamp(0.0, 1.0);
+      pctText = 'أنجز ${(pct * 100).round()}% من الجزء';
+    } else if (_st.mode == 'review_exam' && _st.juzFrom == _st.juzTo) {
+      pct = 1;
+      pctText = 'أنهى حفظ الجزء';
+    }
+    // خريطة سور الجزء
+    final chips = <Widget>[];
+    if ((_st.mode == 'memorize' || _st.mode == 'review_surah') && j > 0) {
+      final curS = _st.fromG != null ? surahOf(_st.fromG!) : null;
+      for (final s in surahsOfJuz(_dir, j)) {
+        final g = _ayahsIn(s, j);
+        final doneS = cp != null && _o.pos[g.reduce((a, b) => _o.pos[a] > _o.pos[b] ? a : b)] <= cp;
+        final cur = !doneS && s == curS;
+        chips.add(Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          decoration: BoxDecoration(
+            color: doneS ? brandGreen : Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: cur ? const Color(0xFFC88A12) : (doneS ? brandGreen : const Color(0xFFB9D3C4)), width: cur ? 2 : 1),
+          ),
+          child: Text(surahName(s),
+              style: TextStyle(
+                  fontSize: 11.5,
+                  color: doneS ? Colors.white : (cur ? _amber : brandGreen),
+                  fontWeight: cur ? FontWeight.bold : FontWeight.normal)),
+        ));
+      }
+    }
+    // آخر الجلسات
+    final rec = _c.recent;
+    String? lastLine;
+    if (rec.isNotEmpty) {
+      final l = rec.first;
+      final d = DateTime.tryParse((l['date'] ?? '').toString());
+      final when = d == null ? '' : '${dayName(d)} ${d.day}/${d.month}';
+      final parts = <String>[];
+      if (l['status'] != 'recited') {
+        parts.add(SheikhHomeScreenStateText.of(l['status'] as String?));
+      } else {
+        final nm = l['newMem'];
+        if (nm is Map) parts.add('سمّع ${nm['label'] ?? ''}');
+        final rv = ((l['reviews'] as List?) ?? []).whereType<Map>().map((r) => r['label']).join('، ');
+        if (rv.isNotEmpty) parts.add('راجع $rv');
+      }
+      lastLine = 'آخر مرة ($when): ${parts.join(' · ')}';
+    }
+    Widget dot(String? st) {
+      final (Color c, String t) = switch (st) {
+        'recited' => (brandGreen, '✓'),
+        'absent' => (Colors.red.shade700, 'غ'),
+        'excused' => (const Color(0xFFC88A12), 'ع'),
+        'norecite' => (Colors.red.shade300, 'ل'),
+        _ => (Colors.grey, '·'),
+      };
+      return Container(
+        width: 22,
+        height: 22,
+        margin: const EdgeInsetsDirectional.only(start: 4),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+        child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
       );
+    }
+
+    final req = _todayRequired;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(color: const Color(0xFFE8F3EC), borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(child: Text(_st.title, style: const TextStyle(color: brandGreen, fontSize: 13.5))),
+            if (pctText != null) Text(pctText, style: const TextStyle(color: brandGreen, fontSize: 13)),
+          ]),
+          if (pct != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                    value: pct, minHeight: 6, color: brandGreen, backgroundColor: const Color(0xFFCFE3D8)),
+              ),
+            ),
+          if (req != null)
+            Text(req, style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 16, height: 1.5)),
+          if (chips.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Wrap(spacing: 4, runSpacing: 4, children: chips),
+            ),
+          if (lastLine != null || rec.isNotEmpty) ...[
+            const Divider(height: 18, color: Color(0xFFB9D3C4)),
+            if (lastLine != null) Text(lastLine, style: const TextStyle(color: Color(0xFF5B6B63), fontSize: 12.5)),
+            const SizedBox(height: 6),
+            Row(children: [
+              const Text('آخر الجلسات:', style: TextStyle(color: Color(0xFF5B6B63), fontSize: 12.5)),
+              for (final l in rec.reversed) dot(l['status'] as String?),
+            ]),
+          ],
+        ],
+      ),
+    );
+  }
 
   // ---------- تحديد نقطة البداية ----------
   Widget _startPointView() {
@@ -918,63 +1148,117 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   }
 
   // ---------- الحفظ الجديد ----------
-  Widget _newMemView() {
-    final o = memOrder(_dir);
+  Widget _newMemBody() {
+    final o = _o;
     final j = _juz;
     final fromPos = o.pos[_from!];
-    final surahs = surahsOfJuz(_dir, j).where((s) {
-      final g = _ayahsIn(s, j);
-      return g.any((x) => o.pos[x] >= fromPos);
-    }).toList();
+    final surahs = surahsOfJuz(_dir, j).where((s) => _ayahsIn(s, j).any((x) => o.pos[x] >= fromPos)).toList();
     final toS = surahOf(_to!);
     final toAyahs = _ayahsIn(toS, j).where((g) => o.pos[g] >= fromPos).toList();
     final pages = _newPages;
+    final p1 = pageOf(_from! < _to! ? _from! : _to!), p2 = pageOf(_from! < _to! ? _to! : _from!);
+    final seg = _ayahsIn(toS, j);
+    final segDone = seg.where((g) => o.pos[g] <= o.pos[_to!]).length;
+    Widget chip(String t, double v) {
+      final on = (pages - v).abs() < 0.26;
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              backgroundColor: on ? const Color(0xFFE8F3EC) : null,
+              side: BorderSide(color: on ? brandGreen : const Color(0xFFCFD6D2)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            ),
+            onPressed: () => setState(() => _to = _toForPages(v)),
+            child: Text(t, style: TextStyle(fontSize: 12.5, color: on ? brandGreen : Colors.black87)),
+          ),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CheckboxListTile(
-          value: _hasNew,
-          onChanged: (v) => setState(() => _hasNew = v ?? false),
-          title: const Text('سمّع حفظاً جديداً'),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-        ),
-        if (_hasNew) ...[
-          Text('من: ${posLabel(_from!)}', style: const TextStyle(fontSize: 16)),
-          const SizedBox(height: 10),
-          Row(children: [
+        Row(children: [chip('½ صفحة', 0.5), chip('صفحة', 1), chip('صفحتين', 2), chip('3 صفحات', 3)]),
+        const SizedBox(height: 10),
+        Row(children: [
+          const SizedBox(width: 34, child: Text('من', style: TextStyle(color: Colors.black54))),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF6F7F6),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFD5DAD7)),
+              ),
+              child: Text(posLabel(_from!), style: const TextStyle(fontSize: 15)),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 8),
+        Row(children: [
+          const SizedBox(width: 34, child: Text('إلى', style: TextStyle(color: Colors.black54))),
+          Expanded(
+            child: DropdownButtonFormField<int>(
+              value: surahs.contains(toS) ? toS : null,
+              isExpanded: true,
+              decoration: const InputDecoration(isDense: true),
+              items: [for (final s in surahs) DropdownMenuItem(value: s, child: Text(surahName(s)))],
+              onChanged: (v) => setState(() {
+                if (v == null) return;
+                _to = _ayahsIn(v, j).where((g) => o.pos[g] >= fromPos).toList().last;
+              }),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 92,
+            child: DropdownButtonFormField<int>(
+              value: toAyahs.contains(_to) ? _to : null,
+              isExpanded: true,
+              decoration: const InputDecoration(isDense: true),
+              items: [for (final g in toAyahs) DropdownMenuItem(value: g, child: Text('${ayahNo(g)}'))],
+              onChanged: (v) => setState(() => _to = v ?? _to),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(color: const Color(0xFFF6F7F6), borderRadius: BorderRadius.circular(8)),
+          child: Row(children: [
             Expanded(
-              child: DropdownButtonFormField<int>(
-                value: surahs.contains(toS) ? toS : null,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'إلى سورة'),
-                items: [for (final s in surahs) DropdownMenuItem(value: s, child: Text(surahName(s)))],
-                onChanged: (v) => setState(() {
-                  if (v == null) return;
-                  final opts = _ayahsIn(v, j).where((g) => o.pos[g] >= fromPos).toList();
-                  _to = opts.last;
-                }),
-              ),
+              child: Text.rich(TextSpan(children: [
+                TextSpan(text: memRangeLabel(_dir, _from!, _to!), style: const TextStyle(fontSize: 15)),
+                TextSpan(
+                    text: p1 == p2 ? '  (ص $p1)' : '  (ص $p1–$p2)',
+                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ])),
             ),
-            const SizedBox(width: 10),
-            SizedBox(
-              width: 110,
-              child: DropdownButtonFormField<int>(
-                value: toAyahs.contains(_to) ? _to : null,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'الآية'),
-                items: [for (final g in toAyahs) DropdownMenuItem(value: g, child: Text('${ayahNo(g)}'))],
-                onChanged: (v) => setState(() => _to = v ?? _to),
-              ),
-            ),
+            _pill('${fmtPages(pages)} صفحة', pages < widget.minNew - 1e-9 ? _amber : brandGreen),
           ]),
-          const SizedBox(height: 8),
-          Text('${memRangeLabel(_dir, _from!, _to!)} — ${fmtPages(pages)} صفحة',
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          if (pages < widget.minNew - 1e-9)
-            Text('أقل من الحد الأدنى للحفظ (${fmt(widget.minNew)} صفحة)',
-                style: const TextStyle(color: Color(0xFF9A6700))),
-        ],
+        ),
+        if (pages < widget.minNew - 1e-9)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text('أقل من الحد الأدنى للحفظ (${fmt(widget.minNew)} صفحة)',
+                style: const TextStyle(color: _amber, fontSize: 12.5)),
+          ),
+        const SizedBox(height: 8),
+        Text('سورة ${surahName(toS)}: $segDone من ${seg.length} آية بعد اليوم',
+            style: const TextStyle(fontSize: 12.5, color: Colors.black54)),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: seg.isEmpty ? 0 : segDone / seg.length,
+            minHeight: 7,
+            color: const Color(0xFF7FBF9F),
+            backgroundColor: const Color(0xFFEEEEEE),
+          ),
+        ),
       ],
     );
   }
@@ -982,76 +1266,179 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   @override
   Widget build(BuildContext context) {
     final s = widget.student;
+    final idx = widget.order.indexWhere((x) => x.id == s.id);
+    final counter = idx >= 0 ? 'الطالب ${idx + 1} من ${widget.order.length}' : '';
+    final appBar = AppBar(
+      title: BrandTitle(s.name),
+      actions: [
+        Padding(
+          padding: const EdgeInsetsDirectional.only(end: 14),
+          child: Center(child: Text(counter, style: const TextStyle(color: Color(0xFFCFE3D8), fontSize: 13))),
+        ),
+      ],
+    );
     if (_st.mode == 'needs_start') {
-      return Scaffold(appBar: AppBar(title: BrandTitle(s.name)), body: _startPointView());
+      return Scaffold(appBar: appBar, body: _startPointView());
     }
     final recited = _att == 'recited';
     final sugg = _suggestedReview;
-    final suggAdded = sugg != null && _reviews.any((r) => r['fromG'] == sugg['fromG'] && r['toG'] == sugg['toG']);
+    bool added(Map<String, dynamic> r) => _reviews.any((x) => x['fromG'] == r['fromG'] && x['toG'] == r['toG']);
+    final quick = _quickReviews;
+    final hasNext = _nextIndex != null;
+    final summary = recited
+        ? 'اليوم: ${_hasNew && _canNew ? 'حفظ ${fmtPages(_newPages)} ص · ' : ''}مراجعة ${fmtPages(_reviewPages)} ص'
+        : 'اليوم: ${SheikhHomeScreenStateText.of(_att)}';
     return Scaffold(
-      appBar: AppBar(title: BrandTitle(s.name)),
+      appBar: appBar,
+      backgroundColor: const Color(0xFFF3F2EC),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
         children: [
-          _box(
-            _todayRequired == null ? _st.title : '${_st.title}\n$_todayRequired',
-            _st.mode == 'review_surah'
-                ? Colors.red.shade50
-                : _st.mode == 'memorize'
-                    ? const Color(0xFFE8F3EC)
-                    : const Color(0xFFE6EEF8),
-            _st.mode == 'review_surah'
-                ? Colors.red.shade800
-                : _st.mode == 'memorize'
-                    ? brandGreen
-                    : const Color(0xFF1F4E8C),
+          _topCard(),
+          _card(
+            title: 'الحضور',
+            child: SegmentedRow(
+              items: const ['سمّع', 'لم يسمّع', 'غائب', 'بعذر'],
+              selected: const ['recited', 'norecite', 'absent', 'excused'].indexOf(_att),
+              onChanged: (i) => setState(() => _att = const ['recited', 'norecite', 'absent', 'excused'][i]),
+            ),
           ),
-          _h('الحالة اليوم'),
-          Wrap(spacing: 8, runSpacing: 6, children: [
-            for (final e in const {'recited': 'سمّع', 'norecite': 'لم يسمّع', 'absent': 'غائب', 'excused': 'غائب بعذر'}.entries)
-              ChoiceChip(label: Text(e.value), selected: _att == e.key, onSelected: (_) => setState(() => _att = e.key)),
-          ]),
           if (recited) ...[
-            _h('الحفظ الجديد'),
-            if (_st.mode == 'review_surah' && !_surahReviewDone)
-              _box('لازم يراجع ${rangeLabel(_st.segFrom!, _st.segTo!)} كاملة قبل الحفظ الجديد.', Colors.red.shade50,
-                  Colors.red.shade800)
-            else if (_canNew && _from != null)
-              _newMemView()
-            else
-              Text(
-                _st.mode == 'review_exam'
-                    ? 'لا حفظ جديد: الطالب في مرحلة المراجعة للاختبار.'
-                    : _st.mode == 'hafiz'
-                        ? 'الطالب حافظ للقرآن — مراجعة فقط.'
-                        : 'لا يوجد حفظ جديد متاح.',
-                style: const TextStyle(color: Colors.black54),
+            _card(
+              title: 'الحفظ الجديد',
+              trailing: (_canNew && _from != null) ? Switch(value: _hasNew, onChanged: (v) => setState(() => _hasNew = v)) : null,
+              child: (_st.mode == 'review_surah' && !_surahReviewDone)
+                  ? _box('لازم يراجع ${rangeLabel(_st.segFrom!, _st.segTo!)} كاملة قبل الحفظ الجديد.', Colors.red.shade50,
+                      Colors.red.shade800)
+                  : (_canNew && _from != null)
+                      ? (_hasNew
+                          ? _newMemBody()
+                          : const Text('لم يسمّع حفظاً جديداً اليوم.', style: TextStyle(color: Colors.black54)))
+                      : Text(
+                          _st.mode == 'review_exam'
+                              ? 'لا حفظ جديد: الطالب في مرحلة المراجعة للاختبار.'
+                              : _st.mode == 'hafiz'
+                                  ? 'الطالب حافظ للقرآن — مراجعة فقط.'
+                                  : 'لا يوجد حفظ جديد متاح.',
+                          style: const TextStyle(color: Colors.black54),
+                        ),
+            ),
+            _card(
+              title: 'المراجعة',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if ((sugg != null && !added(sugg)) || quick.isNotEmpty)
+                    Wrap(spacing: 6, runSpacing: 6, children: [
+                      if (sugg != null && !added(sugg))
+                        FilledButton.tonal(
+                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFE6EEF8), foregroundColor: _blue),
+                          onPressed: () => _addReview(sugg),
+                          child: Text('المطلوبة: ${sugg['label']}'),
+                        ),
+                      for (final q in quick)
+                        FilledButton.tonal(
+                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFE6EEF8), foregroundColor: _blue),
+                          onPressed: () => setState(() {
+                            for (final r in q.value) {
+                              if (!added(r)) _reviews.add(r);
+                            }
+                            _ensureNewAfterSurahReview();
+                          }),
+                          child: Text(q.key),
+                        ),
+                    ]),
+                  for (var i = 0; i < _reviews.length; i++)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE)))),
+                      child: Row(children: [
+                        Expanded(child: Text('${_reviews[i]['label']}', style: const TextStyle(fontSize: 14))),
+                        _pill('${fmtPages(((_reviews[i]['pages'] ?? 0) as num).toDouble())} ص', _blue),
+                        TextButton(
+                          onPressed: () => setState(() => _reviews.removeAt(i)),
+                          child: Text('حذف', style: TextStyle(color: Colors.red.shade700, fontSize: 12.5)),
+                        ),
+                      ]),
+                    ),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    for (final e in const {'ayat': '+ آيات', 'surah': '+ سورة', 'juz': '+ جزء'}.entries)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 3),
+                          child: OutlinedButton(onPressed: () => _reviewDialog(e.key), child: Text(e.value)),
+                        ),
+                      ),
+                  ]),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    const Expanded(child: Text('مجموع المراجعة', style: TextStyle(fontWeight: FontWeight.bold))),
+                    Text('${fmtPages(_reviewPages)} صفحة', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ]),
+                  if (_st.isReview && _reviewPages < widget.minReview - 1e-9)
+                    Text('أقل من الحد الأدنى للمراجعة (${fmt(widget.minReview)} صفحات)',
+                        style: const TextStyle(color: _amber, fontSize: 12.5)),
+                ],
               ),
-            _h('المراجعة'),
-            for (var i = 0; i < _reviews.length; i++)
-              Row(children: [
-                Expanded(child: Text('${_reviews[i]['label']} — ${fmtPages(((_reviews[i]['pages'] ?? 0) as num).toDouble())} ص')),
-                TextButton(onPressed: () => setState(() => _reviews.removeAt(i)), child: const Text('حذف')),
-              ]),
-            Wrap(spacing: 6, runSpacing: 4, children: [
-              if (sugg != null && !suggAdded)
-                FilledButton.tonal(onPressed: () => _addReview(sugg), child: Text('المراجعة المطلوبة: ${sugg['label']}')),
-              OutlinedButton(onPressed: () => _reviewDialog('ayat'), child: const Text('+ آيات')),
-              OutlinedButton(onPressed: () => _reviewDialog('surah'), child: const Text('+ سورة')),
-              OutlinedButton(onPressed: () => _reviewDialog('juz'), child: const Text('+ جزء')),
-            ]),
-            const SizedBox(height: 6),
-            Text('مجموع المراجعة: ${fmtPages(_reviewPages)} صفحة', style: const TextStyle(fontWeight: FontWeight.bold)),
-            if (_st.isReview && _reviewPages < widget.minReview - 1e-9)
-              Text('أقل من الحد الأدنى للمراجعة (${fmt(widget.minReview)} صفحات)',
-                  style: const TextStyle(color: Color(0xFF9A6700))),
+            ),
           ],
-          _h('ملاحظات'),
-          TextField(controller: _notes, maxLines: 2, decoration: const InputDecoration(labelText: 'ملاحظة (اختياري)')),
-          const SizedBox(height: 20),
-          BigButton(icon: Icons.save, text: 'حفظ', onPressed: _save),
+          _card(
+            title: 'ملاحظة',
+            child: TextField(
+              controller: _notes,
+              decoration: const InputDecoration(hintText: 'اختياري', isDense: true),
+            ),
+          ),
         ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, -2))],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(summary, style: const TextStyle(fontSize: 12.5, color: Colors.black54)),
+              const SizedBox(height: 6),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                    onPressed: () => _save(),
+                    child: const Text('حفظ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                if (hasNext) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                      onPressed: () => _save(next: true),
+                      child: const Text('حفظ والتالي ←', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ]),
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+/// نصوص حالات الحضور
+class SheikhHomeScreenStateText {
+  static String of(String? s) => switch (s) {
+        'recited' => 'سمّع',
+        'norecite' => 'لم يسمّع',
+        'absent' => 'غائب',
+        'excused' => 'غائب بعذر',
+        _ => '',
+      };
 }
