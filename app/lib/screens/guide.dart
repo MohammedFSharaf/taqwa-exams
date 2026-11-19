@@ -85,7 +85,7 @@ class GuideScreen extends StatelessWidget {
                     '• إذا وصل الخصم في سؤال واحد إلى 9 علامات يُغلق الاختبار ويُسجَّل الطالب راسباً.'),
                 const SizedBox(height: 24),
                 const Divider(),
-                const DedicationText(),
+                const DedicationLine(),
                 const SizedBox(height: 12),
                 const DevCredit(),
               ],

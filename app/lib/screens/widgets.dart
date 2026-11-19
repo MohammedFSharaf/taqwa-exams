@@ -4,6 +4,7 @@ import '../logic.dart';
 import '../env.dart';
 import '../slogan.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'dedication.dart';
 
 const Color brandGreen = Color(0xFF1F5F46);
 const Color brandGold = Color(0xFFB8913A);
@@ -258,7 +259,7 @@ void showAboutApp(BuildContext context) {
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
-      content: const SingleChildScrollView(child: Column(children: [DedicationText(), SizedBox(height: 14), DevCredit()])),
+      content: const SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [DedicationLine(), SizedBox(height: 6), DevCredit()])),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق'))],
     ),
   );
@@ -281,43 +282,8 @@ const dedicationNames = [
 const dedicationOutro =
     'رحمهم الله رحمةً واسعة، وأسكنهم الفردوس الأعلى، ونسأل الله أن يتقبّل هذا العمل ويجعله في ميزان حسناتهم.';
 
-/// النص الكامل للإهداء
-class DedicationText extends StatelessWidget {
-  const DedicationText({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Text('صدقة جارية',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: brandGreen, fontSize: 17, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        const Text(dedicationIntro, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, height: 1.8)),
-        const SizedBox(height: 10),
-        for (final n in dedicationNames)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Text(n,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF5C4A1E))),
-          ),
-        const SizedBox(height: 10),
-        const Text(dedicationOutro,
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 13.5, height: 1.8, color: Colors.black54)),
-      ],
-    );
-  }
-}
-
 void showDedication(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      content: const SingleChildScrollView(child: DedicationText()),
-      actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق'))],
-    ),
-  );
+  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DedicationScreen()));
 }
 
 /// سطر قصير قابل للضغط يفتح النص الكامل

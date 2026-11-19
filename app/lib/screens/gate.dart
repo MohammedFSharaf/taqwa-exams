@@ -5,6 +5,7 @@ import 'examiner.dart';
 import 'home.dart';
 import 'sheikh.dart';
 import 'widgets.dart';
+import 'dedication.dart';
 
 /// شاشة البداية: تسجيل دخول الجهاز ثم كلمة السر الموحدة
 class GateScreen extends StatefulWidget {
@@ -124,21 +125,31 @@ class _GateScreenState extends State<GateScreen> {
       );
     }
     return Scaffold(
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                children: [
-                  const AppHeader(),
-                  Padding(padding: const EdgeInsets.fromLTRB(22, 22, 22, 10), child: body),
-                ],
+      backgroundColor: const Color(0xFFF7F4EC),
+      body: CustomPaint(
+        painter: const StarPatternPainter(color: Color(0x22B8913A)),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  children: [
+                    const AppHeader(),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 30, 16, 10),
+                      child: CustomPaint(
+                        painter: const MihrabPainter(),
+                        child: Padding(padding: const EdgeInsets.fromLTRB(22, 84, 22, 26), child: body),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const AyahLine(),
-            const DedicationLine(),
-          ],
+              const AyahLine(),
+              const DedicationLine(),
+            ],
+          ),
         ),
       ),
     );
