@@ -107,6 +107,8 @@
     <button data-tab="exams" class="active">الاختبارات</button>
     <button data-tab="retests">بانتظار الإعادة <span class="badge hidden" id="retestBadge"></span></button>
     <button data-tab="stats">الإحصائيات والتقارير</button>
+    <button data-tab="daily">السجل اليومي</button>
+    <button data-tab="sheikhs">المشايخ</button>
     <button data-tab="pending">طلاب جدد <span class="badge hidden" id="pendingBadge"></span></button>
     <button data-tab="students">الطلاب</button>
     <button data-tab="halaqat">الحلقات</button>
@@ -192,6 +194,64 @@
       <div class="card"><h2>حسب الشهر</h2><div id="stByMonth"></div></div>
     </section>
 
+    <!-- السجل اليومي -->
+    <section id="tab-daily" class="hidden">
+      <div class="card">
+        <h2>سجل يوم</h2>
+        <div class="row">
+          <label>التاريخ<input type="date" id="dDate"></label>
+          <label>الحلقة<select id="dHalaqa"></select></label>
+          <span class="muted" id="dInfo"></span>
+        </div>
+      </div>
+      <div class="stats" id="dSummary"></div>
+      <div class="card" style="padding:0;overflow:auto">
+        <table>
+          <thead><tr><th>الطالب</th><th>الحلقة</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>المرحلة الآن</th><th>الشيخ</th><th></th></tr></thead>
+          <tbody id="dBody"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h2>إحصائيات فترة</h2>
+        <div class="row">
+          <label>من تاريخ<input type="date" id="dsFrom"></label>
+          <label>إلى تاريخ<input type="date" id="dsTo"></label>
+          <label>الحلقة<select id="dsHalaqa"></select></label>
+          <button id="dsWeek">هذا الأسبوع</button>
+          <button id="dsMonth">هذا الشهر</button>
+          <button class="primary" id="dsExcel">تصدير Excel</button>
+        </div>
+        <h2 style="margin-top:14px">حسب الحلقة</h2><div id="dsByHalaqa"></div>
+        <h2 style="margin-top:14px">حسب الطالب</h2><div id="dsByStudent"></div>
+        <h2 style="margin-top:14px">غياب متكرر (آخر جلستين أو أكثر غياب)</h2><div id="dsAbsent"></div>
+      </div>
+      <div class="card">
+        <h2>الإجازات</h2>
+        <div class="row" style="margin-bottom:10px">
+          <label>التاريخ<input type="date" id="hDate"></label>
+          <label>لمن<select id="hHalaqa"></select></label>
+          <label>السبب<input id="hReason" placeholder="مثلاً: عيد، ظرف طارئ"></label>
+          <button class="primary" id="addHolidayBtn">إضافة إجازة</button>
+        </div>
+        <table><thead><tr><th>التاريخ</th><th>لمن</th><th>السبب</th><th>أضافها</th><th></th></tr></thead><tbody id="hBody"></tbody></table>
+      </div>
+    </section>
+
+    <!-- المشايخ -->
+    <section id="tab-sheikhs" class="hidden">
+      <div class="card">
+        <h2>حسابات المشايخ</h2>
+        <p class="muted">كل شيخ يدخل التطبيق باسمه ورمزه، ويرى طلاب حلقته فقط. الحلقة يمكن أن يكون لها أكثر من شيخ.</p>
+        <div class="row" style="margin-bottom:12px">
+          <label>اسم الشيخ<input id="newShName" style="min-width:220px"></label>
+          <label>الحلقة<select id="newShHalaqa"></select></label>
+          <label>رمز الدخول<input id="newShPin" style="width:120px" inputmode="numeric" placeholder="4 أرقام"></label>
+          <button class="primary" id="addShBtn">إضافة</button>
+        </div>
+        <table><thead><tr><th>الاسم</th><th>الحلقة</th><th>الرمز</th><th></th></tr></thead><tbody id="shBody"></tbody></table>
+      </div>
+    </section>
+
     <!-- طلاب جدد -->
     <section id="tab-pending" class="hidden">
       <div class="card">
@@ -270,6 +330,15 @@
 
     <!-- الإعدادات -->
     <section id="tab-settings" class="hidden">
+      <div class="card">
+        <h2>أيام التحفيظ والحد الأدنى للصفحات (السجل اليومي)</h2>
+        <div class="row" id="sessDays" style="margin-bottom:10px"></div>
+        <div class="row">
+          <label>حد الحفظ الجديد اليومي (صفحات)<input type="number" step="0.5" min="0" id="minNewPages" style="width:110px"></label>
+          <label>حد المراجعة اليومي (صفحات)<input type="number" step="0.5" min="0" id="minReviewPages" style="width:110px"></label>
+          <button class="primary" id="saveDailySettingsBtn">حفظ</button>
+        </div>
+      </div>
       <div class="card">
         <h2>مدة التوقف</h2>
         <p class="muted">الطالب الذي يبقى على نفس الاختبار في المسار أكثر من هذه المدة يظهر في قائمة "المتوقفين" في الإحصائيات.</p>
@@ -367,6 +436,87 @@ function stepLabel(st){
   if (st.type === 30) return "المصحف كاملاً (30 جزءاً)";
   return `${TYPES[st.type]}: من الجزء ${st.start} إلى الجزء ${st.end}`;
 }
+const Q = {"names":["الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه","الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم","لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر","فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق","الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة","الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس","التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد","الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات","القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر","المسد","الإخلاص","الفلق","الناس"],"counts":[7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6],"pageStart":[1,8,13,24,32,37,45,56,65,69,77,84,91,96,101,109,113,120,127,134,142,149,153,161,171,177,184,189,194,198,204,210,218,223,227,232,238,241,245,253,256,260,264,267,272,277,282,289,290,294,303,309,316,323,331,339,346,355,364,371,377,385,394,402,409,415,426,434,442,447,451,459,467,474,480,488,494,500,505,508,513,517,520,527,531,538,545,553,559,568,573,580,585,588,595,599,607,615,621,628,634,641,648,656,664,669,672,675,679,683,687,693,701,706,711,715,720,727,734,740,746,752,759,765,773,778,783,790,798,808,817,825,834,842,849,858,863,871,880,884,891,900,908,914,921,927,932,936,941,947,955,966,977,985,992,998,1006,1012,1022,1028,1036,1042,1050,1059,1075,1085,1092,1098,1104,1110,1114,1118,1125,1133,1142,1150,1161,1169,1177,1186,1194,1201,1206,1213,1222,1230,1236,1242,1249,1256,1262,1267,1272,1276,1283,1290,1297,1304,1308,1315,1322,1329,1335,1342,1347,1353,1358,1365,1371,1379,1385,1390,1398,1407,1418,1426,1435,1443,1453,1462,1471,1479,1486,1493,1502,1511,1519,1527,1536,1545,1555,1562,1571,1582,1591,1601,1611,1619,1627,1634,1640,1649,1660,1666,1675,1683,1692,1700,1708,1713,1721,1726,1736,1742,1750,1756,1761,1769,1775,1784,1793,1803,1818,1834,1854,1873,1893,1908,1916,1928,1936,1944,1956,1966,1974,1981,1989,1995,2004,2012,2020,2030,2037,2047,2057,2068,2079,2088,2096,2105,2116,2126,2134,2145,2156,2161,2168,2175,2186,2194,2202,2215,2224,2238,2251,2262,2276,2289,2302,2315,2327,2346,2361,2386,2400,2413,2425,2436,2447,2462,2474,2484,2494,2508,2519,2528,2541,2556,2565,2574,2585,2596,2601,2611,2619,2626,2634,2642,2651,2660,2668,2674,2691,2701,2716,2733,2748,2763,2778,2792,2802,2812,2819,2823,2828,2835,2845,2850,2853,2858,2867,2876,2888,2899,2911,2923,2933,2952,2972,2993,3016,3044,3069,3092,3116,3139,3160,3173,3182,3195,3204,3215,3223,3236,3248,3258,3266,3274,3281,3288,3296,3303,3312,3323,3330,3337,3347,3355,3364,3371,3379,3386,3393,3404,3415,3425,3434,3442,3451,3460,3470,3481,3489,3498,3504,3515,3524,3534,3540,3549,3556,3564,3569,3577,3584,3588,3596,3607,3614,3621,3629,3638,3646,3655,3664,3672,3679,3691,3699,3705,3718,3733,3746,3760,3776,3789,3813,3840,3865,3891,3915,3942,3971,3987,3997,4013,4032,4054,4064,4069,4080,4090,4099,4106,4115,4126,4133,4141,4150,4159,4167,4174,4183,4192,4200,4211,4219,4230,4239,4248,4257,4265,4273,4283,4288,4295,4304,4317,4324,4336,4348,4359,4373,4386,4399,4415,4433,4454,4474,4487,4496,4506,4516,4525,4531,4539,4546,4557,4565,4575,4584,4593,4599,4607,4612,4617,4624,4631,4646,4666,4682,4706,4727,4750,4767,4785,4811,4829,4853,4874,4896,4918,4942,4969,4996,5030,5056,5079,5087,5094,5100,5105,5111,5116,5126,5130,5136,5143,5151,5156,5162,5169,5178,5186,5193,5200,5209,5218,5223,5230,5237,5242,5254,5268,5287,5314,5332,5358,5386,5415,5430,5448,5461,5476,5495,5513,5543,5571,5597,5617,5642,5673,5703,5728,5759,5801,5830,5855,5883,5910,5932,5964,5994,6017,6044,6073,6099,6126,6138,6156,6177,6194,6208,6222,6237],"juz":[[1,148],[149,259],[260,385],[386,516],[517,640],[641,750],[751,899],[900,1041],[1042,1200],[1201,1327],[1328,1478],[1479,1648],[1649,1802],[1803,2029],[2030,2214],[2215,2483],[2484,2673],[2674,2855],[2856,3159],[3160,3340],[3341,3533],[3534,3705],[3706,4058],[4059,4218],[4219,4510],[4511,4675],[4676,5104],[5105,5241],[5242,5672],[5673,6236]]};
+
+// ===== محرك السجل اليومي =====
+const SURAH_START = (() => { const s = [0]; let g = 1; for (let i = 0; i < 114; i++){ s.push(g); g += Q.counts[i]; } return s; })();
+const N_AYAH = 6236;
+function surahOf(g){ let lo = 1, hi = 114; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (SURAH_START[m] <= g) lo = m; else hi = m - 1; } return lo; }
+function ayahNo(g){ return g - SURAH_START[surahOf(g)] + 1; }
+function gidOf(s, a){ return SURAH_START[s] + a - 1; }
+function surahEnd(s){ return SURAH_START[s] + Q.counts[s-1] - 1; }
+function pageOf(g){ let lo = 1, hi = 604; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (Q.pageStart[m-1] <= g) lo = m; else hi = m - 1; } return lo; }
+function ayahFrac(g){ const p = pageOf(g); return 1 / (Q.pageStart[p] - Q.pageStart[p-1]); }
+function pagesOfRange(a, b){ let t = 0; for (let g = a; g <= b; g++) t += ayahFrac(g); return t; }
+function juzOfG(g){ for (let j = 1; j <= 30; j++) if (g >= Q.juz[j-1][0] && g <= Q.juz[j-1][1]) return j; return 30; }
+function segmentOf(g){ const j = juzOfG(g), s = surahOf(g), [a, b] = Q.juz[j-1]; return [Math.max(a, SURAH_START[s]), Math.min(b, surahEnd(s))]; }
+function posLabel(g){ return `${Q.names[surahOf(g)-1]} ${ayahNo(g)}`; }
+function rangeLabel(a, b){
+  const sa = surahOf(a), sb = surahOf(b);
+  if (sa === sb){
+    if (a === SURAH_START[sa] && b === surahEnd(sa)) return `سورة ${Q.names[sa-1]}`;
+    return `${Q.names[sa-1]} ${ayahNo(a)}–${ayahNo(b)}`;
+  }
+  return `${posLabel(a)} ← ${posLabel(b)}`;
+}
+const _ORDER = {};
+function memOrder(dir){
+  if (_ORDER[dir]) return _ORDER[dir];
+  const order = [];
+  if (dir === "asc"){ for (let g = 1; g <= N_AYAH; g++) order.push(g); }
+  else {
+    for (let j = 30; j >= 1; j--){
+      const [a, b] = Q.juz[j-1], sa = surahOf(a), sb = surahOf(b);
+      for (let s = sb; s >= sa; s--){ const lo = Math.max(a, SURAH_START[s]), hi = Math.min(b, surahEnd(s)); for (let g = lo; g <= hi; g++) order.push(g); }
+    }
+  }
+  const pos = new Int32Array(N_AYAH + 1); order.forEach((g, i) => pos[g] = i);
+  const jStart = [], jEnd = [];
+  for (let j = 1; j <= 30; j++){ const [a, b] = Q.juz[j-1]; let mn = 1e9, mx = -1; for (let g = a; g <= b; g++){ mn = Math.min(mn, pos[g]); mx = Math.max(mx, pos[g]); } jStart[j] = mn; jEnd[j] = mx; }
+  return (_ORDER[dir] = { order, pos, jStart, jEnd });
+}
+// حالة الطالب في السجل اليومي
+function dailyStatus(dir, start, passedKeys, logs, progress, minNew){
+  const O = memOrder(dir);
+  const p = pathStatus(dir, start, passedKeys);
+  if (p.hafiz) return { mode: "hafiz" };
+  const step = p.steps[p.next];
+  if (step.type > 1) return { mode: "review_exam", step, juzFrom: step.start, juzTo: step.end };
+  const J = step.start;
+  let cursor = null, hasData = false;
+  if (progress){ hasData = true; if (progress.lastG) cursor = O.pos[progress.lastG]; }
+  for (const l of logs) if (l.newMem && l.newMem.toG){ hasData = true; const c = O.pos[l.newMem.toG]; if (cursor === null || c > cursor) cursor = c; }
+  if (!hasData) return { mode: "needs_start", step, juz: J };
+  if (cursor !== null && cursor >= O.jEnd[J]) return { mode: "review_exam", step, juzFrom: J, juzTo: J, ready: true };
+  if (cursor === null || cursor < O.jStart[J] - 1) cursor = O.jStart[J] - 1;
+  if (cursor >= O.jStart[J]){
+    const [sa, sb] = segmentOf(O.order[cursor]);
+    if (cursor === O.pos[sb]){
+      const ps = O.pos[sa], pe = O.pos[sb];
+      const touching = logs.filter(l => l.newMem && O.pos[l.newMem.fromG] <= pe && O.pos[l.newMem.toG] >= ps);
+      if (touching.length >= 2){
+        const doneDate = touching.map(l => l.date).sort().pop();
+        const reviewed = logs.some(l => l.date >= doneDate && (l.reviews || []).some(r => r.fromG <= sa && r.toG >= sb));
+        if (!reviewed) return { mode: "review_surah", step, juz: J, segFrom: sa, segTo: sb };
+      }
+    }
+  }
+  const fromPos = cursor + 1;
+  let t = 0, toPos = fromPos;
+  for (let i = fromPos; i <= O.jEnd[J]; i++){ t += ayahFrac(O.order[i]); toPos = i; if (t >= (minNew || 1) - 1e-9) break; }
+  return { mode: "memorize", step, juz: J, fromG: O.order[fromPos], suggestToG: O.order[toPos], juzEndG: O.order[O.jEnd[J]] };
+}
+// صفحات مدى في ترتيب الحفظ (للحفظ الجديد)
+function memRangePages(dir, fromG, toG){ const O = memOrder(dir); let t = 0; for (let i = O.pos[fromG]; i <= O.pos[toG]; i++) t += ayahFrac(O.order[i]); return t; }
+function memRangeLabel(dir, fromG, toG){
+  const O = memOrder(dir), a = O.pos[fromG], b = O.pos[toG];
+  if (dir === "asc") return rangeLabel(fromG, toG);
+  // من الناس: قد يشمل عدة سور تنازلياً
+  const parts = []; let i = a;
+  while (i <= b){ const s = surahOf(O.order[i]); let j = i; while (j + 1 <= b && surahOf(O.order[j+1]) === s) j++; parts.push(rangeLabel(O.order[i], O.order[j])); i = j + 1; }
+  return parts.join("، ");
+}
+
 function stepShort(st){ return st.type === 1 ? String(st.start) : st.type === 30 ? "المصحف" : `م${st.type}`; }
 function sDir(s){ return s && s.pathDir === "asc" ? "asc" : "desc"; }
 function sStart(s){ const v = parseInt(s && s.pathStart); return v >= 1 && v <= 30 ? v : (sDir(s) === "asc" ? 1 : 30); }
@@ -434,7 +584,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const S = { halaqat:[], students:[], examiners:[], exams:[], permits:[], settings:{} };
+const S = { halaqat:[], students:[], examiners:[], exams:[], permits:[], sheikhs:[], logs:[], progress:[], holidays:[], settings:{} };
 let unsubs = [];
 const $ = id => document.getElementById(id);
 
@@ -485,10 +635,12 @@ function listen(name, cb){
 }
 function startListeners(){
   listen("halaqat"); listen("students"); listen("examiners"); listen("exams"); listen("permits");
+  listen("sheikhs"); listen("logs"); listen("progress"); listen("holidays");
   unsubs.push(onSnapshot(doc(db, "settings", "app"), d => {
     S.settings = d.exists() ? d.data() : {};
     $("curAppPass").value = S.settings.password || "(لم تُحدد بعد)";
     $("stallDays").value = stallDays();
+    renderDailySettings();
     renderStats();
   }));
 }
@@ -525,7 +677,7 @@ function confirmDlg(msg, onYes){
 // ===== رسم الكل =====
 function renderAll(){
   fillSelects();
-  renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers(); renderRetests(); renderStats();
+  renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers(); renderRetests(); renderStats(); renderDaily(); renderSheikhs();
 }
 
 function fillSelect(sel, items, allText){
@@ -539,6 +691,10 @@ function fillSelects(){
   fillSelect($("fHalaqa"), hs, "الكل");
   fillSelect($("sHalaqa"), hs, "الكل");
   fillSelect($("rHalaqa"), hs, "الكل");
+  fillSelect($("dHalaqa"), hs, "الكل");
+  fillSelect($("dsHalaqa"), hs, "الكل");
+  fillSelect($("newShHalaqa"), hs, null);
+  fillSelect($("hHalaqa"), [{value:"all", text:"المركز كله"}, ...hs], null);
   fillSelect($("newStudentHalaqa"), hs, null);
   const exNames = [...new Set(S.exams.map(e=>e.examinerName).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
   fillSelect($("fExaminer"), exNames.map(n=>({value:n,text:n})), "الكل");
@@ -857,6 +1013,7 @@ function studentRecordHtml(sid, forPrint){
     </table>
     ${forPrint ? `<p>الأجزاء المجتازة: ${juzChips.join("، ") || "لا يوجد"}</p>` : `<div class="chips" style="margin:10px 0">${juzChips.join("")}</div>`}
     ${forPrint ? "" : permitsHtml(sid)}
+    ${forPrint ? "" : dailyRecordHtml(sid)}
     <h2>الاختبارات</h2>
     <table>
       <thead><tr><th>التاريخ</th><th>النوع</th><th>الأجزاء</th><th>المختبر</th><th>المجموع</th><th>النتيجة</th><th>ملاحظات</th></tr></thead>
@@ -1199,6 +1356,235 @@ $("examinersBody").addEventListener("click", ev => {
 });
 
 // ===== الإعدادات =====
+// ===================== السجل اليومي =====================
+const DAY_NAMES = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+const ST_TEXT = { recited:"سمّع", norecite:"لم يسمّع", absent:"غائب", excused:"غائب بعذر" };
+function sessionDays(){ const v = S.settings && S.settings.sessionDays; return Array.isArray(v) && v.length ? v.map(Number) : [6,0,2,4]; }
+function minNewPages(){ const v = parseFloat(S.settings && S.settings.minNewPages); return v >= 0 ? v : 1; }
+function minReviewPages(){ const v = parseFloat(S.settings && S.settings.minReviewPages); return v >= 0 ? v : 7; }
+const fp = n => (Math.round((n||0)*10)/10).toFixed(1);
+function logsOf(sid){ return S.logs.filter(l => l.studentId === sid); }
+function progressOf(sid){ return S.progress.find(p => p.id === sid) || null; }
+function dailyOf(s){ return dailyStatus(sDir(s), sStart(s), passedKeys(s.id), logsOf(s.id), progressOf(s.id), minNewPages()); }
+function dailyTitle(d){
+  switch (d.mode){
+    case "hafiz": return "حافظ للقرآن الكريم";
+    case "needs_start": return "لم تُحدَّد نقطة البداية";
+    case "review_surah": return `مراجعة ${rangeLabel(d.segFrom, d.segTo)} كاملة (إجباري)`;
+    case "review_exam": return d.juzFrom === d.juzTo ? `مراجعة الجزء ${d.juzFrom} للاختبار` : `مراجعة الأجزاء ${d.juzFrom}–${d.juzTo} للاختبار`;
+    default: return `حفظ: الجزء ${d.juz} — التالي من ${posLabel(d.fromG)}`;
+  }
+}
+function isHoliday(date, halaqaId){ return S.holidays.some(h => h.date === date && (h.halaqaId === "all" || h.halaqaId === halaqaId)); }
+function logWarn(l){
+  if (l.status !== "recited") return "";
+  if (l.newMem && (l.newPages||0) < minNewPages() - 1e-9) return "أقل من حد الحفظ";
+  if (!l.newMem && ["review_exam","review_surah","hafiz"].includes(l.mode) && (l.reviewPages||0) < minReviewPages() - 1e-9) return "أقل من حد المراجعة";
+  return "";
+}
+function reviewsText(l){ return (l.reviews||[]).map(r => `${esc(r.label)} (${fp(r.pages)})`).join("، "); }
+
+(() => { const d = new Date(); $("dDate").value = dayKey(d); $("hDate").value = dayKey(d);
+  $("dsFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("dsTo").value = dayKey(d); })();
+["dDate","dHalaqa","dsFrom","dsTo","dsHalaqa"].forEach(id => $(id).addEventListener("input", renderDaily));
+$("dsWeek").onclick = () => { const d = new Date(); const back = (d.getDay() + 1) % 7; const s = new Date(d); s.setDate(d.getDate() - back); $("dsFrom").value = dayKey(s); $("dsTo").value = dayKey(d); renderDaily(); };
+$("dsMonth").onclick = () => { const d = new Date(); $("dsFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("dsTo").value = dayKey(d); renderDaily(); };
+
+function renderDaily(){
+  if (!$("dDate").value) return;
+  const date = $("dDate").value, h = $("dHalaqa").value;
+  const wd = new Date(date + "T12:00:00").getDay();
+  $("dInfo").textContent = `${DAY_NAMES[wd]}${sessionDays().includes(wd) ? "" : " — ليس من أيام التحفيظ"}${isHoliday(date, "all") ? " — إجازة للمركز" : ""}`;
+  const studs = sortAr(S.students.filter(s => !h || s.halaqaId === h));
+  let rec = 0, abs = 0, exc = 0, nor = 0, none = 0, np = 0, rp = 0;
+  const rows = studs.map(s => {
+    const l = S.logs.find(x => x.id === `${s.id}_${date}`);
+    const hol = isHoliday(date, s.halaqaId);
+    if (!l) { if (!hol) none++; } else if (l.status === "recited"){ rec++; np += l.newPages||0; rp += l.reviewPages||0; }
+    else if (l.status === "absent") abs++; else if (l.status === "excused") exc++; else if (l.status === "norecite") nor++;
+    const d = dailyOf(s), w = l ? logWarn(l) : "";
+    return `<tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
+      <td>${l ? ST_TEXT[l.status]||"" : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
+      <td>${l && l.newMem ? `${esc(l.newMem.label)} <b>(${fp(l.newPages)})</b>` : ""}</td>
+      <td>${l && (l.reviews||[]).length ? `${reviewsText(l)} <b>= ${fp(l.reviewPages)}</b>` : ""}</td>
+      <td class="muted">${esc(dailyTitle(d))}</td><td>${esc(l ? l.sheikhName||"" : "")}</td>
+      <td class="actions"><button class="small" data-rec="${s.id}">سجل الطالب</button></td></tr>`;
+  }).join("");
+  $("dBody").innerHTML = rows || `<tr><td colspan="8" class="muted" style="text-align:center">لا يوجد طلاب</td></tr>`;
+  $("dSummary").innerHTML = `<span>سمّع: <b class="pass">${rec}</b></span><span>لم يسمّع: <b>${nor}</b></span><span>غائب: <b class="fail">${abs}</b></span>
+    <span>بعذر: <b>${exc}</b></span><span>لم يُسجّل: <b>${none}</b></span><span>صفحات الحفظ: <b>${fp(np)}</b></span><span>صفحات المراجعة: <b>${fp(rp)}</b></span>`;
+  renderDailyStats(); renderHolidays();
+}
+$("dBody").addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && b.dataset.rec) studentRecord(b.dataset.rec); });
+
+function rangeLogs(){
+  const f = $("dsFrom").value, t = $("dsTo").value, h = $("dsHalaqa").value;
+  return S.logs.filter(l => (!f || l.date >= f) && (!t || l.date <= t) && (!h || l.halaqaId === h));
+}
+function aggLogs(list){
+  const a = { sessions:list.length, recited:0, norecite:0, absent:0, excused:0, newPages:0, reviewPages:0, low:0 };
+  for (const l of list){ a[l.status] = (a[l.status]||0) + 1; if (l.status === "recited"){ a.newPages += l.newPages||0; a.reviewPages += l.reviewPages||0; } if (logWarn(l)) a.low++; }
+  const att = a.recited + a.norecite;
+  a.attendance = a.sessions ? Math.round(att * 1000 / a.sessions) / 10 : 0;
+  return a;
+}
+function aggTable(rows, title){
+  if (!rows.length) return `<p class="muted">لا توجد بيانات</p>`;
+  return `<table><thead><tr><th>${title}</th><th>الجلسات</th><th>سمّع</th><th>لم يسمّع</th><th>غائب</th><th>بعذر</th><th>نسبة الحضور</th>
+    <th>صفحات الحفظ</th><th>صفحات المراجعة</th><th>تحت الحد</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.label)}</td>
+    <td>${r.sessions}</td><td class="pass">${r.recited}</td><td>${r.norecite}</td><td class="fail">${r.absent}</td><td>${r.excused}</td>
+    <td><span class="bar"><span style="width:${r.attendance}%"></span></span>${r.attendance}%</td>
+    <td><b>${fp(r.newPages)}</b></td><td><b>${fp(r.reviewPages)}</b></td><td>${r.low ? `<span class="closed">${r.low}</span>` : 0}</td></tr>`).join("")}</tbody></table>`;
+}
+function groupLogs(list, key){
+  const m = new Map(); for (const l of list){ const k = key(l); if (!m.has(k)) m.set(k, []); m.get(k).push(l); }
+  return [...m.entries()].map(([label, arr]) => ({ label, ...aggLogs(arr) }));
+}
+function frequentAbsence(){
+  const out = [];
+  for (const s of S.students.filter(x => x.status !== "pending")){
+    const ls = logsOf(s.id).filter(l => !isHoliday(l.date, s.halaqaId)).sort((a,b)=>a.date.localeCompare(b.date));
+    let n = 0; for (let i = ls.length - 1; i >= 0 && (ls[i].status === "absent"); i--) n++;
+    if (n >= 2) out.push({ s, n, last: ls[ls.length-1].date });
+  }
+  return out.sort((a,b)=>b.n-a.n);
+}
+function renderDailyStats(){
+  const list = rangeLogs();
+  $("dsByHalaqa").innerHTML = aggTable(groupLogs(list, l => halaqaName(l.halaqaId)).sort((a,b)=>b.newPages-a.newPages), "الحلقة");
+  $("dsByStudent").innerHTML = aggTable(groupLogs(list, l => l.studentName||"").sort((a,b)=>b.newPages-a.newPages), "الطالب");
+  const fa = frequentAbsence();
+  $("dsAbsent").innerHTML = fa.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>غياب متتالي</th><th>آخر جلسة</th><th></th></tr></thead><tbody>${
+    fa.map(x => `<tr><td>${esc(x.s.name)}</td><td>${esc(halaqaName(x.s.halaqaId))}</td><td class="fail">${x.n}</td><td>${x.last}</td>
+    <td><button class="small" data-rec="${x.s.id}">سجل الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`;
+}
+$("dsAbsent").addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && b.dataset.rec) studentRecord(b.dataset.rec); });
+$("dsExcel").onclick = () => {
+  const list = rangeLogs().sort((a,b)=>a.date.localeCompare(b.date));
+  if (!list.length){ toast("لا توجد بيانات"); return; }
+  const wb = newBook();
+  const sh = (rows, t) => rows.map(r => ({ [t]: r.label, "الجلسات": r.sessions, "سمّع": r.recited, "لم يسمّع": r.norecite, "غائب": r.absent,
+    "بعذر": r.excused, "نسبة الحضور %": r.attendance, "صفحات الحفظ": +fp(r.newPages), "صفحات المراجعة": +fp(r.reviewPages), "تحت الحد": r.low }));
+  addSheet(wb, sh(groupLogs(list, l => halaqaName(l.halaqaId)), "الحلقة"), "حسب الحلقة");
+  addSheet(wb, sh(groupLogs(list, l => l.studentName||""), "الطالب"), "حسب الطالب");
+  addSheet(wb, list.map(l => ({ "التاريخ": l.date, "الطالب": l.studentName, "الحلقة": halaqaName(l.halaqaId), "الحالة": ST_TEXT[l.status]||"",
+    "الحفظ الجديد": l.newMem ? l.newMem.label : "", "صفحات الحفظ": +fp(l.newPages), "المراجعة": (l.reviews||[]).map(r=>r.label).join("، "),
+    "صفحات المراجعة": +fp(l.reviewPages), "الشيخ": l.sheikhName||"", "جلسة إضافية": l.extraDay ? "نعم" : "", "ملاحظات": l.notes||"" })), "الجلسات");
+  XLSX.writeFile(wb, `السجل-اليومي-${$("dsFrom").value}-${$("dsTo").value}.xlsx`);
+};
+
+// ----- الإجازات
+function renderHolidays(){
+  const list = [...S.holidays].sort((a,b)=>b.date.localeCompare(a.date)).slice(0, 60);
+  $("hBody").innerHTML = list.length ? list.map(h => `<tr><td>${esc(h.date)}</td><td>${h.halaqaId === "all" ? "<b>المركز كله</b>" : esc(halaqaName(h.halaqaId))}</td>
+    <td>${esc(h.reason||"")}</td><td class="muted">${esc(h.by||"")}</td><td class="actions"><button class="small danger" data-delh="${h.id}">حذف</button></td></tr>`).join("")
+    : `<tr><td colspan="5" class="muted" style="text-align:center">لا توجد إجازات</td></tr>`;
+}
+$("addHolidayBtn").onclick = async () => {
+  const date = $("hDate").value, hid = $("hHalaqa").value || "all";
+  if (!date){ toast("اختر التاريخ"); return; }
+  await setDoc(doc(db,"holidays",`${hid}_${date}`), { date, halaqaId: hid, reason: $("hReason").value.trim(), by: "الإدارة" });
+  $("hReason").value = ""; toast("تمت إضافة الإجازة");
+};
+$("hBody").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b || !b.dataset.delh) return;
+  confirmDlg("حذف هذه الإجازة؟", async () => { await deleteDoc(doc(db,"holidays",b.dataset.delh)); toast("تم الحذف"); });
+});
+
+// ----- المشايخ
+function renderSheikhs(){
+  $("shBody").innerHTML = sortAr([...S.sheikhs]).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(halaqaName(x.halaqaId))}</td>
+    <td><code>${esc(x.pin)}</code></td><td class="actions"><button class="small" data-edsh="${x.id}">تعديل</button>
+    <button class="small danger" data-delsh="${x.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="4" class="muted" style="text-align:center">لا يوجد مشايخ</td></tr>`;
+}
+const pinOk = p => /^\d{4,6}$/.test(p);
+$("addShBtn").onclick = async () => {
+  const name = $("newShName").value.trim(), halaqaId = $("newShHalaqa").value, pin = $("newShPin").value.trim();
+  if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة"); return; }
+  if (!pinOk(pin)){ toast("الرمز 4 إلى 6 أرقام"); return; }
+  await addDoc(collection(db,"sheikhs"), { name, halaqaId, pin });
+  $("newShName").value = ""; $("newShPin").value = ""; toast("تمت الإضافة");
+};
+$("shBody").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  const x = S.sheikhs.find(y => y.id === (b.dataset.edsh || b.dataset.delsh));
+  if (b.dataset.delsh) confirmDlg(`حذف حساب ${x.name}؟`, async () => { await deleteDoc(doc(db,"sheikhs",x.id)); toast("تم الحذف"); });
+  if (b.dataset.edsh){
+    const hs = sortAr([...S.halaqat]).map(h=>`<option value="${h.id}" ${h.id===x.halaqaId?'selected':''}>${esc(h.name)}</option>`).join("");
+    openDialog("تعديل حساب شيخ", `<div class="grid2"><label>الاسم<input id="eshName" value="${esc(x.name)}"></label>
+      <label>الحلقة<select id="eshHalaqa">${hs}</select></label><label>رمز الدخول<input id="eshPin" value="${esc(x.pin)}"></label></div>
+      <div class="err" id="eshErr"></div>`, [
+      { text:"حفظ", cls:"primary", onClick: async () => {
+        const pin = $("eshPin").value.trim(); if (!pinOk(pin)){ $("eshErr").textContent = "الرمز 4 إلى 6 أرقام"; return false; }
+        await updateDoc(doc(db,"sheikhs",x.id), { name: $("eshName").value.trim(), halaqaId: $("eshHalaqa").value, pin }); toast("تم الحفظ");
+      }}, { text:"إلغاء" }]);
+  }
+});
+
+// ----- إعدادات السجل اليومي
+function renderDailySettings(){
+  const days = sessionDays();
+  $("sessDays").innerHTML = '<span class="muted">أيام التحفيظ:</span>' + [6,0,1,2,3,4,5].map(d =>
+    `<label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" value="${d}" ${days.includes(d)?'checked':''}> ${DAY_NAMES[d]}</label>`).join("");
+  $("minNewPages").value = minNewPages(); $("minReviewPages").value = minReviewPages();
+}
+$("saveDailySettingsBtn").onclick = async () => {
+  const days = [...$("sessDays").querySelectorAll("input:checked")].map(i => +i.value);
+  const mn = parseFloat($("minNewPages").value), mr = parseFloat($("minReviewPages").value);
+  if (!days.length){ toast("اختر يوماً واحداً على الأقل"); return; }
+  if (!(mn >= 0) || !(mr >= 0)){ toast("أدخل أرقاماً صحيحة"); return; }
+  await setDoc(doc(db,"settings","app"), { sessionDays: days, minNewPages: mn, minReviewPages: mr }, { merge:true });
+  toast("تم الحفظ");
+};
+
+// ----- السجل اليومي داخل سجل الطالب
+function dailyRecordHtml(sid){
+  const st = S.students.find(x => x.id === sid); if (!st) return "";
+  const d = dailyOf(st), pr = progressOf(sid);
+  const ls = logsOf(sid).sort((a,b)=>b.date.localeCompare(a.date));
+  const now = new Date(), wkStart = new Date(now); wkStart.setDate(now.getDate() - ((now.getDay() + 1) % 7));
+  const mStart = dayKey(new Date(now.getFullYear(), now.getMonth(), 1)), wKey = dayKey(wkStart);
+  const wk = aggLogs(ls.filter(l => l.date >= wKey)), mo = aggLogs(ls.filter(l => l.date >= mStart));
+  const start = pr ? (pr.lastG ? `آخر آية محفوظة عند البداية: ${posLabel(pr.lastG)}` : "بدأ الجزء من أوله") : "لم تُحدَّد";
+  return `<h2>السجل اليومي</h2>
+    <table class="detail">
+      <tr><td>الحالة الآن</td><td><b>${esc(dailyTitle(d))}</b></td></tr>
+      <tr><td>نقطة البداية</td><td>${esc(start)} <button class="small" data-setstart="${sid}">تعديل</button></td></tr>
+      <tr><td>هذا الأسبوع</td><td>حفظ ${fp(wk.newPages)} ص · مراجعة ${fp(wk.reviewPages)} ص · حضور ${wk.attendance}% (${wk.sessions} جلسة)</td></tr>
+      <tr><td>هذا الشهر</td><td>حفظ ${fp(mo.newPages)} ص · مراجعة ${fp(mo.reviewPages)} ص · حضور ${mo.attendance}% (${mo.sessions} جلسة)</td></tr>
+    </table>
+    <table><thead><tr><th>التاريخ</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>الشيخ</th><th></th></tr></thead><tbody>
+    ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${l.extraDay ? ' <span class="muted">(إضافية)</span>' : ""}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
+      <td>${l.newMem ? `${esc(l.newMem.label)} (${fp(l.newPages)})` : ""}</td><td>${reviewsText(l)}${(l.reviews||[]).length ? ` = ${fp(l.reviewPages)}` : ""}</td>
+      <td>${esc(l.sheikhName||"")}</td><td><button class="small danger" data-dellog="${l.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">لا توجد جلسات</td></tr>`}
+    </tbody></table>`;
+}
+$("dlgBody").addEventListener("click", async ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  const sid = $("dlgBody").dataset.sid;
+  if (b.dataset.dellog){
+    if (!confirm("حذف هذه الجلسة من السجل اليومي؟")) return;
+    await deleteDoc(doc(db,"logs",b.dataset.dellog)); toast("تم الحذف"); setTimeout(()=>studentRecord(sid), 300);
+  }
+  if (b.dataset.setstart){
+    const st = S.students.find(x => x.id === b.dataset.setstart);
+    const opts = Array.from({length:114},(_,i)=>i+1).map(i=>`<option value="${i}">${i}. ${Q.names[i-1]}</option>`).join("");
+    openDialog("نقطة البداية في السجل اليومي", `
+      <p class="muted">آخر آية حفظها الطالب قبل بدء السجل اليومي. يكمل التطبيق بعدها تلقائياً.</p>
+      <label style="display:block;margin-bottom:8px"><input type="radio" name="spm" value="fresh" checked> بدأ الجزء الحالي من أوله</label>
+      <label style="display:block;margin-bottom:8px"><input type="radio" name="spm" value="ayah"> آخر آية حفظها:</label>
+      <div class="grid2"><label>السورة<select id="spS">${opts}</select></label><label>الآية<input type="number" id="spA" min="1" value="1"></label></div>
+      <div class="err" id="spErr"></div>`, [
+      { text:"حفظ", cls:"primary", onClick: async () => {
+        const mode = document.querySelector('input[name="spm"]:checked').value;
+        let lastG = null;
+        if (mode === "ayah"){ const s = +$("spS").value, a = +$("spA").value; if (!(a >= 1 && a <= Q.counts[s-1])){ $("spErr").textContent = `الآية من 1 إلى ${Q.counts[s-1]}`; return false; } lastG = gidOf(s, a); }
+        await setDoc(doc(db,"progress",st.id), { halaqaId: st.halaqaId, lastG, fresh: lastG === null, setBy: "الإدارة" }, { merge:true });
+        toast("تم الحفظ"); setTimeout(()=>studentRecord(st.id), 300);
+      }}, { text:"إلغاء" }]);
+  }
+});
+
 $("saveStallBtn").onclick = async () => {
   const v = parseInt($("stallDays").value);
   if (!(v > 0)){ toast("أدخل عدد أيام صحيح"); return; }
