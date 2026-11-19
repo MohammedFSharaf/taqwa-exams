@@ -193,6 +193,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         'sheikhId': widget.sheikh['id'],
         'sheikhName': _sheikhName,
         'extraDay': !_isSessionDay,
+        'holiday': _holidayAll || _holidayHalaqa,
         'mode': st.mode,
         'dir': s.pathDir,
         'notes': '',
@@ -245,7 +246,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   }
 
   String? _warning(Map<String, dynamic> l, DailyStatus st) {
-    if (l['status'] != 'recited') return null;
+    if (l['status'] != 'recited' || l['holiday'] == true) return null;
     final np = ((l['newPages'] ?? 0) as num).toDouble();
     final rp = ((l['reviewPages'] ?? 0) as num).toDouble();
     if (l['newMem'] is Map && np < _minNew - 1e-9) return 'أقل من الحد الأدنى للحفظ (${fmt(_minNew)} صفحة)';
@@ -327,7 +328,9 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
             ),
           const SizedBox(height: 6),
           Text(
-            'سُجّل $done · لم يُسجّل $todo · غياب $absent${pending > 0 ? ' · بانتظار الرفع $pending' : ''}',
+            (_holidayAll || _holidayHalaqa)
+                ? 'يوم إجازة — التسجيل اختياري · سمّع $done${pending > 0 ? ' · بانتظار الرفع $pending' : ''}'
+                : 'سُجّل $done · لم يُسجّل $todo · غياب $absent${pending > 0 ? ' · بانتظار الرفع $pending' : ''}',
             style: const TextStyle(color: Colors.white, fontSize: 13),
           ),
           const SizedBox(height: 6),
@@ -348,7 +351,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   /// شو سمّع الطالب بالضبط وكم صفحة
   String _shortSummary(Map<String, dynamic> l) {
     if (l['status'] != 'recited') return '';
-    final lines = <String>[];
+    final lines = <String>[if (l['holiday'] == true) 'جلسة بيوم إجازة'];
     final nm = l['newMem'];
     if (nm is Map) {
       lines.add('سمّع: ${nm['label'] ?? ''} (${fmtPages(((l['newPages'] ?? 0) as num).toDouble())} ص)');
@@ -460,12 +463,19 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                 if (todo.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
-                    child: Text('لم يُسجّل بعد (${todo.length})',
+                    child: Text('${(_holidayAll || _holidayHalaqa) ? 'إجازة' : 'لم يُسجّل بعد'} (${todo.length})',
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
                   ),
+                  if (!(_holidayAll || _holidayHalaqa))
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+                      child: Text('اضغط مطوّلاً على الطالب لتسجيل الغياب', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    )
+                  else
                   const Padding(
                     padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
-                    child: Text('اضغط مطوّلاً على الطالب لتسجيل الغياب', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    child: Text('لا يُحسب غياب اليوم. من يسمّع يُسجَّل له حفظه ومراجعته.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF9A6700))),
                   ),
                   for (final s in todo) _studentRow(s, numbers[s.id] ?? 0),
                 ],
@@ -529,8 +539,11 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     } else if (l != null && status == 'recited') {
       sub = '${st.title}\n${_shortSummary(l)}';
     }
+    final holiday = _holidayAll || _holidayHalaqa;
     Widget action;
-    if (l != null) {
+    if (l == null && holiday && st.mode == 'needs_start') {
+      action = const Text('إجازة', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold));
+    } else if (l != null) {
       action = Text(statusText(status), style: TextStyle(color: stColor, fontWeight: FontWeight.bold));
     } else if (st.mode == 'needs_start') {
       action = OutlinedButton(onPressed: () => _open(s, st, l), child: const Text('تحديد البداية'));
@@ -1049,6 +1062,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     }
 
     final req = _todayRequired;
+    final holidayToday = _c.base['holiday'] == true;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 10),
@@ -1057,6 +1071,14 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (holidayToday)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: const Color(0xFFFFF4DE), borderRadius: BorderRadius.circular(8)),
+              child: const Text('يوم إجازة — التسجيل اختياري ولا يُحسب غياب',
+                  style: TextStyle(color: _amber, fontSize: 12.5, fontWeight: FontWeight.bold)),
+            ),
           Row(children: [
             Expanded(child: Text(_st.title, style: const TextStyle(color: brandGreen, fontSize: 13.5))),
             if (pctText != null) Text(pctText, style: const TextStyle(color: brandGreen, fontSize: 13)),
