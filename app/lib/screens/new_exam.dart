@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../daily.dart';
 import '../logic.dart';
 import '../repo.dart';
 import 'exam.dart';
@@ -27,6 +28,19 @@ class _NewExamScreenState extends State<NewExamScreen> {
   List<Map<String, dynamic>>? _sExams; // كل اختبارات الطالب المختار
   StreamSubscription? _permSub;
   List<Map<String, dynamic>> _permits = []; // أذونات الإدارة لإعادة اختبار ناجح
+  StreamSubscription? _logSub, _progSub;
+  List<Map<String, dynamic>> _sLogs = [];
+  Map<String, dynamic>? _sProg;
+
+  /// حالة الطالب في السجل اليومي (إن وُجد له سجل)
+  DailyStatus? get _daily {
+    if (_student == null || _sExams == null || (_sLogs.isEmpty && _sProg == null)) return null;
+    final passed = {
+      for (final e in _sExams!)
+        if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
+    };
+    return dailyStatus(_student!.pathDir, _student!.pathStart, passed, _sLogs, _sProg, 1);
+  }
 
   /// آخر اختبار سابق لنفس الطالب بنفس النوع والأجزاء
   Map<String, dynamic>? get _prev {
@@ -111,7 +125,17 @@ class _NewExamScreenState extends State<NewExamScreen> {
     _permSub?.cancel();
     _permSub = null;
     _permits = [];
+    _logSub?.cancel();
+    _progSub?.cancel();
+    _sLogs = [];
+    _sProg = null;
     if (_student == null) return;
+    _logSub = Repo.I.studentLogs(_student!.id).listen((l) {
+      if (mounted) setState(() => _sLogs = l);
+    }, onError: (_) {});
+    _progSub = Repo.I.studentProgress(_student!.id).listen((p) {
+      if (mounted) setState(() => _sProg = p);
+    }, onError: (_) {});
     _permSub = Repo.I.permitsFor(_student!.id).listen((list) {
       if (!mounted) return;
       setState(() => _permits = list);
@@ -128,6 +152,8 @@ class _NewExamScreenState extends State<NewExamScreen> {
   void dispose() {
     _sub?.cancel();
     _permSub?.cancel();
+    _logSub?.cancel();
+    _progSub?.cancel();
     super.dispose();
   }
 
@@ -243,6 +269,18 @@ class _NewExamScreenState extends State<NewExamScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 15, height: 1.5)),
+          if (_daily != null && s != null && s.type == 1)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                _daily!.mode == 'review_exam' && _daily!.ready
+                    ? 'السجل اليومي: أنهى حفظ الجزء ويراجعه — جاهز للاختبار'
+                    : _daily!.mode == 'memorize' || _daily!.mode == 'review_surah'
+                        ? 'السجل اليومي: ما زال يحفظ هذا الجزء'
+                        : '',
+                style: const TextStyle(color: Color(0xFF1F4E8C)),
+              ),
+            ),
         ],
       ),
     );

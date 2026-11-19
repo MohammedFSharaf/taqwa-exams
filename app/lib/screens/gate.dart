@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../repo.dart';
 import 'examiner.dart';
 import 'home.dart';
+import 'sheikh.dart';
 import 'widgets.dart';
 
 /// شاشة البداية: تسجيل دخول الجهاز ثم كلمة السر الموحدة
@@ -18,6 +19,7 @@ class _GateScreenState extends State<GateScreen> {
   bool _loading = true;
   bool _noNet = false;
   String? _error;
+  String _role = Repo.I.lastRole ?? 'examiner';
 
   @override
   void initState() {
@@ -59,6 +61,7 @@ class _GateScreenState extends State<GateScreen> {
       return;
     }
     if (!mounted) return;
+    Repo.I.setLastRole('examiner');
     final next = Repo.I.examinerName == null ? const ExaminerScreen(first: true) : const HomeScreen();
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => next));
   }
@@ -95,6 +98,35 @@ class _GateScreenState extends State<GateScreen> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 10,
+                              children: [
+                                ChoiceChip(
+                                  label: const Text('مختبر', style: TextStyle(fontSize: 16)),
+                                  selected: _role == 'examiner',
+                                  onSelected: (_) => setState(() => _role = 'examiner'),
+                                ),
+                                ChoiceChip(
+                                  label: const Text('شيخ حلقة', style: TextStyle(fontSize: 16)),
+                                  selected: _role == 'sheikh',
+                                  onSelected: (_) => setState(() => _role = 'sheikh'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            if (_role == 'sheikh') ...[
+                              const Text('السجل اليومي للحلقة',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: brandGreen)),
+                              const SizedBox(height: 16),
+                              BigButton(
+                                icon: Icons.person,
+                                text: 'دخول الشيخ',
+                                onPressed: () => Navigator.of(context)
+                                    .push(MaterialPageRoute(builder: (_) => const SheikhLoginScreen())),
+                              ),
+                            ] else ...[
                             const Text('اختبارات الحفظ',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: brandGreen)),
@@ -113,6 +145,7 @@ class _GateScreenState extends State<GateScreen> {
                               ),
                             const SizedBox(height: 20),
                             BigButton(icon: Icons.login, text: 'دخول', onPressed: _check),
+                            ],
                           ],
                         ),
             ),

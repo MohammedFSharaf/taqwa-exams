@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'env.dart';
+
 /// يفحص إذا في نسخة كاملة جديدة من التطبيق على GitHub (للتحديثات التي تحتاج تنزيل)
 /// التحديثات العادية تصل تلقائياً عبر Shorebird بدون تنزيل.
 const _latestUrl = 'https://api.github.com/repos/MohammedFSharaf/taqwa-exams/releases/latest';
@@ -12,7 +14,7 @@ const _latestUrl = 'https://api.github.com/repos/MohammedFSharaf/taqwa-exams/rel
 bool _checked = false;
 
 Future<void> checkForUpdate(BuildContext context) async {
-  if (_checked) return;
+  if (_checked || kBeta) return;
   _checked = true;
   try {
     final info = await PackageInfo.fromPlatform();

@@ -57,7 +57,7 @@ class Repo {
   /// يبقي القوائم محدّثة في ذاكرة الجهاز كلما توفر الإنترنت
   void startSync() {
     if (_subs.isNotEmpty) return;
-    for (final c in ['halaqat', 'students', 'examiners', 'exams', 'permits']) {
+    for (final c in ['halaqat', 'students', 'examiners', 'exams', 'permits', 'sheikhs', 'holidays']) {
       _subs.add(db.collection(c).snapshots().listen((_) {}, onError: (_) {}));
     }
     _subs.add(db.collection('settings').doc('app').snapshots().listen((d) {
@@ -158,6 +158,69 @@ class Repo {
       .where('studentId', isEqualTo: studentId)
       .snapshots()
       .map((s) => s.docs.map((d) => d.data()).toList());
+
+  // ===== السجل اليومي =====
+  List<Map<String, dynamic>> _docs(QuerySnapshot<Map<String, dynamic>> s) =>
+      s.docs.map((d) => <String, dynamic>{'id': d.id, ...d.data()}).toList();
+
+  Stream<List<Map<String, dynamic>>> sheikhs() => db.collection('sheikhs').snapshots().map(_docs);
+  Stream<Map<String, dynamic>> settings() =>
+      db.collection('settings').doc('app').snapshots().map((d) => d.data() ?? <String, dynamic>{});
+  Stream<List<Map<String, dynamic>>> holidays() => db.collection('holidays').snapshots().map(_docs);
+  Stream<List<Map<String, dynamic>>> halaqaLogs(String halaqaId) => db
+      .collection('logs')
+      .where('halaqaId', isEqualTo: halaqaId)
+      .snapshots(includeMetadataChanges: true)
+      .map((s) => s.docs
+          .map((d) => <String, dynamic>{'id': d.id, '_pending': d.metadata.hasPendingWrites, ...d.data()})
+          .toList());
+  Stream<List<Map<String, dynamic>>> halaqaProgress(String halaqaId) =>
+      db.collection('progress').where('halaqaId', isEqualTo: halaqaId).snapshots().map(_docs);
+  Stream<List<Map<String, dynamic>>> halaqaExams(String halaqaId) =>
+      db.collection('exams').where('halaqaId', isEqualTo: halaqaId).snapshots().map(_docs);
+  Stream<List<Map<String, dynamic>>> studentLogs(String studentId) =>
+      db.collection('logs').where('studentId', isEqualTo: studentId).snapshots().map(_docs);
+  Stream<Map<String, dynamic>?> studentProgress(String studentId) =>
+      db.collection('progress').doc(studentId).snapshots().map((d) => d.data());
+
+  void _fire(Future<void> f) => f.then((_) {}, onError: (Object e) {});
+
+  /// سجل الطالب لليوم: مستند واحد لكل طالب في كل يوم
+  void saveLog(String studentId, String date, Map<String, dynamic> data) {
+    _fire(db.collection('logs').doc('${studentId}_$date').set({
+      ...data,
+      'studentId': studentId,
+      'date': date,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'clientAt': DateTime.now().millisecondsSinceEpoch,
+    }));
+  }
+
+  /// نقطة البداية / آخر آية محفوظة
+  void setProgress(String studentId, String halaqaId, int? lastG, String by) {
+    _fire(db.collection('progress').doc(studentId).set({
+      'halaqaId': halaqaId,
+      'lastG': lastG,
+      'fresh': lastG == null,
+      'setBy': by,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)));
+  }
+
+  void setHalaqaHoliday(String halaqaId, String date, bool on, String by) {
+    final ref = db.collection('holidays').doc('${halaqaId}_$date');
+    if (on) {
+      _fire(ref.set({'halaqaId': halaqaId, 'date': date, 'reason': 'إجازة الحلقة', 'by': by}));
+    } else {
+      _fire(ref.delete());
+    }
+  }
+
+  String? get sheikhId => prefs.getString('sheikhId');
+  Future<void> setSheikhId(String? id) =>
+      id == null ? prefs.remove('sheikhId') : prefs.setString('sheikhId', id);
+  String? get lastRole => prefs.getString('lastRole');
+  Future<void> setLastRole(String r) => prefs.setString('lastRole', r);
 
   Stream<QuerySnapshot<Map<String, dynamic>>> myExams() => db
       .collection('exams')

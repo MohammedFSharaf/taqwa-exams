@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../logic.dart';
+import '../env.dart';
 import '../slogan.dart';
 
 const Color brandGreen = Color(0xFF1F5F46);
@@ -44,6 +45,13 @@ class AppHeader extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Image.memory(sloganPng, height: 46, fit: BoxFit.contain, gaplessPlayback: true),
+          if (kBeta)
+            Container(
+              margin: const EdgeInsets.only(top: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              decoration: BoxDecoration(color: brandGold, borderRadius: BorderRadius.circular(8)),
+              child: const Text('نسخة تجريبية', style: TextStyle(color: Color(0xFF174A36), fontWeight: FontWeight.bold)),
+            ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

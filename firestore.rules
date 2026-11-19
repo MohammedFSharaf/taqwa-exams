@@ -46,6 +46,32 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ===== السجل اليومي =====
+    // حسابات المشايخ: الإدارة تكتب، والتطبيق يقرأ
+    match /sheikhs/{id} {
+      allow read: if isApp();
+      allow write: if isAdmin();
+    }
+    // سجل كل طالب لكل يوم
+    match /logs/{id} {
+      allow read: if isApp();
+      allow create, update: if isApp();
+      allow delete: if isAdmin();
+    }
+    // نقطة بداية الطالب في السجل اليومي
+    match /progress/{id} {
+      allow read: if isApp();
+      allow create, update: if isApp();
+      allow delete: if isAdmin();
+    }
+    // الإجازات: إجازة المركز من الإدارة فقط، وإجازة الحلقة من الشيخ أو الإدارة
+    match /holidays/{id} {
+      allow read: if isApp();
+      allow create: if isAdmin() || (isApp() && request.resource.data.halaqaId != 'all');
+      allow delete: if isAdmin() || (isApp() && resource.data.halaqaId != 'all');
+      allow update: if isAdmin();
+    }
+
     // الاختبارات: التطبيق يقرأ الكل (لمعرفة الإعادة) ويضيف فقط، والتعديل والحذف للإدارة
     match /exams/{id} {
       allow read: if isApp();
