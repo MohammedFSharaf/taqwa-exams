@@ -12,11 +12,30 @@ import 'env.dart';
 const _latestUrl = 'https://api.github.com/repos/MohammedFSharaf/taqwa-exams/releases/latest';
 const _releasesUrl = 'https://api.github.com/repos/MohammedFSharaf/taqwa-exams/releases';
 
-bool _checked = false;
+DateTime? _lastCheck;
+bool _showing = false;
+
+/// مفتاح التنقل العام لفحص التحديث عند الرجوع للتطبيق
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
+/// يفحص التحديث كلما رجع المستخدم للتطبيق من الخلفية
+class UpdateWatcher with WidgetsBindingObserver {
+  static final UpdateWatcher I = UpdateWatcher._();
+  UpdateWatcher._();
+  void start() => WidgetsBinding.instance.addObserver(this);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx != null) checkForUpdate(ctx);
+  }
+}
 
 Future<void> checkForUpdate(BuildContext context) async {
-  if (_checked) return;
-  _checked = true;
+  // لا نفحص أكثر من مرة كل 5 دقائق، ولا نفتح نافذتين
+  final now = DateTime.now();
+  if (_showing || (_lastCheck != null && now.difference(_lastCheck!).inMinutes < 5)) return;
+  _lastCheck = now;
   try {
     final info = await PackageInfo.fromPlatform();
     final current = int.tryParse(info.buildNumber) ?? 0;
@@ -46,6 +65,7 @@ Future<void> checkForUpdate(BuildContext context) async {
     if (assets.isEmpty) return;
     final url = (assets.first as Map)['browser_download_url'].toString();
     if (!context.mounted) return;
+    _showing = true;
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -65,5 +85,7 @@ Future<void> checkForUpdate(BuildContext context) async {
     );
   } catch (_) {
     // بدون إنترنت أو أي خطأ: نتجاهل بهدوء
+  } finally {
+    _showing = false;
   }
 }
