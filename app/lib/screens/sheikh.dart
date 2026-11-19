@@ -6,6 +6,7 @@ import '../daily.dart';
 import '../logic.dart';
 import '../quran_data.dart';
 import '../repo.dart';
+import '../update_check.dart';
 import 'gate.dart';
 import 'widgets.dart';
 
@@ -146,6 +147,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => checkForUpdate(context));
     void on<T>(Stream<T> s, void Function(T) f) => _subs.add(s.listen((v) {
           if (mounted) setState(() => f(v));
         }, onError: (_) {}));
