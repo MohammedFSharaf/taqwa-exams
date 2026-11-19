@@ -1376,8 +1376,9 @@ function dailyTitle(d){
   }
 }
 function isHoliday(date, halaqaId){ return S.holidays.some(h => h.date === date && (h.halaqaId === "all" || h.halaqaId === halaqaId)); }
+function logHoliday(l){ return l.holiday === true || isHoliday(l.date, l.halaqaId); }
 function logWarn(l){
-  if (l.status !== "recited") return "";
+  if (l.status !== "recited" || logHoliday(l)) return "";
   if (l.newMem && (l.newPages||0) < minNewPages() - 1e-9) return "أقل من حد الحفظ";
   if (!l.newMem && ["review_exam","review_surah","hafiz"].includes(l.mode) && (l.reviewPages||0) < minReviewPages() - 1e-9) return "أقل من حد المراجعة";
   return "";
@@ -1401,10 +1402,11 @@ function renderDaily(){
     const l = S.logs.find(x => x.id === `${s.id}_${date}`);
     const hol = isHoliday(date, s.halaqaId);
     if (!l) { if (!hol) none++; } else if (l.status === "recited"){ rec++; np += l.newPages||0; rp += l.reviewPages||0; }
+    else if (hol) { /* يوم إجازة: لا يُحسب غياب */ }
     else if (l.status === "absent") abs++; else if (l.status === "excused") exc++; else if (l.status === "norecite") nor++;
     const d = dailyOf(s), w = l ? logWarn(l) : "";
     return `<tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
-      <td>${l ? ST_TEXT[l.status]||"" : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
+      <td>${l ? (ST_TEXT[l.status]||"") + (logHoliday(l) ? ' <span class="muted">(يوم إجازة)</span>' : "") : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
       <td>${l && l.newMem ? `${esc(l.newMem.label)} <b>(${fp(l.newPages)})</b>` : ""}</td>
       <td>${l && (l.reviews||[]).length ? `${reviewsText(l)} <b>= ${fp(l.reviewPages)}</b>` : ""}</td>
       <td class="muted">${esc(dailyTitle(d))}</td><td>${esc(l ? l.sheikhName||"" : "")}</td>
@@ -1422,8 +1424,13 @@ function rangeLogs(){
   return S.logs.filter(l => (!f || l.date >= f) && (!t || l.date <= t) && (!h || l.halaqaId === h));
 }
 function aggLogs(list){
-  const a = { sessions:list.length, recited:0, norecite:0, absent:0, excused:0, newPages:0, reviewPages:0, low:0 };
-  for (const l of list){ a[l.status] = (a[l.status]||0) + 1; if (l.status === "recited"){ a.newPages += l.newPages||0; a.reviewPages += l.reviewPages||0; } if (logWarn(l)) a.low++; }
+  // أيام الإجازة: تُحسب صفحاتها، ولا تدخل في الحضور والغياب
+  const a = { sessions:0, recited:0, norecite:0, absent:0, excused:0, newPages:0, reviewPages:0, low:0, holidaySessions:0 };
+  for (const l of list){
+    if (l.status === "recited"){ a.newPages += l.newPages||0; a.reviewPages += l.reviewPages||0; }
+    if (logHoliday(l)){ a.holidaySessions++; continue; }
+    a.sessions++; a[l.status] = (a[l.status]||0) + 1; if (logWarn(l)) a.low++;
+  }
   const att = a.recited + a.norecite;
   a.attendance = a.sessions ? Math.round(att * 1000 / a.sessions) / 10 : 0;
   return a;
@@ -1554,7 +1561,7 @@ function dailyRecordHtml(sid){
       <tr><td>هذا الشهر</td><td>حفظ ${fp(mo.newPages)} ص · مراجعة ${fp(mo.reviewPages)} ص · حضور ${mo.attendance}% (${mo.sessions} جلسة)</td></tr>
     </table>
     <table><thead><tr><th>التاريخ</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>الشيخ</th><th></th></tr></thead><tbody>
-    ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${l.extraDay ? ' <span class="muted">(إضافية)</span>' : ""}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
+    ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${logHoliday(l) ? ' <span class="muted">(إجازة)</span>' : (l.extraDay ? ' <span class="muted">(إضافية)</span>' : "")}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
       <td>${l.newMem ? `${esc(l.newMem.label)} (${fp(l.newPages)})` : ""}</td><td>${reviewsText(l)}${(l.reviews||[]).length ? ` = ${fp(l.reviewPages)}` : ""}</td>
       <td>${esc(l.sheikhName||"")}</td><td><button class="small danger" data-dellog="${l.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">لا توجد جلسات</td></tr>`}
     </tbody></table>`;
