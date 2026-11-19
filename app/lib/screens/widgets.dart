@@ -98,3 +98,25 @@ class BigButton extends StatelessWidget {
         : OutlinedButton.icon(onPressed: onPressed, icon: Icon(icon), label: Text(text), style: style);
   }
 }
+
+/// عنوان الشريط العلوي مع شعار المركز الصغير
+class BrandTitle extends StatelessWidget {
+  final String title;
+  const BrandTitle(this.title, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+          child: ClipOval(child: Image.asset('assets/logo.png', width: 28, height: 28, fit: BoxFit.contain)),
+        ),
+        const SizedBox(width: 8),
+        Flexible(child: Text(title, overflow: TextOverflow.ellipsis)),
+      ],
+    );
+  }
+}

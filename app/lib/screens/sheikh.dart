@@ -44,7 +44,7 @@ class _SheikhLoginScreenState extends State<SheikhLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('دخول الشيخ')),
+      appBar: AppBar(title: const BrandTitle('دخول الشيخ')),
       body: StreamBuilder<List<Halaqa>>(
         stream: Repo.I.halaqat(),
         builder: (context, hs) {
@@ -127,6 +127,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   Map<String, dynamic> _settings = {};
   String _halaqaName = '';
   bool _loaded = false;
+  bool _showDone = false;
+  String _q = '';
 
   String get _halaqaId => (widget.sheikh['halaqaId'] ?? '').toString();
   String get _sheikhName => (widget.sheikh['name'] ?? '').toString();
@@ -274,113 +276,154 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     if (ok == true) Repo.I.setHalaqaHoliday(_halaqaId, _today, on, _sheikhName);
   }
 
-  Widget _header(DateTime now) {
+  Widget _header(DateTime now, int done, int todo, int absent, int pending, int total) {
     final names = _sheikhs
         .where((x) => x['halaqaId'] == _halaqaId)
         .map((x) => (x['name'] ?? '').toString())
         .where((n) => n.isNotEmpty)
         .join('، ');
-    final holiday = _holidayAll
-        ? 'اليوم إجازة للمركز'
-        : _holidayHalaqa
-            ? 'اليوم إجازة للحلقة'
-            : null;
+    const white70 = TextStyle(color: Color(0xFFDCEBE3), fontSize: 13);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF174A36), brandGreen],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_halaqaName.isEmpty ? 'الحلقة' : _halaqaName,
-              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text('المشايخ: ${names.isEmpty ? _sheikhName : names}',
-              style: const TextStyle(color: Color(0xFFDCEBE3), fontSize: 14)),
-          const Divider(color: Colors.white24, height: 18),
-          Row(
-            children: [
-              Text(dayName(now),
-                  style: const TextStyle(color: brandGold, fontSize: 17, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              Text('${now.day}/${now.month}/${now.year}',
-                  textDirection: TextDirection.ltr,
-                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-              const Spacer(),
-              if (!_isSessionDay)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: brandGold, borderRadius: BorderRadius.circular(8)),
-                  child: const Text('جلسة إضافية',
-                      style: TextStyle(color: Color(0xFF174A36), fontSize: 12, fontWeight: FontWeight.bold)),
+          Row(children: [
+            Expanded(
+              child: Text(_halaqaName.isEmpty ? 'الحلقة' : _halaqaName,
+                  style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
+            ),
+            Text('${dayName(now)} ', style: const TextStyle(color: brandGold, fontSize: 15, fontWeight: FontWeight.bold)),
+            Text('${now.day}/${now.month}/${now.year}',
+                textDirection: TextDirection.ltr,
+                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+          ]),
+          Row(children: [
+            Expanded(
+                child: Text('المشايخ: ${names.isEmpty ? _sheikhName : names}',
+                    style: white70, overflow: TextOverflow.ellipsis)),
+            if (!_holidayAll)
+              InkWell(
+                onTap: _toggleHoliday,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Text(_holidayHalaqa ? 'إلغاء الإجازة' : 'إجازة',
+                      style: const TextStyle(color: brandGold, fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
-            ],
-          ),
-          if (holiday != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(holiday, style: const TextStyle(color: brandGold, fontWeight: FontWeight.bold)),
-            ),
-          if (!_holidayAll)
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton(
-                onPressed: _toggleHoliday,
-                child: Text(_holidayHalaqa ? 'إلغاء الإجازة' : 'إجازة اليوم للحلقة',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
               ),
+          ]),
+          if (_holidayAll || _holidayHalaqa || !_isSessionDay)
+            Text(
+              [
+                if (_holidayAll) 'اليوم إجازة للمركز',
+                if (!_holidayAll && _holidayHalaqa) 'اليوم إجازة للحلقة',
+                if (!_isSessionDay) 'جلسة إضافية (ليس يوم تحفيظ)',
+              ].join(' — '),
+              style: const TextStyle(color: brandGold, fontSize: 13, fontWeight: FontWeight.bold),
             ),
+          const SizedBox(height: 6),
+          Text(
+            'سُجّل $done · لم يُسجّل $todo · غياب $absent${pending > 0 ? ' · بانتظار الرفع $pending' : ''}',
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: total == 0 ? 0 : done / total,
+              minHeight: 6,
+              color: brandGold,
+              backgroundColor: Colors.white24,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _counts(int recorded, int notRecorded, int absent, int pending) {
-    Widget item(String n, String label, Color c) => Expanded(
-          child: Column(children: [
-            Text(n, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: c)),
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-          ]),
-        );
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-      child: Row(children: [
-        item('$recorded', 'سُجّل', brandGreen),
-        item('$notRecorded', 'لم يُسجّل', Colors.black87),
-        item('$absent', 'غياب', Colors.red.shade700),
-        if (pending > 0) item('$pending', 'بانتظار الرفع', const Color(0xFF9A6700)),
-      ]),
-    );
+  String _shortSummary(Map<String, dynamic> l) {
+    if (l['status'] != 'recited') return '';
+    final np = ((l['newPages'] ?? 0) as num).toDouble();
+    final rp = ((l['reviewPages'] ?? 0) as num).toDouble();
+    return [
+      if (l['newMem'] is Map) 'حفظ ${fmtPages(np)} ص',
+      if (rp > 0) 'مراجعة ${fmtPages(rp)} ص',
+    ].join(' · ');
   }
 
-  Widget _section(String t, int n) => Padding(
-        padding: const EdgeInsets.only(top: 6, bottom: 4, right: 4, left: 4),
-        child: Text('$t ($n)', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
-      );
+  Future<void> _longPress(Student s, DailyStatus st, Map<String, dynamic>? l) async {
+    final r = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(s.name),
+        children: [
+          for (final e in const {'absent': 'غائب', 'excused': 'غائب بعذر', 'norecite': 'حضر ولم يسمّع'}.entries)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, e.key),
+              child: Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(e.value, style: const TextStyle(fontSize: 16))),
+            ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, 'details'),
+            child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 6),
+                child: Text('تسجيل مفصّل', style: TextStyle(fontSize: 16, color: brandGreen))),
+          ),
+        ],
+      ),
+    );
+    if (r == null) return;
+    if (r == 'details') {
+      _open(s, st, l);
+    } else {
+      _quickStatus(s, st, r);
+    }
+  }
+
+  Future<void> _markRestAbsent(List<Student> todo) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تسجيل الباقين غائب؟'),
+        content: Text('سيُسجَّل ${todo.length} طالب غائبين لهذا اليوم. يمكن تعديل أي واحد بعدها.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأكيد')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    for (final s in todo) {
+      _quickStatus(s, _statusOf(s), 'absent');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final students = [..._students];
+    final all = [..._students];
+    final numbers = {for (var i = 0; i < all.length; i++) all[i].id: i + 1};
+    final students = _q.isEmpty ? all : all.where((s) => s.name.contains(_q)).toList();
     final todo = students.where((s) => _todayLog(s.id) == null).toList();
     final done = students.where((s) => _todayLog(s.id) != null).toList();
-    final absent = done.where((s) {
+    final doneAll = all.where((s) => _todayLog(s.id) != null).toList();
+    final todoAll = all.where((s) => _todayLog(s.id) == null).toList();
+    final absent = doneAll.where((s) {
       final l = _todayLog(s.id)!;
       return l['status'] == 'absent' || l['status'] == 'excused';
     }).length;
     final pending = _logs.where((l) => l['_pending'] == true).length;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('السجل اليومي'),
+        title: const BrandTitle('السجل اليومي'),
         actions: [
           TextButton(
             onPressed: () {
@@ -395,26 +438,71 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 20),
               children: [
-                _header(now),
-                _counts(done.length, todo.length, absent, pending),
-                if (students.isEmpty)
+                _header(now, doneAll.length, todoAll.length, absent, pending, all.length),
+                const SizedBox(height: 8),
+                if (all.length > 6)
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'بحث عن طالب',
+                      prefixIcon: Icon(Icons.search),
+                      isDense: true,
+                    ),
+                    onChanged: (v) => setState(() => _q = v.trim()),
+                  ),
+                if (all.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(24),
                     child: Text('لا يوجد طلاب في الحلقة', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
                   ),
-                if (todo.isNotEmpty) _section('لم يُسجّل بعد', todo.length),
-                for (final s in todo) _studentCard(s),
-                if (done.isNotEmpty) _section('تم التسجيل', done.length),
-                for (final s in done) _studentCard(s),
-                const SizedBox(height: 20),
+                if (todo.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
+                    child: Text('لم يُسجّل بعد (${todo.length})',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+                    child: Text('اضغط مطوّلاً على الطالب لتسجيل الغياب', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ),
+                  for (final s in todo) _studentRow(s, numbers[s.id] ?? 0),
+                ],
+                if (done.isNotEmpty)
+                  InkWell(
+                    onTap: () => setState(() => _showDone = !_showDone),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
+                      child: Row(children: [
+                        Expanded(
+                          child: Text('تم التسجيل (${done.length})',
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
+                        ),
+                        Text(_showDone ? 'إخفاء' : 'عرض',
+                            style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold)),
+                      ]),
+                    ),
+                  ),
+                if (_showDone || _q.isNotEmpty)
+                  for (final s in done) _studentRow(s, numbers[s.id] ?? 0),
+                if (todoAll.isNotEmpty && !_holidayAll && !_holidayHalaqa && _q.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(46),
+                        foregroundColor: Colors.red.shade700,
+                      ),
+                      onPressed: () => _markRestAbsent(todoAll),
+                      child: Text('تسجيل الباقين غائب (${todoAll.length})'),
+                    ),
+                  ),
               ],
             ),
     );
   }
 
-  Widget _studentCard(Student s) {
+  Widget _studentRow(Student s, int number) {
     final st = _statusOf(s);
     final l = _todayLog(s.id);
     final warn = l == null ? null : _warning(l, st);
@@ -433,59 +521,56 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       _ => Colors.grey,
     };
     final canQuick = l == null && st.mode == 'memorize' && st.fromG != null && st.suggestToG != null;
+    String sub = st.title;
+    if (canQuick) {
+      sub = '${st.title}\nالمقترح: ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!)} '
+          '(${fmtPages(memRangePages(s.pathDir, st.fromG!, st.suggestToG!))} ص)';
+    } else if (l != null && status == 'recited') {
+      sub = '${st.title}\n${_shortSummary(l)}';
+    }
+    Widget action;
+    if (l != null) {
+      action = Text(statusText(status), style: TextStyle(color: stColor, fontWeight: FontWeight.bold));
+    } else if (st.mode == 'needs_start') {
+      action = OutlinedButton(onPressed: () => _open(s, st, l), child: const Text('تحديد البداية'));
+    } else if (canQuick) {
+      action = FilledButton(onPressed: () => _quickRecite(s, st), child: const Text('سمّع'));
+    } else {
+      action = FilledButton.tonal(onPressed: () => _open(s, st, l), child: const Text('تسجيل'));
+    }
     return Card(
       color: Colors.white,
       surfaceTintColor: Colors.white,
-      margin: const EdgeInsets.symmetric(vertical: 4),
+      margin: const EdgeInsets.symmetric(vertical: 3),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _open(s, st, l),
+        onLongPress: () => _longPress(s, st, l),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 2),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
             children: [
-              Row(children: [
-                Expanded(
-                  child: Text(s.name + (s.pending ? ' (جديد)' : ''),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-                Text(status == null ? 'لم يُسجّل' : statusText(status),
-                    style: TextStyle(color: stColor, fontWeight: FontWeight.bold)),
-              ]),
-              const SizedBox(height: 2),
-              Text(st.title, style: TextStyle(color: modeColor, fontSize: 14)),
-              if (l != null && status == 'recited')
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(_summary(l), style: const TextStyle(color: Colors.black87, fontSize: 13)),
-                ),
-              if (warn != null) Text(warn, style: const TextStyle(color: Color(0xFF9A6700), fontSize: 13)),
-              if (l != null && l['_pending'] == true)
-                const Text('بانتظار الرفع', style: TextStyle(color: Color(0xFF9A6700), fontSize: 12)),
-              Row(
-                children: [
-                  if (canQuick)
-                    Expanded(
-                      child: TextButton(
-                        style: TextButton.styleFrom(alignment: AlignmentDirectional.centerStart),
-                        onPressed: () => _quickRecite(s, st),
-                        child: Text(
-                          'سمّع ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!)} (${fmtPages(memRangePages(s.pathDir, st.fromG!, st.suggestToG!))} ص)',
-                          maxLines: 2,
-                        ),
-                      ),
-                    )
-                  else
-                    const Spacer(),
-                  if (l == null && st.mode != 'needs_start')
-                    TextButton(onPressed: () => _quickStatus(s, st, 'absent'), child: const Text('غائب')),
-                  TextButton(
-                    onPressed: () => _open(s, st, l),
-                    child: Text(st.mode == 'needs_start' ? 'تحديد البداية' : (l == null ? 'تفاصيل' : 'تعديل')),
-                  ),
-                ],
+              CircleAvatar(
+                radius: 15,
+                backgroundColor: const Color(0xFFE8F3EC),
+                child: Text('$number', style: const TextStyle(color: brandGreen, fontSize: 13, fontWeight: FontWeight.bold)),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s.name + (s.pending ? ' (جديد)' : ''),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    Text(sub, style: TextStyle(color: modeColor, fontSize: 12.5, height: 1.4)),
+                    if (warn != null) Text(warn, style: const TextStyle(color: Color(0xFF9A6700), fontSize: 12)),
+                    if (l != null && l['_pending'] == true)
+                      const Text('بانتظار الرفع', style: TextStyle(color: Color(0xFF9A6700), fontSize: 11.5)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              action,
             ],
           ),
         ),
@@ -886,13 +971,13 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   Widget build(BuildContext context) {
     final s = widget.student;
     if (_st.mode == 'needs_start') {
-      return Scaffold(appBar: AppBar(title: Text(s.name)), body: _startPointView());
+      return Scaffold(appBar: AppBar(title: BrandTitle(s.name)), body: _startPointView());
     }
     final recited = _att == 'recited';
     final sugg = _suggestedReview;
     final suggAdded = sugg != null && _reviews.any((r) => r['fromG'] == sugg['fromG'] && r['toG'] == sugg['toG']);
     return Scaffold(
-      appBar: AppBar(title: Text(s.name)),
+      appBar: AppBar(title: BrandTitle(s.name)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

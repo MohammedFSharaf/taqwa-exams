@@ -49,7 +49,7 @@ class GuideScreen extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('نظام الاختبارات'),
+          title: const BrandTitle('نظام الاختبارات'),
           bottom: const TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,

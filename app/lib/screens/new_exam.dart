@@ -294,7 +294,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('اختبار جديد')),
+      appBar: AppBar(title: const BrandTitle('اختبار جديد')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -58,7 +58,7 @@ class MyExamsScreen extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('الاختبارات'),
+          title: const BrandTitle('الاختبارات'),
           bottom: const TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets.dart';
+
 import '../repo.dart';
 import 'home.dart';
 
@@ -31,7 +33,7 @@ class _ExaminerScreenState extends State<ExaminerScreen> {
   Widget build(BuildContext context) {
     final current = Repo.I.examinerName;
     return Scaffold(
-      appBar: AppBar(title: const Text('اسم المختبر')),
+      appBar: AppBar(title: const BrandTitle('اسم المختبر')),
       body: StreamBuilder<List<String>>(
         stream: Repo.I.examiners(),
         builder: (context, snap) {

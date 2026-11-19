@@ -157,7 +157,7 @@ class _ExamScreenState extends State<ExamScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(s.studentName),
+          title: BrandTitle(s.studentName),
           actions: [
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 14),

@@ -155,7 +155,7 @@ class _FinishScreenState extends State<FinishScreen> {
     final total = _total;
     final passed = total != null && total >= passMark;
     return Scaffold(
-      appBar: AppBar(title: const Text('نتيجة الاختبار')),
+      appBar: AppBar(title: const BrandTitle('نتيجة الاختبار')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
