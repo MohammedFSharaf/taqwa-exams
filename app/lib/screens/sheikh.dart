@@ -350,14 +350,20 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     );
   }
 
+  /// شو سمّع الطالب بالضبط وكم صفحة
   String _shortSummary(Map<String, dynamic> l) {
     if (l['status'] != 'recited') return '';
-    final np = ((l['newPages'] ?? 0) as num).toDouble();
-    final rp = ((l['reviewPages'] ?? 0) as num).toDouble();
-    return [
-      if (l['newMem'] is Map) 'حفظ ${fmtPages(np)} ص',
-      if (rp > 0) 'مراجعة ${fmtPages(rp)} ص',
-    ].join(' · ');
+    final lines = <String>[];
+    final nm = l['newMem'];
+    if (nm is Map) {
+      lines.add('حفظ: ${nm['label'] ?? ''} (${fmtPages(((l['newPages'] ?? 0) as num).toDouble())} ص)');
+    }
+    final revs = ((l['reviews'] as List?) ?? []).whereType<Map>().toList();
+    if (revs.isNotEmpty) {
+      final labels = revs.map((r) => (r['label'] ?? '').toString()).join('، ');
+      lines.add('مراجعة: $labels (${fmtPages(((l['reviewPages'] ?? 0) as num).toDouble())} ص)');
+    }
+    return lines.isEmpty ? 'سمّع' : lines.join('\n');
   }
 
   Future<void> _longPress(Student s, DailyStatus st, Map<String, dynamic>? l) async {
@@ -722,6 +728,17 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     return null;
   }
 
+  /// المطلوب من الطالب اليوم بالضبط
+  String? get _todayRequired {
+    if (_st.mode == 'memorize' && _st.fromG != null && _st.suggestToG != null) {
+      return 'الحفظ التالي: ${memRangeLabel(_dir, _st.fromG!, _st.suggestToG!)} '
+          '(${fmtPages(memRangePages(_dir, _st.fromG!, _st.suggestToG!))} صفحة)';
+    }
+    final r = _suggestedReview;
+    if (r != null) return 'المراجعة المطلوبة: ${r['label']} (${fmtPages((r['pages'] as num).toDouble())} صفحة)';
+    return null;
+  }
+
   void _addReview(Map<String, dynamic> r) => setState(() {
         _reviews.add(r);
         _ensureNewAfterSurahReview();
@@ -982,7 +999,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _box(
-            _st.title,
+            _todayRequired == null ? _st.title : '${_st.title}\n$_todayRequired',
             _st.mode == 'review_surah'
                 ? Colors.red.shade50
                 : _st.mode == 'memorize'
