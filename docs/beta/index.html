@@ -11,25 +11,14 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
   :root{
-    --green:#1f5f46; --green-dark:#174a36; --line:#d9dde1; --text:#222; --muted:#6b7280;
-    --bg:#f6f7f8; --red:#b42318; --amber:#9a6700;
+    --green:#1f5f46; --green-dark:#174a36; --gold:#b8913a; --line:#e1e6e3; --text:#1e2a25; --muted:#6b7a73;
+    --bg:#f4f6f5; --red:#b23a3a; --amber:#a86a0c;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:'Cairo',Tahoma,sans-serif;background:var(--bg);color:var(--text);font-size:15px}
-  header{background:var(--green);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
-  header h1{margin:0;font-size:19px;font-weight:700}
-  header .brand{display:flex;align-items:center;gap:12px}
-  header .brand > img{width:46px;height:46px;object-fit:contain;background:#fff;border-radius:50%;padding:2px}
   #login .logo{width:130px;height:130px;object-fit:contain;margin-bottom:6px}
   #login .slogan{width:260px;max-width:90%;margin:4px auto 8px;display:block}
-  header .brand .slogan{height:30px;width:auto;display:block;margin-top:3px;background:none;border-radius:0;padding:0}
-  header button{background:transparent;border:1px solid rgba(255,255,255,.6);color:#fff}
-  nav{background:#fff;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;padding:0 12px}
-  nav button{background:none;border:none;border-bottom:3px solid transparent;border-radius:0;padding:12px 14px;color:var(--muted);font-weight:600}
-  nav button.active{color:var(--green);border-bottom-color:var(--green)}
-  nav .badge{background:var(--red);color:#fff;border-radius:10px;padding:0 7px;font-size:12px;margin-right:4px}
-  main{padding:20px;max-width:1300px;margin:auto}
-  .card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px;overflow-x:auto}
   h2{font-size:17px;margin:0 0 12px}
   button{font-family:inherit;font-size:14px;cursor:pointer;border-radius:5px;padding:7px 14px;border:1px solid var(--line);background:#fff;color:var(--text)}
   button.primary{background:var(--green);border-color:var(--green);color:#fff}
@@ -41,8 +30,8 @@
   .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
   .row label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
   table{width:100%;border-collapse:collapse;background:#fff}
-  th,td{border-bottom:1px solid var(--line);padding:8px 7px;text-align:right;vertical-align:middle}
-  th{background:#f0f2f3;font-weight:600;font-size:13px;white-space:nowrap}
+  th,td{border-bottom:1px solid #edf0ee;padding:8px 7px;text-align:right;vertical-align:middle}
+  th{background:#f5f7f6;font-weight:700;font-size:12.5px;color:var(--muted);white-space:nowrap}
   tr:hover td{background:#fafbfb}
   .muted{color:var(--muted);font-size:13px}
   .pass{color:var(--green);font-weight:700}
@@ -81,6 +70,79 @@
   .progress span{display:block;height:100%;background:var(--green)}
   .toast{position:fixed;bottom:20px;left:20px;background:#222;color:#fff;padding:10px 16px;border-radius:6px;opacity:0;transition:.3s}
   .toast.show{opacity:1}
+
+  /* ===== التخطيط: قائمة جانبية ===== */
+  .side{position:fixed;top:0;right:0;bottom:0;width:240px;background:var(--green-dark);color:#e6efe9;overflow-y:auto;z-index:40;display:flex;flex-direction:column}
+  .side .brand{text-align:center;padding:18px 14px 12px;border-bottom:1px solid rgba(255,255,255,.12)}
+  .side .brand .lg{width:66px;height:66px;border-radius:50%;background:#fff;border:2px solid var(--gold);padding:3px;object-fit:contain}
+  .side .brand b{display:block;color:#fff;font-size:13.5px;line-height:1.6;margin-top:6px}
+  .side .brand .slogan{height:26px;margin-top:2px}
+  .betatag{display:inline-block;background:#E9C46A;color:#174A36;border-radius:6px;padding:0 8px;font-size:12px;font-weight:700;margin-top:4px}
+  #tabs{padding:6px 0 10px;flex:1}
+  #tabs .grp{font-size:11.5px;color:#9fb8ad;padding:12px 20px 3px;font-weight:700}
+  #tabs button{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;border-right:3px solid transparent;border-radius:0;color:#e6efe9;padding:7px 20px;font-size:14px;text-align:right}
+  #tabs button:hover{background:rgba(255,255,255,.06)}
+  #tabs button.active{background:rgba(255,255,255,.11);border-right-color:var(--gold);color:#fff;font-weight:700}
+  .badge{background:var(--gold);color:#fff;border-radius:10px;padding:0 7px;font-size:11.5px;line-height:19px;font-weight:700}
+  .badge.red{background:#c0504d}
+  .side .logout{margin:8px 20px 18px;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
+  .content{margin-right:240px;min-height:100vh}
+  .topbar{display:flex;align-items:center;gap:12px;padding:16px 24px 4px}
+  .topbar h1{margin:0;font-size:21px}
+  .topbar .sub{color:var(--muted);font-size:13px}
+  .topbar .menu{display:none;font-size:20px;padding:4px 12px}
+  main{padding:12px 24px 24px;max-width:1400px}
+  .shade{display:none}
+  /* لوحة اليوم */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+  .kpi .l{color:var(--muted);font-size:12.5px}
+  .kpi .v{font-size:26px;font-weight:700;line-height:1.45}
+  .kpi .s{font-size:12px;color:var(--muted)}
+  .kpi .s.up{color:var(--green)} .kpi .s.dn{color:var(--red)}
+  .homegrid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+  .card h2 .lnk,.lnk{font-size:12.5px;color:var(--green);font-weight:400;cursor:pointer;background:none;border:0;padding:0}
+  .card h2{display:flex;justify-content:space-between;align-items:center}
+  .pill{display:inline-block;border-radius:10px;padding:0 9px;font-size:12px;line-height:21px;white-space:nowrap}
+  .p-ok{background:#e3f1ea;color:var(--green)} .p-no{background:#f7e4e4;color:var(--red)} .p-wa{background:#fbf0dc;color:var(--amber)} .p-gr{background:#eef0ef;color:var(--muted)}
+  .alert{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid #f0f2f1;cursor:pointer;border-radius:6px}
+  .alert:hover{background:#f7f9f8}
+  .alert:last-child{border-bottom:0}
+  .alert .dot{width:9px;height:9px;border-radius:50%;margin-top:8px;flex-shrink:0}
+  .alert b{font-size:14px}
+  .hbar{height:7px;background:#edf0ee;border-radius:4px;overflow:hidden;min-width:80px}
+  .hbar i{display:block;height:100%;background:var(--green)}
+  tr.click{cursor:pointer}
+  a.name{color:var(--text);text-decoration:none;cursor:pointer;border-bottom:1px dashed #b9c3be}
+  a.name:hover{color:var(--green)}
+  /* ملف الطالب */
+  .pagehead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .pagehead h2{font-size:22px;margin:2px 0}
+  .crumb{font-size:13px;color:var(--muted)}
+  .info4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:14px}
+  .info4 .muted{font-size:12px}
+  .crumb a{color:var(--green);cursor:pointer}
+  .steps{display:grid;grid-template-columns:repeat(20,1fr);gap:3px;margin:8px 0 6px}
+  .steps span{height:16px;border-radius:3px;background:#edf0ee}
+  .steps span.on{background:var(--green)} .steps span.cur{background:var(--gold)} .steps span.ex{background:#cfd8d3}
+  @media (max-width:900px){
+    .side{transform:translateX(100%);transition:transform .2s;box-shadow:-4px 0 18px rgba(0,0,0,.2)}
+    body.nav-open .side{transform:none}
+    body.nav-open .shade{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:30}
+    .content{margin-right:0}
+    .topbar{background:var(--green-dark);color:#fff;padding:10px 14px;position:sticky;top:0;z-index:20}
+    .topbar .sub{color:#cfe0d7}
+    .topbar h1{font-size:17px}
+    .topbar .menu{display:inline-block;background:transparent;border:0;color:#fff}
+    main{padding:12px}
+    .kpis{grid-template-columns:1fr 1fr;gap:8px}
+    .kpi .v{font-size:22px}
+    .homegrid{grid-template-columns:1fr}
+    .steps{grid-template-columns:repeat(10,1fr)}
+    .info4{grid-template-columns:1fr 1fr}
+    .hm{display:none}
+  }
+  @media print{.side,.topbar{display:none}.content{margin:0}}
 </style>
 </head>
 <body>
@@ -100,23 +162,68 @@
 
 <!-- اللوحة -->
 <div id="app" class="hidden">
-  <header>
-    <div class="brand"><img src="logo.png" alt="" title="تصميم وتطوير: Eng. Mohammed F Sharaf"><div><h1>إدارة اختبارات مركز التقوى <span style="background:#E9C46A;color:#174A36;border-radius:6px;padding:0 8px;font-size:14px">نسخة تجريبية</span></h1><img class="slogan" src="slogan_gold.png" alt="نحو مدرسة قرآنية"></div></div>
-    <button id="logoutBtn">خروج</button>
-  </header>
-  <nav id="tabs">
-    <button data-tab="exams" class="active">الاختبارات</button>
-    <button data-tab="retests">بانتظار الإعادة <span class="badge hidden" id="retestBadge"></span></button>
-    <button data-tab="stats">الإحصائيات والتقارير</button>
-    <button data-tab="daily">السجل اليومي</button>
-    <button data-tab="sheikhs">المشايخ</button>
-    <button data-tab="pending">طلاب جدد <span class="badge hidden" id="pendingBadge"></span></button>
-    <button data-tab="students">الطلاب</button>
-    <button data-tab="halaqat">الحلقات</button>
-    <button data-tab="examiners">المختبرين</button>
-    <button data-tab="settings">الإعدادات</button>
-  </nav>
+  <div class="shade" id="shade"></div>
+  <aside class="side" id="side">
+    <div class="brand">
+      <img class="lg" src="logo.png" alt="" title="تصميم وتطوير: Eng. Mohammed F Sharaf">
+      <b>مركز التقوى لتعليم وتحفيظ القرآن الكريم</b>
+      <img class="slogan" src="slogan_gold.png" alt="نحو مدرسة قرآنية">
+      <span class="betatag">نسخة تجريبية</span>
+    </div>
+    <nav id="tabs">
+      <button data-tab="home" class="active">لوحة اليوم</button>
+      <div class="grp">الاختبارات</div>
+      <button data-tab="exams">سجل الاختبارات</button>
+      <button data-tab="retests">بانتظار الإعادة <span class="badge red hidden" id="retestBadge"></span></button>
+      <button data-tab="permits">تصاريح الإعادة <span class="badge hidden" id="permitBadge"></span></button>
+      <div class="grp">التسميع اليومي</div>
+      <button data-tab="daily">سجل اليوم</button>
+      <button data-tab="dstats">إحصائيات التسميع</button>
+      <button data-tab="absence">الغياب المتكرر <span class="badge hidden" id="absentBadge"></span></button>
+      <button data-tab="holidays">الإجازات</button>
+      <div class="grp">الطلاب والحلقات</div>
+      <button data-tab="students">الطلاب</button>
+      <button data-tab="pending">طلاب جدد <span class="badge hidden" id="pendingBadge"></span></button>
+      <button data-tab="halaqat">الحلقات</button>
+      <div class="grp">الكادر</div>
+      <button data-tab="examiners">المختبرين</button>
+      <button data-tab="sheikhs">المشايخ</button>
+      <div class="grp">التقارير</div>
+      <button data-tab="report">التقرير الشهري</button>
+      <button data-tab="stats">إحصائيات الاختبارات</button>
+      <div class="grp"></div>
+      <button data-tab="settings">الإعدادات</button>
+    </nav>
+    <button id="logoutBtn" class="logout">خروج</button>
+  </aside>
+  <div class="content">
+  <div class="topbar">
+    <button class="menu" id="menuBtn" aria-label="القائمة">☰</button>
+    <div><h1 id="pageTitle">لوحة اليوم</h1><div class="sub" id="pageSub"></div></div>
+  </div>
   <main>
+    <!-- لوحة اليوم -->
+    <section id="tab-home">
+      <div class="kpis" id="homeKpis"></div>
+      <div class="homegrid">
+        <div class="card"><h2>التسميع اليومي حسب الحلقة <button class="lnk" data-go="daily">سجل اليوم ←</button></h2><div id="homeHalaqat"></div></div>
+        <div class="card"><h2>تنبيهات تحتاج متابعة</h2><div id="homeAlerts"></div></div>
+      </div>
+      <div class="card"><h2>آخر الاختبارات <button class="lnk" data-go="exams">كل الاختبارات ←</button></h2><div id="homeExams"></div></div>
+    </section>
+
+    <!-- تصاريح الإعادة -->
+    <section id="tab-permits" class="hidden">
+      <div class="card">
+        <h2>تصاريح إعادة الاختبارات الناجحة</h2>
+        <p class="muted">الاختبار الناجح لا يُعاد إلا بتصريح من الإدارة. يُعطى التصريح من ملف الطالب، ويسمح بإعادة واحدة وينتهي تلقائياً بعدها.</p>
+        <div id="permitsList"></div>
+      </div>
+    </section>
+
+    <!-- ملف الطالب -->
+    <section id="tab-student" class="hidden"><div id="stuPage"></div></section>
+
     <!-- الاختبارات -->
     <section id="tab-exams">
       <div class="card">
@@ -179,20 +286,30 @@
           <button id="stAll">كل الفترات</button>
         </div>
       </div>
-      <div class="card">
-        <h2>التقرير الشهري</h2>
-        <div class="row">
-          <label>الشهر<input type="month" id="repMonth"></label>
-          <button class="primary" id="repExcel">تصدير Excel</button>
-          <button id="repPrint">طباعة / PDF</button>
-        </div>
-      </div>
       <div class="card"><h2>تقدّم الطلاب في المسار</h2><div id="stPath"></div></div>
       <div class="stats" id="stSummary"></div>
       <div class="card"><h2>حسب الحلقة</h2><div id="stByHalaqa"></div></div>
       <div class="card"><h2>حسب المختبر</h2><div id="stByExaminer"></div></div>
       <div class="card"><h2>حسب نوع الاختبار</h2><div id="stByType"></div></div>
       <div class="card"><h2>حسب الشهر</h2><div id="stByMonth"></div></div>
+    </section>
+
+    <!-- التقرير الشهري -->
+    <section id="tab-report" class="hidden">
+      <div class="card">
+        <h2>التقرير الشهري للاختبارات</h2>
+        <p class="muted">ملخص الشهر حسب الحلقة والمختبر ونوع الاختبار، مع قائمة الاختبارات والطلاب بانتظار الإعادة.</p>
+        <div class="row">
+          <label>الشهر<input type="month" id="repMonth"></label>
+          <button class="primary" id="repExcel">تصدير Excel</button>
+          <button id="repPrint">طباعة / PDF</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>تقرير التسميع اليومي</h2>
+        <p class="muted">إحصائيات الحضور والصفحات لأي فترة، مع تصدير Excel.</p>
+        <button data-go="dstats">فتح إحصائيات التسميع ←</button>
+      </div>
     </section>
 
     <!-- السجل اليومي -->
@@ -212,6 +329,10 @@
           <tbody id="dBody"></tbody>
         </table>
       </div>
+    </section>
+
+    <!-- إحصائيات التسميع -->
+    <section id="tab-dstats" class="hidden">
       <div class="card">
         <h2>إحصائيات فترة</h2>
         <div class="row">
@@ -224,8 +345,20 @@
         </div>
         <h2 style="margin-top:14px">حسب الحلقة</h2><div id="dsByHalaqa"></div>
         <h2 style="margin-top:14px">حسب الطالب</h2><div id="dsByStudent"></div>
-        <h2 style="margin-top:14px">غياب متكرر (آخر جلستين أو أكثر غياب)</h2><div id="dsAbsent"></div>
       </div>
+    </section>
+
+    <!-- الغياب المتكرر -->
+    <section id="tab-absence" class="hidden">
+      <div class="card">
+        <h2>غياب متكرر</h2>
+        <p class="muted">طلاب غابوا آخر جلستين أو أكثر متتاليتين (بدون عذر، ولا تُحسب أيام الإجازة).</p>
+        <div id="dsAbsent"></div>
+      </div>
+    </section>
+
+    <!-- الإجازات -->
+    <section id="tab-holidays" class="hidden">
       <div class="card">
         <h2>الإجازات</h2>
         <div class="row" style="margin-bottom:10px">
@@ -359,6 +492,7 @@
       </div>
     </section>
   </main>
+  </div>
 </div>
 
 <!-- نافذة عامة -->
@@ -585,6 +719,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+const DAY_NAMES_ = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 const S = { halaqat:[], students:[], examiners:[], exams:[], permits:[], sheikhs:[], logs:[], progress:[], holidays:[], settings:{} };
 let unsubs = [];
 const $ = id => document.getElementById(id);
@@ -620,6 +755,7 @@ onAuthStateChanged(auth, user => {
   if (user && user.email === ADMIN_EMAIL){
     $("login").classList.add("hidden"); $("app").classList.remove("hidden");
     startListeners();
+    route();
   } else {
     if (user) signOut(auth);
     $("app").classList.add("hidden"); $("login").classList.remove("hidden");
@@ -646,13 +782,42 @@ function startListeners(){
   }));
 }
 
-// ===== التبويبات =====
-document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
-  document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");
-  document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
-  $("tab-"+b.dataset.tab).classList.remove("hidden");
+// ===== التنقل =====
+let curTab = "home", curStudent = null;
+const TAB_TITLE = {};
+document.querySelectorAll("#tabs button").forEach(b => {
+  TAB_TITLE[b.dataset.tab] = b.childNodes[0].textContent.trim();
+  b.onclick = () => go(b.dataset.tab);
 });
+TAB_TITLE.student = "ملف الطالب";
+function go(tab, push = true){
+  if (!$("tab-"+tab)) tab = "home";
+  curTab = tab;
+  const navTab = tab === "student" ? "students" : tab;
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x.dataset.tab === navTab));
+  document.querySelectorAll("main section").forEach(x => x.classList.add("hidden"));
+  $("tab-"+tab).classList.remove("hidden");
+  $("pageTitle").textContent = TAB_TITLE[tab] || "";
+  document.body.classList.remove("nav-open");
+  const hash = tab === "student" ? "#student/" + curStudent : "#" + tab;
+  if (push && location.hash !== hash) history.pushState(null, "", hash);
+  if (tab === "home") renderHome();
+  if (tab === "student") renderStudentPage();
+  window.scrollTo(0, 0);
+}
+function route(){
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h.startsWith("student/")){ curStudent = h.slice(8); go("student", false); }
+  else go(h || "home", false);
+}
+window.addEventListener("popstate", route);
+$("menuBtn").onclick = () => document.body.classList.toggle("nav-open");
+$("shade").onclick = () => document.body.classList.remove("nav-open");
+document.addEventListener("click", ev => {
+  const g = ev.target.closest("[data-go]"); if (g){ ev.preventDefault(); go(g.dataset.go); return; }
+  const r = ev.target.closest("a[data-rec],tr[data-rec]"); if (r){ ev.preventDefault(); studentRecord(r.dataset.rec); }
+});
+(() => { const d = new Date(); $("pageSub").textContent = `${DAY_NAMES_[d.getDay()]} ${d.getDate()} / ${d.getMonth()+1} / ${d.getFullYear()}`; })();
 
 // ===== النافذة =====
 function openDialog(title, bodyHtml, buttons, wide){
@@ -679,6 +844,9 @@ function confirmDlg(msg, onYes){
 function renderAll(){
   fillSelects();
   renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers(); renderRetests(); renderStats(); renderDaily(); renderSheikhs();
+  renderPermits(); renderBadges();
+  if (curTab === "home") renderHome();
+  if (curTab === "student") renderStudentPage();
 }
 
 function fillSelect(sel, items, allText){
@@ -738,7 +906,7 @@ function renderExams(){
   $("examsBody").innerHTML = list.length ? list.map(e => `
     <tr>
       <td>${esc(dateText(e))}</td>
-      <td>${esc(e.studentName)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td>
+      <td>${nameLink(e.studentId, e.studentName)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td>
       <td>${esc(e.halaqaName)}</td>
       <td>${esc(TYPES[e.type]||e.type)}</td>
       <td class="muted">${esc(juzLabel(e))}</td>
@@ -924,7 +1092,7 @@ function renderRetests(){
     <tr><td>${esc(e.studentName)}</td><td>${esc(e.halaqaName)}</td><td>${esc(TYPES[e.type]||e.type)}</td>
     <td class="muted">${esc(juzLabel(e))}</td><td>${esc(dateText(e))}</td><td>${daysSince(e)} يوم</td>
     <td>${attempts}</td><td class="${resultOf(e)}">${resultText(e)}</td>
-    <td class="actions"><button class="small" data-rec="${e.studentId}">سجل الطالب</button></td></tr>`).join("")
+    <td class="actions"><button class="small" data-rec="${e.studentId}">ملف الطالب</button></td></tr>`).join("")
     : `<tr><td colspan="9" class="muted" style="text-align:center">لا يوجد طلاب بانتظار الإعادة</td></tr>`;
 }
 $("rHalaqa").addEventListener("input", renderRetests);
@@ -959,9 +1127,9 @@ function permitsHtml(sid){
     <table><thead><tr><th>الاختبار</th><th>تاريخ النجاح</th><th>المجموع</th><th>الإذن</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="muted">الإذن يسمح بإعادة واحدة، وينتهي تلقائياً بعد أن يُعاد الاختبار. يصل للجوالات عند اتصالها بالإنترنت.</p>`;
 }
-$("dlgBody").addEventListener("click", async ev => {
+const onStudentClick = async ev => {
   const b = ev.target.closest("button"); if (!b) return;
-  const sid = $("dlgBody").dataset.sid;
+  const sid = ev.currentTarget.dataset.sid;
   if (b.dataset.permit && sid){
     const [type, startJuz] = b.dataset.permit.split("|").map(Number);
     const st = S.students.find(x=>x.id===sid) || {};
@@ -975,7 +1143,8 @@ $("dlgBody").addEventListener("click", async ev => {
     await deleteDoc(doc(db,"permits",b.dataset.revoke));
     toast("تم إلغاء الإذن"); setTimeout(()=>studentRecord(sid), 300);
   }
-});
+};
+$("stuPage").addEventListener("click", onStudentClick);
 
 function studentRecordHtml(sid, forPrint){
   const st = S.students.find(x=>x.id===sid) || {};
@@ -1025,13 +1194,183 @@ function studentRecordHtml(sid, forPrint){
     </table>`;
 }
 function studentRecord(sid){
-  const st = S.students.find(x=>x.id===sid) || {};
   if ($("dlg").open) $("dlg").close();
-  openDialog("سجل الطالب", studentRecordHtml(sid, false), [
-    { text:"طباعة", cls:"primary", onClick: () => { printDoc(`سجل الطالب: ${st.name||""}`, studentRecordHtml(sid, true)); return false; } },
-    { text:"إغلاق" }
-  ], true);
-  $("dlgBody").dataset.sid = sid;
+  curStudent = sid;
+  go("student", !(curTab === "student" && location.hash === "#student/" + sid));
+}
+
+
+// ===== لوحة اليوم =====
+function pill(cls, t){ return `<span class="pill ${cls}">${t}</span>`; }
+function nameLink(sid, name){ return sid ? `<a class="name" data-rec="${esc(sid)}">${esc(name)}</a>` : esc(name); }
+function approvedStudents(){ return S.students.filter(s => s.status !== "pending"); }
+function stalledList(){
+  const N = stallDays(), now = Date.now(), out = [];
+  for (const s of approvedStudents()){
+    const p = studentPath(s); if (p.hafiz) continue;
+    const keys = new Set(p.steps.map(x=>x.key));
+    const ex = S.exams.filter(e=>e.studentId===s.id);
+    const lastPass = ex.filter(e=>e.passed && keys.has(e.type+"|"+e.startJuz)).map(examDate).filter(Boolean).sort((a,b)=>b-a)[0];
+    const since = lastPass || (s.createdAt && s.createdAt.toDate ? s.createdAt.toDate() : null);
+    if (since){ const d = Math.floor((now - since)/86400000); if (d > N) out.push({ s, d }); }
+  }
+  return out.sort((a,b)=>b.d-a.d);
+}
+function readyForExam(){ return approvedStudents().filter(s => { try { return dailyOf(s).mode === "review_exam"; } catch(_){ return false; } }); }
+function activePermits(){ return S.permits.filter(p => { const a = activePermit(p.studentId, p.type, p.startJuz); return a && a.id === p.id; }); }
+function renderBadges(){
+  const n = frequentAbsence().length;
+  $("absentBadge").textContent = n; $("absentBadge").classList.toggle("hidden", !n);
+  const k = activePermits().length;
+  $("permitBadge").textContent = k; $("permitBadge").classList.toggle("hidden", !k);
+}
+function renderHome(){
+  const now = new Date(), tk = dayKey(now), mk = tk.slice(0,7);
+  const pm = dayKey(new Date(now.getFullYear(), now.getMonth()-1, 1)).slice(0,7);
+  const exToday = S.exams.filter(e => { const d = examDate(e); return d && dayKey(d) === tk; });
+  const exPass = exToday.filter(e=>e.passed).length;
+  const inMonth = m => S.exams.filter(e => { const d = examDate(e); return d && dayKey(d).slice(0,7) === m; });
+  const mList = inMonth(mk), pList = inMonth(pm);
+  const mRate = pct(mList.filter(e=>e.passed).length, mList.length), pRate = pct(pList.filter(e=>e.passed).length, pList.length);
+  const diff = Math.round((mRate - pRate) * 10) / 10;
+  const isSession = sessionDays().includes(now.getDay());
+  // التسميع حسب الحلقة
+  const studs = approvedStudents();
+  let totS = 0, totP = 0, newP = 0, revP = 0, anyLog = false;
+  const rows = sortAr([...S.halaqat]).map(h => {
+    const hs = studs.filter(s => s.halaqaId === h.id);
+    const ids = new Set(hs.map(s=>s.id));
+    const ls = S.logs.filter(l => l.date === tk && ids.has(l.studentId));
+    const hol = isHoliday(tk, h.id);
+    const pres = ls.filter(l => l.status === "recited" || l.status === "norecite").length;
+    const np = ls.reduce((a,l)=>a+(l.status==="recited"?(l.newPages||0):0),0);
+    newP += np; revP += ls.reduce((a,l)=>a+(l.status==="recited"?(l.reviewPages||0):0),0);
+    if (ls.length) anyLog = true;
+    if (!hol){ totS += hs.length; totP += pres; }
+    let st;
+    if (hol) st = pill("p-gr","إجازة");
+    else if (hs.length && ls.length >= hs.length) st = pill("p-ok","مكتمل");
+    else if (ls.length) st = pill("p-wa","جارٍ");
+    else st = isSession ? pill("p-no","لم تسجّل") : pill("p-gr","ليس يوم تحفيظ");
+    const sh = S.sheikhs.filter(x => x.halaqaId === h.id).map(x => x.name).join("، ");
+    const w = hs.length ? Math.min(100, Math.round(ls.length*100/hs.length)) : 0;
+    return `<tr class="click" data-hq="${h.id}"><td>${esc(h.name)}</td><td class="muted hm">${esc(sh) || "—"}</td>
+      <td class="hm" style="width:28%"><div class="hbar"><i style="width:${hol?0:w}%"></i></div></td>
+      <td>${hol||!ls.length ? "—" : `${pres}/${hs.length}`}</td><td>${np ? fp(np)+" ص" : "—"}</td><td>${st}</td></tr>`;
+  }).join("");
+  $("homeHalaqat").innerHTML = rows ? `<table><thead><tr><th>الحلقة</th><th class="hm">الشيخ</th><th class="hm">التسجيل</th><th>الحضور</th><th>حفظ</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+    : `<p class="muted">لا توجد حلقات بعد</p>`;
+  const att = totS ? Math.round(totP*100/totS) : 0;
+  $("homeKpis").innerHTML = `
+    <div class="kpi"><div class="l">اختبارات اليوم</div><div class="v">${exToday.length}</div><div class="s">${exToday.length ? `${exPass} ناجح · ${exToday.length-exPass} راسب` : "لا يوجد اختبارات اليوم"}</div></div>
+    <div class="kpi"><div class="l">نسبة النجاح هذا الشهر</div><div class="v">${mList.length ? mRate + "%" : "—"}</div>
+      <div class="s ${pList.length && mList.length ? (diff >= 0 ? "up" : "dn") : ""}">${pList.length && mList.length ? `${diff >= 0 ? "▲" : "▼"} ${Math.abs(diff)}% عن الشهر الماضي` : `${mList.length} اختبار هذا الشهر`}</div></div>
+    <div class="kpi"><div class="l">حضور التسميع اليوم</div><div class="v">${anyLog ? att + "%" : "—"}</div><div class="s">${anyLog ? `${totP} من ${totS} طالب` : (isSession ? "لم يُسجَّل تسميع بعد" : "ليس من أيام التحفيظ")}</div></div>
+    <div class="kpi"><div class="l">صفحات الحفظ اليوم</div><div class="v">${fp(newP)}</div><div class="s">مراجعة: ${fp(revP)} صفحة</div></div>`;
+  // التنبيهات
+  const pr = pendingRetests(), stl = stalledList(), fa = frequentAbsence(), pend = S.students.filter(s=>s.status==="pending"), rdy = readyForExam();
+  const al = [];
+  if (pr.length) al.push(["#c0504d", `${pr.length} بانتظار الإعادة`, `أقدمهم: ${esc(pr[0].last.studentName)} — منذ ${daysSince(pr[0].last)} يوم`, "retests"]);
+  if (stl.length) al.push(["var(--amber)", `${stl.length} متوقفون أكثر من ${stallDays()} يوماً`, "بدون اختبار جديد في المسار", "stats"]);
+  if (fa.length) al.push(["var(--amber)", `${fa.length} غياب متكرر`, "غابوا آخر جلستين أو أكثر", "absence"]);
+  if (pend.length) al.push(["var(--gold)", `${pend.length} طلاب جدد بانتظار الموافقة`, "أضافهم المختبرون من التطبيق", "pending"]);
+  if (rdy.length) al.push(["var(--green)", `${rdy.length} جاهزون للاختبار`, "أنهوا حفظ الجزء ويراجعونه", "ready"]);
+  $("homeAlerts").innerHTML = al.length ? al.map(([c,t,sub,g]) => `<div class="alert" data-al="${g}"><span class="dot" style="background:${c}"></span><div><b>${t}</b><div class="muted">${sub}</div></div></div>`).join("")
+    : `<p class="muted">لا توجد تنبيهات — كل شيء على ما يرام</p>`;
+  // آخر الاختبارات
+  const last = [...S.exams].sort((a,b)=>(examDate(b)||0)-(examDate(a)||0)).slice(0, 8);
+  const tm = e => { const d = examDate(e); if (!d) return ""; return dayKey(d) === tk ? `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}` : dateText(e); };
+  $("homeExams").innerHTML = last.length ? `<table><thead><tr><th>الطالب</th><th class="hm">الحلقة</th><th>الاختبار</th><th class="hm">المختبر</th><th>العلامة</th><th>النتيجة</th><th class="hm">الوقت</th></tr></thead><tbody>${
+    last.map(e => `<tr><td>${nameLink(e.studentId, e.studentName)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td><td class="hm">${esc(e.halaqaName)}</td>
+      <td>${esc(juzLabel(e))}</td><td class="hm">${esc(e.examinerName)}</td><td><b>${e.closed?"—":fmtNum(e.total)}</b></td>
+      <td>${e.passed ? pill("p-ok","ناجح") : e.closed ? pill("p-wa","أُغلق") : pill("p-no","راسب")}</td><td class="muted hm">${tm(e)}</td></tr>`).join("")}</tbody></table>`
+    : `<p class="muted">لا توجد اختبارات بعد</p>`;
+}
+$("homeAlerts").addEventListener("click", ev => {
+  const a = ev.target.closest("[data-al]"); if (!a) return;
+  if (a.dataset.al !== "ready"){ go(a.dataset.al); return; }
+  const list = sortAr(readyForExam());
+  openDialog("طلاب جاهزون للاختبار", `<p class="muted">أنهوا حفظ الجزء حسب السجل اليومي، ويراجعونه الآن قبل الاختبار.</p>
+    <table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار التالي</th></tr></thead><tbody>${
+    list.map(s => `<tr><td>${nameLink(s.id, s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td><td>${esc(nextText(s))}</td></tr>`).join("")}</tbody></table>`, [{ text:"إغلاق" }], true);
+});
+$("homeHalaqat").addEventListener("click", ev => {
+  const r = ev.target.closest("tr[data-hq]"); if (!r) return;
+  $("dDate").value = dayKey(new Date()); $("dHalaqa").value = r.dataset.hq; renderDaily(); go("daily");
+});
+
+// ===== تصاريح الإعادة =====
+function renderPermits(){
+  const list = activePermits().sort((a,b)=>(b.grantedAtMs||0)-(a.grantedAtMs||0));
+  const lab = p => p.type === 30 ? "القرآن كاملاً" : juzLabel({ startJuz:p.startJuz, endJuz:p.startJuz + p.type - 1 });
+  $("permitsList").innerHTML = list.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>تاريخ التصريح</th><th></th></tr></thead><tbody>${
+    list.map(p => { const st = S.students.find(x=>x.id===p.studentId) || {};
+      return `<tr><td>${nameLink(p.studentId, st.name || p.studentName)}</td><td>${esc(halaqaName(st.halaqaId))}</td>
+      <td>${esc(TYPES[p.type]||p.type)} — ${esc(lab(p))}</td><td>${p.grantedAtMs ? dayKey(new Date(p.grantedAtMs)) : ""}</td>
+      <td class="actions"><button class="small danger" data-prevoke="${p.id}">إلغاء التصريح</button></td></tr>`; }).join("")}</tbody></table>`
+    : `<p class="muted">لا توجد تصاريح فعّالة الآن</p>`;
+}
+$("permitsList").addEventListener("click", ev => {
+  const b = ev.target.closest("button[data-prevoke]"); if (!b) return;
+  confirmDlg("إلغاء هذا التصريح؟", async () => { await deleteDoc(doc(db,"permits",b.dataset.prevoke)); toast("تم إلغاء التصريح"); });
+});
+
+// ===== صفحة ملف الطالب =====
+function renderStudentPage(){
+  const sid = curStudent, el = $("stuPage");
+  el.dataset.sid = sid || "";
+  const st = S.students.find(x=>x.id===sid);
+  const exams = S.exams.filter(e=>e.studentId===sid);
+  if (!st && !exams.length){ el.innerHTML = `<div class="card"><p class="muted">لم يُعثر على الطالب (قد يكون حُذف أو لم تُحمَّل البيانات بعد).</p><button data-go="students">العودة للطلاب</button></div>`; return; }
+  const name = (st && st.name) || exams[0].studentName || "", hName = halaqaName(st && st.halaqaId) || (exams[0]||{}).halaqaName || "";
+  const ls = logsOf(sid);
+  const now = new Date(), wk = new Date(now); wk.setDate(now.getDate() - ((now.getDay() + 1) % 7));
+  const W = aggLogs(ls.filter(l => l.date >= dayKey(wk))), M = aggLogs(ls.filter(l => l.date >= dayKey(new Date(now.getFullYear(), now.getMonth(), 1))));
+  const pass = exams.filter(e=>e.passed).length;
+  const sh = st ? S.sheikhs.filter(x => x.halaqaId === st.halaqaId).map(x=>x.name).join("، ") : "";
+  let pathCard = "";
+  if (st){
+    const p = studentPath(st), passed = passedKeys(sid);
+    const doneN = p.steps.slice(p.first).filter(x => passed.has(x.key)).length, total = p.steps.length - p.first;
+    let d = null; try { d = dailyOf(st); } catch(_){}
+    const cells = p.steps.map((x,i) => `<span class="${i < p.first ? "ex" : passed.has(x.key) ? "on" : (i === p.next && !p.hafiz) ? "cur" : ""}" title="${i+1}. ${esc(stepLabel(x))}"></span>`).join("");
+    pathCard = `<div class="card">
+      <div class="info4">
+        <div><div class="muted">الحلقة</div>${esc(hName)}${sh ? `<div class="muted">${esc(sh)}</div>` : ""}</div>
+        <div><div class="muted">اتجاه المسار</div>${DIRS[sDir(st)]}<div class="muted">البداية: الجزء ${sStart(st)}</div></div>
+        <div><div class="muted">المرحلة الآن (التسميع)</div><b>${d ? esc(dailyTitle(d)) : "—"}</b></div>
+        <div><div class="muted">الاختبار التالي</div><b>${p.hafiz ? '<span class="hafiz">حافظ للقرآن الكريم</span>' : esc(stepLabel(p.steps[p.next]))}</b></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px"><b>التقدم في مسار الحفظ</b><span class="muted">${doneN} من ${total} مرحلة · ${passedJuz(sid).size} جزءاً مجتازاً</span></div>
+      <div class="steps">${cells}</div>
+      <div class="muted"><span style="color:var(--green)">■</span> اجتازها &nbsp; <span style="color:var(--gold)">■</span> التالية &nbsp; <span style="color:#cfd8d3">■</span> قبل نقطة البداية &nbsp; <span style="color:#e3e7e5">■</span> لم تبدأ — مرّر الماوس على المربع لترى المرحلة</div>
+    </div>`;
+  }
+  el.innerHTML = `
+    <div class="pagehead">
+      <div><div class="crumb"><a data-go="students">→ العودة لقائمة الطلاب</a></div><h2>${esc(name)}</h2>${st && st.status === "pending" ? pill("p-wa","بانتظار الاعتماد") : ""}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${st ? `<button data-sedit="${sid}">تعديل البيانات</button>` : ""}<button class="primary" data-sprint="1">طباعة الملف</button></div>
+    </div>
+    ${pathCard}
+    <div class="kpis">
+      <div class="kpi"><div class="l">حفظ هذا الأسبوع</div><div class="v">${fp(W.newPages)} ص</div><div class="s">${W.sessions} جلسة</div></div>
+      <div class="kpi"><div class="l">مراجعة هذا الأسبوع</div><div class="v">${fp(W.reviewPages)} ص</div><div class="s">الشهر: ${fp(M.reviewPages)} ص</div></div>
+      <div class="kpi"><div class="l">الحضور هذا الشهر</div><div class="v">${M.sessions ? M.attendance + "%" : "—"}</div><div class="s">${M.sessions} جلسة · غائب ${M.absent} · بعذر ${M.excused}</div></div>
+      <div class="kpi"><div class="l">الاختبارات</div><div class="v">${exams.length}</div><div class="s">${pass} ناجح · ${exams.length - pass} راسب</div></div>
+    </div>
+    ${st ? `<div class="card">${dailyRecordHtml(sid)}</div>` : ""}
+    <div class="card"><h2>الاختبارات</h2>${examsTableHtml(sid)}</div>
+    ${(() => { const h = permitsHtml(sid); return h ? `<div class="card">${h}</div>` : ""; })()}`;
+}
+function examsTableHtml(sid){
+  const exams = S.exams.filter(e=>e.studentId===sid).sort((a,b)=>(examDate(b)||0)-(examDate(a)||0));
+  return `<table>
+      <thead><tr><th>التاريخ</th><th>النوع</th><th>الأجزاء</th><th>المختبر</th><th>المجموع</th><th>النتيجة</th><th>ملاحظات</th></tr></thead>
+      <tbody>${exams.map(e => `<tr><td>${esc(dateText(e))}</td><td>${esc(TYPES[e.type]||e.type)}${e.isRetest?' (إعادة)':''}</td>
+        <td>${esc(juzLabel(e))}</td><td>${esc(e.examinerName)}</td><td>${e.closed?'—':fmtNum(e.total)}</td>
+        <td class="${resultOf(e)}">${resultText(e)}</td><td>${esc(e.notes)}</td></tr>`).join("")
+        || `<tr><td colspan="7" class="muted">لا توجد اختبارات</td></tr>`}</tbody>
+    </table>`;
 }
 
 // ===== الإحصائيات والتقارير =====
@@ -1103,7 +1442,7 @@ function renderPathStats(){
     <h2 style="margin-top:16px">المتوقفون (أكثر من ${N} يوماً على نفس الاختبار) — ${stalled.length}</h2>
     ${stalled.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار الحالي</th><th>منذ</th><th></th></tr></thead><tbody>
       ${stalled.map(x => `<tr><td>${esc(x.s.name)}</td><td>${esc(halaqaName(x.s.halaqaId))}</td><td>${esc(stepLabel(x.step))}</td>
-      <td>${x.d} يوم</td><td><button class="small" data-rec="${x.s.id}">سجل الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`}
+      <td>${x.d} يوم</td><td><button class="small" data-rec="${x.s.id}">ملف الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`}
     <h2 style="margin-top:16px">الحفّاظ — ${hafiz.length}</h2>
     ${hafiz.length ? `<p>${hafiz.map(s=>`${esc(s.name)} <span class="muted">(${esc(halaqaName(s.halaqaId))})</span>`).join("، ")}</p>` : `<p class="muted">لا يوجد بعد</p>`}`;
 }
@@ -1218,11 +1557,11 @@ function renderStudents(){
   const list = sortAr(S.students.filter(s => s.status!=="pending" && (!q || s.name.includes(q)) && (!h || s.halaqaId===h)));
   $("studentsCount").textContent = `${list.length} طالب`;
   $("studentsBody").innerHTML = list.map(s => `
-    <tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
+    <tr><td>${nameLink(s.id, s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
     <td class="muted">${sDir(s)==="asc"?"من البقرة":"من الناس"} · من الجزء ${sStart(s)}</td>
     <td>${(() => { const t = nextText(s); return t === "حافظ للقرآن" ? `<span class="hafiz">حافظ للقرآن</span>` : esc(t); })()}</td>
     <td>${examsOfStudent(s.id).length}</td>
-    <td class="actions"><button class="small primary" data-rec="${s.id}">السجل</button>
+    <td class="actions"><button class="small primary" data-rec="${s.id}">الملف</button>
     <button class="small" data-edit="${s.id}">تعديل</button>
     <button class="small danger" data-del="${s.id}">حذف</button></td></tr>`).join("");
 }
@@ -1411,7 +1750,7 @@ function renderDaily(){
       <td>${l && l.newMem ? `${esc(l.newMem.label)} <b>(${fp(l.newPages)})</b>` : ""}</td>
       <td>${l && (l.reviews||[]).length ? `${reviewsText(l)} <b>= ${fp(l.reviewPages)}</b>` : ""}</td>
       <td class="muted">${esc(dailyTitle(d))}</td><td>${esc(l ? l.sheikhName||"" : "")}</td>
-      <td class="actions"><button class="small" data-rec="${s.id}">سجل الطالب</button></td></tr>`;
+      <td class="actions"><button class="small" data-rec="${s.id}">ملف الطالب</button></td></tr>`;
   }).join("");
   $("dBody").innerHTML = rows || `<tr><td colspan="8" class="muted" style="text-align:center">لا يوجد طلاب</td></tr>`;
   $("dSummary").innerHTML = `<span>سمّع: <b class="pass">${rec}</b></span><span>لم يسمّع: <b>${nor}</b></span><span>غائب: <b class="fail">${abs}</b></span>
@@ -1464,7 +1803,7 @@ function renderDailyStats(){
   const fa = frequentAbsence();
   $("dsAbsent").innerHTML = fa.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>غياب متتالي</th><th>آخر جلسة</th><th></th></tr></thead><tbody>${
     fa.map(x => `<tr><td>${esc(x.s.name)}</td><td>${esc(halaqaName(x.s.halaqaId))}</td><td class="fail">${x.n}</td><td>${x.last}</td>
-    <td><button class="small" data-rec="${x.s.id}">سجل الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`;
+    <td><button class="small" data-rec="${x.s.id}">ملف الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`;
 }
 $("dsAbsent").addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && b.dataset.rec) studentRecord(b.dataset.rec); });
 $("dsExcel").onclick = () => {
@@ -1567,9 +1906,11 @@ function dailyRecordHtml(sid){
       <td>${esc(l.sheikhName||"")}</td><td><button class="small danger" data-dellog="${l.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">لا توجد جلسات</td></tr>`}
     </tbody></table>`;
 }
-$("dlgBody").addEventListener("click", async ev => {
+$("stuPage").addEventListener("click", async ev => {
   const b = ev.target.closest("button"); if (!b) return;
-  const sid = $("dlgBody").dataset.sid;
+  const sid = ev.currentTarget.dataset.sid;
+  if (b.dataset.sedit){ editStudent(b.dataset.sedit, false); return; }
+  if (b.dataset.sprint){ const st = S.students.find(x=>x.id===sid) || {}; printDoc(`سجل الطالب: ${st.name||""}`, studentRecordHtml(sid, true)); return; }
   if (b.dataset.dellog){
     if (!confirm("حذف هذه الجلسة من السجل اليومي؟")) return;
     await deleteDoc(doc(db,"logs",b.dataset.dellog)); toast("تم الحذف"); setTimeout(()=>studentRecord(sid), 300);
