@@ -88,6 +88,23 @@
   .dedline{display:block;text-align:center;color:var(--gold);font-weight:700;font-size:12.5px;cursor:pointer;line-height:1.7}
   .side-ded{color:#e9c46a;padding:10px 18px 0;font-size:12px}
   .ded h3{color:var(--green);margin:0 0 8px}.ded p{line-height:1.9;margin:6px 0}.ded .nm{font-weight:700;color:#5c4a1e;margin:3px 0}
+  dialog.deddlg{width:min(460px,94vw);border:0;border-radius:24px;padding:30px 26px 24px;color:#fff;position:relative;
+    background:radial-gradient(120% 80% at 80% 0%,#2a7a5b 0%,#14432f 45%,#0b261b 100%)}
+  dialog.deddlg::backdrop{background:rgba(5,20,14,.6)}
+  .deddlg .dclose{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.1);border:0;color:#fff;border-radius:50%;width:32px;height:32px;padding:0;font-size:14px}
+  .deddlg .dhead{display:flex;align-items:center;gap:12px}
+  .deddlg .dhead img{width:48px;height:48px;border-radius:50%;background:#fff;padding:2px;border:1.5px solid #c9a24a}
+  .deddlg .dhead span{display:block;color:#e9c46a;font-size:12px;letter-spacing:2px;font-weight:600}
+  .deddlg .dhead b{color:#d6e6dd;font-size:13.5px}
+  .deddlg .dtitle{height:62px;display:block;margin-top:20px}
+  .deddlg .dbar{width:56px;height:3px;border-radius:3px;background:#c9a24a;margin:8px 0 12px}
+  .deddlg .dintro{color:#d9e7df;font-size:14.5px;line-height:1.9;margin:0 0 16px}
+  .deddlg .dglass{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:4px 16px}
+  .deddlg .dr{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+  .deddlg .dr:last-child{border-bottom:0}
+  .deddlg .dr b{font-size:15.5px}
+  .deddlg .dr i{font-style:normal;font-size:12px;color:#e9c46a;background:rgba(201,162,74,.15);border-radius:10px;padding:1px 9px;font-weight:600}
+  .deddlg .dout{text-align:center;color:#cfe0d7;font-size:13.5px;line-height:1.85;margin:16px 0 0}
   .side .logout{margin:8px 20px 18px;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
   .content{margin-right:240px;min-height:100vh}
   .topbar{display:flex;align-items:center;gap:12px;padding:16px 24px 4px}
@@ -548,6 +565,7 @@
   <div class="dlg-foot" id="dlgFoot"></div>
 </dialog>
 <div class="toast" id="toast"></div>
+<dialog id="dedDlg" class="deddlg"><button class="dclose" onclick="this.closest('dialog').close()" aria-label="إغلاق">✕</button><div id="dedBody"></div></dialog>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -886,7 +904,15 @@ const DED_NAMES = ["الشيخ ياسر العفيفي (أبو حمزة)","ال�
 const DED_OUTRO = "رحمهم الله رحمةً واسعة، وأسكنهم الفردوس الأعلى، ونسأل الله أن يتقبّل هذا العمل ويجعله في ميزان حسناتهم.";
 const DED_SHORT = "صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله";
 function showDedication(){
-  openDialog("صدقة جارية", `<div class="ded" style="text-align:center"><p>${DED_INTRO}</p>${DED_NAMES.map(n=>`<div class="nm">${n}</div>`).join("")}<p class="muted" style="font-size:14px">${DED_OUTRO}</p></div>`, [{ text:"إغلاق", cls:"primary" }]);
+  const rows = DED_NAMES.map(n => { const i = n.indexOf(" ("); const nm = i > 0 ? n.slice(0, i) : n, k = i > 0 ? n.slice(i + 2, -1) : "";
+    return `<div class="dr"><b>${nm}</b>${k ? `<i>${k}</i>` : ""}</div>`; }).join("");
+  $("dedBody").innerHTML = `
+    <div class="dhead"><img src="logo.png" alt=""><div><span>إهداء</span><b>مركز التقوى لتعليم وتحفيظ القرآن الكريم</b></div></div>
+    <img class="dtitle" src="ded_title.png" alt="صدقة جارية"><div class="dbar"></div>
+    <p class="dintro">${DED_INTRO}</p>
+    <div class="dglass">${rows}</div>
+    <p class="dout">${DED_OUTRO}</p>`;
+  $("dedDlg").showModal();
 }
 document.addEventListener("click", ev => { if (ev.target.closest("[data-ded]")){ ev.preventDefault(); showDedication(); } });
 
