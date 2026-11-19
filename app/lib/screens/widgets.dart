@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../logic.dart';
 import '../env.dart';
 import '../slogan.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 const Color brandGreen = Color(0xFF1F5F46);
 const Color brandGold = Color(0xFFB8913A);
@@ -26,7 +27,9 @@ class AppHeader extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
+          GestureDetector(
+            onLongPress: () => showAboutApp(context),
+            child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -36,6 +39,7 @@ class AppHeader extends StatelessWidget {
             child: ClipOval(
               child: Image.asset('assets/logo.png', width: 96, height: 96, fit: BoxFit.contain),
             ),
+          ),
           ),
           const SizedBox(height: 12),
           const Text(
@@ -201,21 +205,61 @@ class SegmentedRow extends StatelessWidget {
 /// اسم المطوّر
 const devCredit = 'Eng. Mohammed F Sharaf';
 
+Future<String> appVersionText() async {
+  try {
+    final info = await PackageInfo.fromPlatform();
+    return '${info.version} (${info.buildNumber})${kBeta ? ' تجريبي' : ''}';
+  } catch (_) {
+    return '';
+  }
+}
+
+/// «حول التطبيق»: رقم الإصدار واسم المطوّر (بشكل خفيف)
 class DevCredit extends StatelessWidget {
   const DevCredit({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.only(bottom: 10),
-      child: Text.rich(
-        TextSpan(children: [
-          TextSpan(text: 'تصميم وتطوير: '),
-          TextSpan(text: devCredit, style: TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.black38, fontSize: 11.5),
+    const st = TextStyle(color: Colors.black38, fontSize: 11.5, height: 1.7);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: FutureBuilder<String>(
+        future: appVersionText(),
+        builder: (context, snap) => Column(
+          children: [
+            const Divider(),
+            const Text('حول التطبيق', style: TextStyle(color: Colors.black45, fontSize: 12, fontWeight: FontWeight.bold)),
+            if ((snap.data ?? '').isNotEmpty)
+              Text.rich(
+                TextSpan(children: [
+                  const TextSpan(text: 'رقم الإصدار: '),
+                  TextSpan(text: snap.data!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                ]),
+                textAlign: TextAlign.center,
+                style: st,
+              ),
+            const Text.rich(
+              TextSpan(children: [
+                TextSpan(text: 'تصميم وتطوير: '),
+                TextSpan(text: devCredit, style: TextStyle(fontWeight: FontWeight.bold)),
+              ]),
+              textAlign: TextAlign.center,
+              style: st,
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+/// نافذة «حول التطبيق» (تفتح بضغطة طويلة على الشعار)
+void showAboutApp(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      content: const SingleChildScrollView(child: DevCredit()),
+      actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق'))],
+    ),
+  );
 }

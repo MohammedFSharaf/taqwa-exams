@@ -137,7 +137,6 @@ class _GateScreenState extends State<GateScreen> {
               ),
             ),
             const AyahLine(),
-            const DevCredit(),
           ],
         ),
       ),
