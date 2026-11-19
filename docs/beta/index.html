@@ -1372,7 +1372,7 @@ function dailyTitle(d){
     case "needs_start": return "لم تُحدَّد نقطة البداية";
     case "review_surah": return `مراجعة ${rangeLabel(d.segFrom, d.segTo)} كاملة (إجباري)`;
     case "review_exam": return d.juzFrom === d.juzTo ? `مراجعة الجزء ${d.juzFrom} للاختبار` : `مراجعة الأجزاء ${d.juzFrom}–${d.juzTo} للاختبار`;
-    default: return `حفظ: الجزء ${d.juz} — التالي من ${posLabel(d.fromG)}`;
+    default: return `في الجزء ${d.juz} — التالي من ${posLabel(d.fromG)}`;
   }
 }
 function isHoliday(date, halaqaId){ return S.holidays.some(h => h.date === date && (h.halaqaId === "all" || h.halaqaId === halaqaId)); }
