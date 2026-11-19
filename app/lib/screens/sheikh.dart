@@ -201,7 +201,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
 
   void _quickRecite(Student s, DailyStatus st) {
     final p = memRangePages(s.pathDir, st.fromG!, st.suggestToG!);
-    Repo.I.saveLog(s.id, _today, {
+    Repo.I.saveLog(s.id, _today, prev: _todayLog(s.id), {
       ..._base(s, st),
       'status': 'recited',
       'newMem': {
@@ -217,7 +217,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   }
 
   void _quickStatus(Student s, DailyStatus st, String status) {
-    Repo.I.saveLog(s.id, _today, {
+    Repo.I.saveLog(s.id, _today, prev: _todayLog(s.id), {
       ..._base(s, st),
       'status': status,
       'newMem': null,
@@ -912,7 +912,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     final recited = _att == 'recited';
     final withNew = recited && _hasNew && _canNew && _from != null && _to != null;
     final np = withNew ? _newPages : 0.0;
-    Repo.I.saveLog(widget.student.id, widget.date, {
+    Repo.I.saveLog(widget.student.id, widget.date, prev: _c.todayLog, {
       ..._c.base,
       'status': _att,
       'newMem': withNew

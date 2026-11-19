@@ -72,6 +72,13 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+    // سجل التعديلات: يُضاف فقط (لا تعديل ولا حذف)، والإدارة فقط تقرأ
+    match /audit/{id} {
+      allow read: if isAdmin();
+      allow create: if isApp();
+      allow update, delete: if false;
+    }
+
     // الاختبارات: التطبيق يقرأ الكل (لمعرفة الإعادة) ويضيف فقط، والتعديل والحذف للإدارة
     match /exams/{id} {
       allow read: if isApp();

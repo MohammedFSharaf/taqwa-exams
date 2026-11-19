@@ -13,9 +13,10 @@ class Halaqa {
 class Student {
   final String id, name, halaqaId;
   final bool pending;
+  final bool inactive; // منقطع: لا يظهر في القوائم
   final String pathDir; // desc = من الناس، asc = من البقرة
   final int pathStart;
-  Student(this.id, this.name, this.halaqaId, this.pending, {this.pathDir = 'desc', int? pathStart})
+  Student(this.id, this.name, this.halaqaId, this.pending, {this.pathDir = 'desc', int? pathStart, this.inactive = false})
       : pathStart = pathStart ?? (pathDir == 'asc' ? 1 : 30);
 
   static Student fromDoc(String id, Map<String, dynamic> d) {
@@ -23,7 +24,7 @@ class Student {
     final st = d['pathStart'];
     final start = (st is num && st >= 1 && st <= 30) ? st.toInt() : null;
     return Student(id, (d['name'] ?? '').toString(), (d['halaqaId'] ?? '').toString(), d['status'] == 'pending',
-        pathDir: dir, pathStart: start);
+        pathDir: dir, pathStart: start, inactive: d['status'] == 'inactive');
   }
 }
 
@@ -101,6 +102,7 @@ class Repo {
           .map((s) {
         final l = s.docs
             .map((d) => Student.fromDoc(d.id, d.data()))
+            .where((x) => !x.inactive)
             .toList();
         l.sort((a, b) => a.name.compareTo(b.name));
         return l;
@@ -110,6 +112,7 @@ class Repo {
   Stream<List<Student>> allStudents() => db.collection('students').snapshots().map((s) {
         final l = s.docs
             .map((d) => Student.fromDoc(d.id, d.data()))
+            .where((x) => !x.inactive)
             .toList();
         l.sort((a, b) => a.name.compareTo(b.name));
         return l;
@@ -186,7 +189,7 @@ class Repo {
   void _fire(Future<void> f) => f.then((_) {}, onError: (Object e) {});
 
   /// سجل الطالب لليوم: مستند واحد لكل طالب في كل يوم
-  void saveLog(String studentId, String date, Map<String, dynamic> data) {
+  void saveLog(String studentId, String date, Map<String, dynamic> data, {Map<String, dynamic>? prev}) {
     _fire(db.collection('logs').doc('${studentId}_$date').set({
       ...data,
       'studentId': studentId,
@@ -194,6 +197,41 @@ class Repo {
       'updatedAt': FieldValue.serverTimestamp(),
       'clientAt': DateTime.now().millisecondsSinceEpoch,
     }));
+    // تعديل تسميع سبق تسجيله ← سجل التعديلات
+    if (prev != null && prev['status'] != null) {
+      final before = logBrief(prev), after = logBrief(data);
+      if (before != after) {
+        _fire(db.collection('audit').add({
+          'atMs': DateTime.now().millisecondsSinceEpoch,
+          'at': FieldValue.serverTimestamp(),
+          'by': (data['sheikhName'] ?? '').toString(),
+          'source': 'app',
+          'action': 'تعديل تسميع',
+          'target': (data['studentName'] ?? '').toString(),
+          'studentId': studentId,
+          'details': date,
+          'before': before,
+          'after': after,
+        }));
+      }
+    }
+  }
+
+  static String logBrief(Map<String, dynamic> l) {
+    String f(dynamic n) => (n is num ? n.toDouble() : 0.0).toStringAsFixed(1);
+    final st = switch (l['status']) {
+      'recited' => 'سمّع',
+      'norecite' => 'لم يسمّع',
+      'absent' => 'غائب',
+      'excused' => 'غائب بعذر',
+      _ => (l['status'] ?? '').toString(),
+    };
+    final parts = <String>[st];
+    final nm = l['newMem'];
+    if (nm is Map) parts.add('حفظ: ${nm['label'] ?? ''} (${f(l['newPages'])} ص)');
+    final rv = l['reviews'];
+    if (rv is List && rv.isNotEmpty) parts.add('مراجعة: ${f(l['reviewPages'])} ص');
+    return parts.join(' · ');
   }
 
   /// نقطة البداية / آخر آية محفوظة
