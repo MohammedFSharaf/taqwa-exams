@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../daily.dart';
@@ -170,6 +171,24 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       s.cancel();
     }
     super.dispose();
+  }
+
+  /// شرط الاختبار من السجل اليومي (تسميع الجزء كاملاً في جلسة)
+  ExamReady _readiness(Student s, List<Map<String, dynamic>> logs) {
+    final mine = _exams.where((e) => e['studentId'] == s.id);
+    final passed = {
+      for (final e in mine)
+        if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
+    };
+    var m = 0;
+    for (final e in mine) {
+      final t = e['createdAt'];
+      final ms = t is Timestamp ? t.millisecondsSinceEpoch : 0;
+      if (ms > m) m = ms;
+    }
+    final last = m == 0 ? '' : dayKey(DateTime.fromMillisecondsSinceEpoch(m));
+    final pr = _progress.where((p) => p['id'] == s.id);
+    return examReadiness(s.pathDir, s.pathStart, passed, logs, pr.isEmpty ? null : pr.first, last);
   }
 
   List<Map<String, dynamic>> _logsOf(String sid) => _logs.where((l) => l['studentId'] == sid).toList();
@@ -539,6 +558,10 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     } else if (l != null && status == 'recited') {
       sub = '${st.title}\n${_shortSummary(l)}';
     }
+    if (st.mode == 'review_exam') {
+      final r = _readiness(s, _logsOf(s.id));
+      sub += r.ok ? '\nجاهز للاختبار ✓' : '\nقبل الاختبار: ${st.juzFrom == st.juzTo ? 'تسميع الجزء كاملاً في جلسة' : 'تسميع كل جزء كاملاً'}';
+    }
     final holiday = _holidayAll || _holidayHalaqa;
     Widget action;
     if (l == null && holiday && st.mode == 'needs_start') {
@@ -603,7 +626,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     };
     final pr = _progress.where((p) => p['id'] == s.id);
     final st = dailyStatus(s.pathDir, s.pathStart, passed, before, pr.isEmpty ? null : pr.first, _minNew);
-    return DayCtx(st, _todayLog(s.id), _base(s, st), before.take(5).toList());
+    return DayCtx(st, _todayLog(s.id), _base(s, st), before.take(5).toList(),
+        ready: st.mode == 'review_exam' ? _readiness(s, before) : null);
   }
 
   void _open(Student s, DailyStatus st, Map<String, dynamic>? l) {
@@ -629,7 +653,8 @@ class DayCtx {
   final Map<String, dynamic>? todayLog;
   final Map<String, dynamic> base;
   final List<Map<String, dynamic>> recent; // آخر الجلسات قبل اليوم (الأحدث أولاً)
-  DayCtx(this.st, this.todayLog, this.base, this.recent);
+  final ExamReady? ready; // شرط الاختبار (قبل تسجيل اليوم)
+  DayCtx(this.st, this.todayLog, this.base, this.recent, {this.ready});
 }
 
 // ===================== تسجيل طالب لليوم =====================
@@ -936,6 +961,44 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     ));
   }
 
+  /// شرط الاختبار: تسميع الجزء كاملاً مراجعةً في جلسة واحدة
+  Widget _readyBox() {
+    final r = _c.ready!;
+    final step = _st.step;
+    String text;
+    var ok = r.ok;
+    if (r.ok) {
+      text = 'جاهز للاختبار ✓ — سمّع المطلوب كاملاً';
+    } else if (step != null && r.reason == 'review') {
+      final nowDone = _att == 'recited' &&
+          r.missing.any((j) => reviewsCoverRange(_reviews, qJuz[j - 1][0], qJuz[j - 1][1]));
+      final left = r.missing
+          .where((j) => !(_att == 'recited' && reviewsCoverRange(_reviews, qJuz[j - 1][0], qJuz[j - 1][1])))
+          .toList();
+      if (left.isEmpty) {
+        ok = true;
+        text = 'بهذا التسجيل يصبح جاهزاً للاختبار ✓';
+      } else {
+        text = step.type == 1
+            ? 'المطلوب قبل الاختبار: تسميع الجزء ${step.start} كاملاً في جلسة واحدة (زر «الجزء من أوله» في المراجعة)'
+            : 'المطلوب قبل الاختبار: تسميع كل جزء كاملاً في جلسة — بقي: ${left.map((j) => 'الجزء $j').join('، ')}';
+        if (nowDone) text += '\nهذا التسجيل يُكمل جزءاً منها ✓';
+      }
+    } else {
+      text = step != null ? r.message(step) : '';
+    }
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+          color: ok ? const Color(0xFFD7EEDF) : const Color(0xFFFFF4DE), borderRadius: BorderRadius.circular(10)),
+      child: Text(text,
+          style: TextStyle(
+              color: ok ? brandGreen : const Color(0xFF8A5A00), fontWeight: FontWeight.bold, fontSize: 13.5, height: 1.5)),
+    );
+  }
+
   // ---------- عناصر التصميم ----------
   Widget _card({required Widget child, String? title, Widget? trailing}) => Container(
         width: double.infinity,
@@ -1094,6 +1157,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
             ),
           if (req != null)
             Text(req, style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 16, height: 1.5)),
+          if (_c.ready != null) _readyBox(),
           if (chips.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),

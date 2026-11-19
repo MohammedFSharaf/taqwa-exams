@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'logic.dart';
 import 'quran_data.dart';
 
@@ -274,3 +275,88 @@ String dayKey(DateTime d) => '${d.year}-${two(d.month)}-${two(d.day)}';
 
 /// يوم الأسبوع بترقيم جافاسكربت (الأحد 0 ... السبت 6) لمطابقة إعدادات اللوحة
 int jsDay(DateTime d) => d.weekday % 7;
+
+
+// ===================== شرط الاختبار من السجل اليومي =====================
+/// الشرط: أتمّ حفظ الجزء، ثم سمّعه كاملاً مراجعةً في جلسة واحدة (بعد آخر اختبار له).
+/// للتجميعي: كل جزء من أجزائه مُسمَّع كاملاً في جلسة (يجوز في جلسات مختلفة).
+class ExamReady {
+  final bool ok;
+  final String reason; // ok / needs_start / memorizing / review
+  final List<int> missing; // أجزاء لم تُسمَّع كاملة
+  const ExamReady(this.ok, this.reason, [this.missing = const []]);
+
+  String message(PathStep step) {
+    switch (reason) {
+      case 'ok':
+        return 'جاهز للاختبار: سمّع المطلوب كاملاً في السجل اليومي';
+      case 'needs_start':
+        return 'لم تُحدَّد نقطة بدايته في السجل اليومي — يحددها الشيخ ثم يُسمّعه الجزء كاملاً';
+      case 'memorizing':
+        return 'ما زال يحفظ الجزء ${step.start} — لم يُتمّ حفظه في السجل اليومي';
+      default:
+        if (step.type == 1) return 'لم يُسمِّع الجزء ${step.start} كاملاً في جلسة واحدة بعد إتمام حفظه';
+        return 'لم يُسمِّع كاملاً بعد: ${missing.map((j) => 'الجزء $j').join('، ')}';
+    }
+  }
+}
+
+bool reviewsCoverRange(dynamic reviews, int a, int b) {
+  if (reviews is! List) return false;
+  final iv = <List<int>>[];
+  for (final r in reviews) {
+    if (r is! Map) continue;
+    final f = _int(r['fromG']), t = _int(r['toG']);
+    if (f == null || t == null) continue;
+    iv.add([min(f, t), max(f, t)]);
+  }
+  iv.sort((x, y) => x[0].compareTo(y[0]));
+  var cur = a;
+  for (final x in iv) {
+    if (x[0] > cur) break;
+    if (x[1] + 1 > cur) cur = x[1] + 1;
+    if (cur > b) return true;
+  }
+  return cur > b;
+}
+
+ExamReady examReadiness(String dir, int start, Set<String> passedKeys, List<Map<String, dynamic>> logs,
+    Map<String, dynamic>? progress, String lastExamDate) {
+  final step = nextPathStep(dir, start, passedKeys);
+  if (step == null) return const ExamReady(true, 'ok');
+  final o = memOrder(dir);
+  var since = lastExamDate;
+  if (step.type == 1) {
+    final j = step.start;
+    int? cursor;
+    var hasData = progress != null;
+    if (progress != null) {
+      final lg = _int(progress['lastG']);
+      if (lg != null && lg >= 1 && lg <= nAyah) cursor = o.pos[lg];
+    }
+    var doneDate = '';
+    for (final l in logs) {
+      final nm = l['newMem'];
+      final tg = nm is Map ? _int(nm['toG']) : null;
+      if (tg == null) continue;
+      hasData = true;
+      final c = o.pos[tg];
+      if (cursor == null || c > cursor) cursor = c;
+      if (c >= o.jStart[j] && c <= o.jEnd[j]) {
+        final d = (l['date'] ?? '').toString();
+        if (d.compareTo(doneDate) > 0) doneDate = d;
+      }
+    }
+    if (!hasData) return const ExamReady(false, 'needs_start');
+    if (cursor == null || cursor < o.jEnd[j]) return const ExamReady(false, 'memorizing');
+    if (doneDate.compareTo(since) > 0) since = doneDate;
+  }
+  final missing = <int>[];
+  for (var j = step.start; j <= step.end; j++) {
+    final a = qJuz[j - 1][0], b = qJuz[j - 1][1];
+    final done = logs.any((l) =>
+        (l['date'] ?? '').toString().compareTo(since) >= 0 && l['status'] == 'recited' && reviewsCoverRange(l['reviews'], a, b));
+    if (!done) missing.add(j);
+  }
+  return missing.isEmpty ? const ExamReady(true, 'ok') : ExamReady(false, 'review', missing);
+}

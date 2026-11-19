@@ -32,16 +32,6 @@ class _NewExamScreenState extends State<NewExamScreen> {
   List<Map<String, dynamic>> _sLogs = [];
   Map<String, dynamic>? _sProg;
 
-  /// حالة الطالب في السجل اليومي (إن وُجد له سجل)
-  DailyStatus? get _daily {
-    if (_student == null || _sExams == null || (_sLogs.isEmpty && _sProg == null)) return null;
-    final passed = {
-      for (final e in _sExams!)
-        if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
-    };
-    return dailyStatus(_student!.pathDir, _student!.pathStart, passed, _sLogs, _sProg, 1);
-  }
-
   /// آخر اختبار سابق لنفس الطالب بنفس النوع والأجزاء
   Map<String, dynamic>? get _prev {
     if (_sExams == null || _type == null || _startJuz == null) return null;
@@ -53,6 +43,34 @@ class _NewExamScreenState extends State<NewExamScreen> {
       return 0;
     });
     return m.first;
+  }
+
+  /// تاريخ آخر اختبار للطالب (أي نتيجة)
+  String get _lastExamDate {
+    var m = 0;
+    for (final e in _sExams ?? const <Map<String, dynamic>>[]) {
+      final t = _ms(e['createdAt']);
+      if (t > m) m = t;
+    }
+    return m == 0 ? '' : dayKey(DateTime.fromMillisecondsSinceEpoch(m));
+  }
+
+  /// شرط السجل اليومي: يُطبَّق على الاختبار التالي في المسار فقط (لا على إعادة ناجح بإذن)
+  ExamReady? get _logReady {
+    final s = _suggested;
+    if (s == null || _student == null || _sExams == null) return null;
+    if (_type != s.type || _startJuz != s.start) return null;
+    final passed = {
+      for (final e in _sExams!)
+        if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
+    };
+    return examReadiness(_student!.pathDir, _student!.pathStart, passed, _sLogs, _sProg, _lastExamDate);
+  }
+
+  /// يمرّ الشرط إذا تحقق أو بتصريح اختبار من الإدارة
+  bool get _logOk {
+    final r = _logReady;
+    return r == null || r.ok || _permitted;
   }
 
   bool get _forcedRetest => _prev != null && _prev!['passed'] != true;
@@ -159,7 +177,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
 
   int? get _endJuz => (_type == null || _startJuz == null) ? null : _startJuz! + _type! - 1;
   bool get _ready =>
-      _halaqa != null && _student != null && _type != null && _startJuz != null && _selectedAllowed && !_blocked;
+      _halaqa != null && _student != null && _type != null && _startJuz != null && _selectedAllowed && !_blocked && _logOk;
 
   Future<void> _pickStudent() async {
     final res = await showModalBottomSheet<Student>(
@@ -269,16 +287,15 @@ class _NewExamScreenState extends State<NewExamScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 15, height: 1.5)),
-          if (_daily != null && s != null && s.type == 1)
+          if (s != null && _logReady != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                _daily!.mode == 'review_exam' && _daily!.ready
-                    ? 'السجل اليومي: أنهى حفظ الجزء ويراجعه — جاهز للاختبار'
-                    : _daily!.mode == 'memorize' || _daily!.mode == 'review_surah'
-                        ? 'السجل اليومي: ما زال يحفظ هذا الجزء'
-                        : '',
-                style: const TextStyle(color: Color(0xFF1F4E8C)),
+                'السجل اليومي: ${_logReady!.message(s)}'
+                    '${!_logReady!.ok && _permitted ? '\nمسموح بتصريح من الإدارة' : ''}',
+                style: TextStyle(
+                    color: _logReady!.ok || _permitted ? const Color(0xFF1F4E8C) : Colors.red.shade800,
+                    fontWeight: FontWeight.w600),
               ),
             ),
         ],
@@ -413,9 +430,11 @@ class _NewExamScreenState extends State<NewExamScreen> {
               child: Text(
                   _blocked
                       ? 'لا يمكن بدء الاختبار: الطالب ناجح فيه سابقاً، ويحتاج إذن الإدارة.'
-                      : (_student == null ? 'اختر الطالب لبدء الاختبار' : 'لا يوجد اختبار متاح لبدئه'),
+                      : !_logOk
+                          ? 'لا يمكن بدء الاختبار قبل تسميع ${(_suggested?.type ?? 1) == 1 ? 'الجزء كاملاً في جلسة واحدة' : 'كل الأجزاء المطلوبة كاملة'} في السجل اليومي، أو بتصريح من الإدارة.'
+                          : (_student == null ? 'اختر الطالب لبدء الاختبار' : 'لا يوجد اختبار متاح لبدئه'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: _blocked ? Colors.red.shade700 : Colors.grey)),
+                  style: TextStyle(color: _blocked || !_logOk ? Colors.red.shade700 : Colors.grey)),
             ),
         ],
       ),
