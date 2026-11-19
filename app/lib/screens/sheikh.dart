@@ -122,7 +122,7 @@ class SheikhHomeScreen extends StatefulWidget {
 class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   final List<StreamSubscription> _subs = [];
   List<Student> _students = [];
-  List<Map<String, dynamic>> _logs = [], _progress = [], _exams = [], _holidays = [];
+  List<Map<String, dynamic>> _logs = [], _progress = [], _exams = [], _holidays = [], _sheikhs = [];
   Map<String, dynamic> _settings = {};
   String _halaqaName = '';
   bool _loaded = false;
@@ -158,6 +158,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     on(Repo.I.halaqaExams(_halaqaId), (List<Map<String, dynamic>> v) => _exams = v);
     on(Repo.I.holidays(), (List<Map<String, dynamic>> v) => _holidays = v);
     on(Repo.I.settings(), (Map<String, dynamic> v) => _settings = v);
+    on(Repo.I.sheikhs(), (List<Map<String, dynamic>> v) => _sheikhs = v);
     on(Repo.I.halaqat(), (List<Halaqa> v) {
       final h = v.where((x) => x.id == _halaqaId);
       _halaqaName = h.isEmpty ? '' : h.first.name;
@@ -271,29 +272,113 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     if (ok == true) Repo.I.setHalaqaHoliday(_halaqaId, _today, on, _sheikhName);
   }
 
-  Widget _banner(String text, Color bg, Color fg, {Widget? action}) => Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-        child: Row(children: [
-          Expanded(child: Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold))),
-          if (action != null) action,
-        ]),
+  Widget _header(DateTime now) {
+    final names = _sheikhs
+        .where((x) => x['halaqaId'] == _halaqaId)
+        .map((x) => (x['name'] ?? '').toString())
+        .where((n) => n.isNotEmpty)
+        .join('، ');
+    final holiday = _holidayAll
+        ? 'اليوم إجازة للمركز'
+        : _holidayHalaqa
+            ? 'اليوم إجازة للحلقة'
+            : null;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF174A36), brandGreen],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_halaqaName.isEmpty ? 'الحلقة' : _halaqaName,
+              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text('المشايخ: ${names.isEmpty ? _sheikhName : names}',
+              style: const TextStyle(color: Color(0xFFDCEBE3), fontSize: 14)),
+          const Divider(color: Colors.white24, height: 18),
+          Row(
+            children: [
+              Text(dayName(now),
+                  style: const TextStyle(color: brandGold, fontSize: 17, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
+              Text('${now.day}/${now.month}/${now.year}',
+                  textDirection: TextDirection.ltr,
+                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              if (!_isSessionDay)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: brandGold, borderRadius: BorderRadius.circular(8)),
+                  child: const Text('جلسة إضافية',
+                      style: TextStyle(color: Color(0xFF174A36), fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+            ],
+          ),
+          if (holiday != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(holiday, style: const TextStyle(color: brandGold, fontWeight: FontWeight.bold)),
+            ),
+          if (!_holidayAll)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: _toggleHoliday,
+                child: Text(_holidayHalaqa ? 'إلغاء الإجازة' : 'إجازة اليوم للحلقة',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _counts(int recorded, int notRecorded, int absent, int pending) {
+    Widget item(String n, String label, Color c) => Expanded(
+          child: Column(children: [
+            Text(n, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: c)),
+            Text(label, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+          ]),
+        );
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        item('$recorded', 'سُجّل', brandGreen),
+        item('$notRecorded', 'لم يُسجّل', Colors.black87),
+        item('$absent', 'غياب', Colors.red.shade700),
+        if (pending > 0) item('$pending', 'بانتظار الرفع', const Color(0xFF9A6700)),
+      ]),
+    );
+  }
+
+  Widget _section(String t, int n) => Padding(
+        padding: const EdgeInsets.only(top: 6, bottom: 4, right: 4, left: 4),
+        child: Text('$t ($n)', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
       );
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final students = [..._students];
-    final recorded = students.where((s) => _todayLog(s.id) != null).length;
-    final absent = students.where((s) {
-      final l = _todayLog(s.id);
-      return l != null && (l['status'] == 'absent' || l['status'] == 'excused');
+    final todo = students.where((s) => _todayLog(s.id) == null).toList();
+    final done = students.where((s) => _todayLog(s.id) != null).toList();
+    final absent = done.where((s) {
+      final l = _todayLog(s.id)!;
+      return l['status'] == 'absent' || l['status'] == 'excused';
     }).length;
     final pending = _logs.where((l) => l['_pending'] == true).length;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_halaqaName.isEmpty ? 'السجل اليومي' : _halaqaName),
+        title: const Text('السجل اليومي'),
         actions: [
           TextButton(
             onPressed: () {
@@ -310,34 +395,18 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
           : ListView(
               padding: const EdgeInsets.all(12),
               children: [
-                Text('الشيخ: $_sheikhName — ${dayName(now)} $_today',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: brandGreen)),
-                const SizedBox(height: 8),
-                if (!_isSessionDay)
-                  _banner('اليوم ليس من أيام التحفيظ — أي تسجيل يُحسب جلسة إضافية', const Color(0xFFFFF4DE),
-                      const Color(0xFF9A6700)),
-                if (_holidayAll)
-                  _banner('اليوم إجازة للمركز', const Color(0xFFE8F3EC), brandGreen)
-                else if (_holidayHalaqa)
-                  _banner('اليوم إجازة للحلقة', const Color(0xFFE8F3EC), brandGreen,
-                      action: TextButton(onPressed: _toggleHoliday, child: const Text('إلغاء الإجازة')))
-                else
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TextButton(onPressed: _toggleHoliday, child: const Text('تعليم اليوم إجازة للحلقة')),
-                  ),
-                Text(
-                  'سُجّل $recorded من ${students.length} — غياب $absent'
-                  '${pending > 0 ? ' — بانتظار الرفع: $pending' : ''}',
-                  style: const TextStyle(color: Colors.black54),
-                ),
-                const SizedBox(height: 8),
-                for (final s in students) _studentCard(s),
+                _header(now),
+                _counts(done.length, todo.length, absent, pending),
                 if (students.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(24),
                     child: Text('لا يوجد طلاب في الحلقة', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
                   ),
+                if (todo.isNotEmpty) _section('لم يُسجّل بعد', todo.length),
+                for (final s in todo) _studentCard(s),
+                if (done.isNotEmpty) _section('تم التسجيل', done.length),
+                for (final s in done) _studentCard(s),
+                const SizedBox(height: 20),
               ],
             ),
     );
@@ -353,12 +422,24 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       'needs_start' => const Color(0xFF9A6700),
       _ => const Color(0xFF1F4E8C),
     };
+    final status = l == null ? null : (l['status'] ?? '').toString();
+    final Color stColor = switch (status) {
+      'recited' => brandGreen,
+      'absent' => Colors.red.shade700,
+      'excused' => const Color(0xFF9A6700),
+      'norecite' => Colors.red.shade400,
+      _ => Colors.grey,
+    };
     final canQuick = l == null && st.mode == 'memorize' && st.fromG != null && st.suggestToG != null;
     return Card(
+      color: Colors.white,
+      surfaceTintColor: Colors.white,
+      margin: const EdgeInsets.symmetric(vertical: 4),
       child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () => _open(s, st, l),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 2),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -367,26 +448,40 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                   child: Text(s.name + (s.pending ? ' (جديد)' : ''),
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
-                if (l != null && l['_pending'] == true)
-                  const Text('بانتظار الرفع', style: TextStyle(color: Color(0xFF9A6700), fontSize: 12)),
+                Text(status == null ? 'لم يُسجّل' : statusText(status),
+                    style: TextStyle(color: stColor, fontWeight: FontWeight.bold)),
               ]),
-              Text(st.title, style: TextStyle(color: modeColor, fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(l == null ? 'لم يُسجّل اليوم' : _summary(l),
-                  style: TextStyle(color: l == null ? Colors.grey : Colors.black87)),
+              Text(st.title, style: TextStyle(color: modeColor, fontSize: 14)),
+              if (l != null && status == 'recited')
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(_summary(l), style: const TextStyle(color: Colors.black87, fontSize: 13)),
+                ),
               if (warn != null) Text(warn, style: const TextStyle(color: Color(0xFF9A6700), fontSize: 13)),
-              Wrap(
-                spacing: 4,
+              if (l != null && l['_pending'] == true)
+                const Text('بانتظار الرفع', style: TextStyle(color: Color(0xFF9A6700), fontSize: 12)),
+              Row(
                 children: [
                   if (canQuick)
-                    TextButton(
-                      onPressed: () => _quickRecite(s, st),
-                      child: Text(
-                          'سمّع: ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!)} (${fmtPages(memRangePages(s.pathDir, st.fromG!, st.suggestToG!))} ص)'),
-                    ),
+                    Expanded(
+                      child: TextButton(
+                        style: TextButton.styleFrom(alignment: AlignmentDirectional.centerStart),
+                        onPressed: () => _quickRecite(s, st),
+                        child: Text(
+                          'سمّع ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!)} (${fmtPages(memRangePages(s.pathDir, st.fromG!, st.suggestToG!))} ص)',
+                          maxLines: 2,
+                        ),
+                      ),
+                    )
+                  else
+                    const Spacer(),
                   if (l == null && st.mode != 'needs_start')
                     TextButton(onPressed: () => _quickStatus(s, st, 'absent'), child: const Text('غائب')),
-                  TextButton(onPressed: () => _open(s, st, l), child: Text(l == null ? 'تسجيل مفصّل' : 'تعديل')),
+                  TextButton(
+                    onPressed: () => _open(s, st, l),
+                    child: Text(st.mode == 'needs_start' ? 'تحديد البداية' : (l == null ? 'تفاصيل' : 'تعديل')),
+                  ),
                 ],
               ),
             ],
