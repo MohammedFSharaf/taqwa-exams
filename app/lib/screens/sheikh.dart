@@ -523,7 +523,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     final canQuick = l == null && st.mode == 'memorize' && st.fromG != null && st.suggestToG != null;
     String sub = st.title;
     if (canQuick) {
-      sub = '${st.title}\nالمقترح: ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!)} '
+      sub = '${st.title}\nالحفظ التالي: ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!)} '
           '(${fmtPages(memRangePages(s.pathDir, st.fromG!, st.suggestToG!))} ص)';
     } else if (l != null && status == 'recited') {
       sub = '${st.title}\n${_shortSummary(l)}';
@@ -1023,7 +1023,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
               ]),
             Wrap(spacing: 6, runSpacing: 4, children: [
               if (sugg != null && !suggAdded)
-                FilledButton.tonal(onPressed: () => _addReview(sugg), child: Text('المقترح: ${sugg['label']}')),
+                FilledButton.tonal(onPressed: () => _addReview(sugg), child: Text('المراجعة المطلوبة: ${sugg['label']}')),
               OutlinedButton(onPressed: () => _reviewDialog('ayat'), child: const Text('+ آيات')),
               OutlinedButton(onPressed: () => _reviewDialog('surah'), child: const Text('+ سورة')),
               OutlinedButton(onPressed: () => _reviewDialog('juz'), child: const Text('+ جزء')),
