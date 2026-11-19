@@ -1319,7 +1319,47 @@ function stalledList(){
   }
   return out.sort((a,b)=>b.d-a.d);
 }
-function readyForExam(){ return approvedStudents().filter(s => { try { return dailyOf(s).mode === "review_exam"; } catch(_){ return false; } }); }
+function readyForExam(){ return approvedStudents().filter(s => { try { const r = examReady(s); return r.ok && !r.hafiz && r.reason === "ok"; } catch(_){ return false; } }); }
+// ===== شرط الاختبار: أتمّ الحفظ ثم سمّع الجزء كاملاً مراجعةً في جلسة واحدة =====
+function reviewsCover(reviews, a, b){
+  const iv = (reviews||[]).filter(r => r && r.fromG && r.toG).map(r => [Math.min(r.fromG, r.toG), Math.max(r.fromG, r.toG)]).sort((x,y)=>x[0]-y[0]);
+  let cur = a;
+  for (const [f,t] of iv){ if (f > cur) break; if (t + 1 > cur) cur = t + 1; if (cur > b) return true; }
+  return cur > b;
+}
+function examReady(s){
+  const passed = passedKeys(s.id), p = pathStatus(sDir(s), sStart(s), passed);
+  if (p.hafiz) return { ok:true, hafiz:true, reason:"hafiz", missing:[] };
+  const step = p.steps[p.next], O = memOrder(sDir(s)), logs = logsOf(s.id), pr = progressOf(s.id);
+  const ms = S.exams.filter(e => e.studentId === s.id).map(examMs).filter(Boolean);
+  let since = ms.length ? dayKey(new Date(Math.max(...ms))) : "";
+  if (step.type === 1){
+    const J = step.start; let cursor = null, hasData = !!pr, doneDate = "";
+    if (pr && pr.lastG) cursor = O.pos[pr.lastG];
+    for (const l of logs){ const tg = l.newMem && l.newMem.toG; if (!tg) continue; hasData = true; const c = O.pos[tg];
+      if (cursor === null || c > cursor) cursor = c; if (c >= O.jStart[J] && c <= O.jEnd[J] && (l.date||"") > doneDate) doneDate = l.date; }
+    if (!hasData) return { ok:false, reason:"needs_start", step, missing:[J] };
+    if (cursor === null || cursor < O.jEnd[J]) return { ok:false, reason:"memorizing", step, missing:[J] };
+    if (doneDate > since) since = doneDate;
+  }
+  const missing = [];
+  for (let j = step.start; j <= step.end; j++){
+    const [a, b] = Q.juz[j-1];
+    if (!logs.some(l => (l.date||"") >= since && l.status === "recited" && reviewsCover(l.reviews, a, b))) missing.push(j);
+  }
+  return { ok: !missing.length, reason: missing.length ? "review" : "ok", step, missing };
+}
+function examPermitted(s, step){
+  const last = Math.max(0, ...S.exams.filter(e => e.studentId === s.id && e.type === step.type && e.startJuz === step.start).map(examMs));
+  return S.permits.some(p => p.studentId === s.id && p.type === step.type && p.startJuz === step.start && (p.grantedAtMs||0) > last);
+}
+function readyText(r){
+  if (r.hafiz) return "";
+  if (r.ok) return "جاهز للاختبار ✓";
+  if (r.reason === "needs_start") return "لم تُحدَّد نقطة البداية في السجل اليومي";
+  if (r.reason === "memorizing") return `ما زال يحفظ الجزء ${r.step.start}`;
+  return r.step.type === 1 ? `لم يُسمِّع الجزء ${r.step.start} كاملاً في جلسة واحدة` : `بقي تسميع: ${r.missing.map(j => "الجزء " + j).join("، ")}`;
+}
 function activePermits(){ return S.permits.filter(p => { const a = activePermit(p.studentId, p.type, p.startJuz); return a && a.id === p.id; }); }
 function renderBadges(){
   const n = frequentAbsence().length;
@@ -1409,7 +1449,7 @@ function renderPermits(){
   $("permitsList").innerHTML = list.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>تاريخ التصريح</th><th></th></tr></thead><tbody>${
     list.map(p => { const st = S.students.find(x=>x.id===p.studentId) || {};
       return `<tr><td>${nameLink(p.studentId, st.name || p.studentName)}</td><td>${esc(halaqaName(st.halaqaId))}</td>
-      <td>${esc(TYPES[p.type]||p.type)} — ${esc(lab(p))}</td><td>${p.grantedAtMs ? dayKey(new Date(p.grantedAtMs)) : ""}</td>
+      <td>${esc(TYPES[p.type]||p.type)} — ${esc(lab(p))} ${p.kind === "exam" ? pill("p-wa","بدون شرط التسميع") : pill("p-gr","إعادة ناجح")}</td><td>${p.grantedAtMs ? dayKey(new Date(p.grantedAtMs)) : ""}</td>
       <td class="actions"><button class="small danger" data-prevoke="${p.id}">إلغاء التصريح</button></td></tr>`; }).join("")}</tbody></table>`
     : `<p class="muted">لا توجد تصاريح فعّالة الآن</p>`;
 }
@@ -1443,7 +1483,10 @@ function renderStudentPage(){
         <div><div class="muted">الحلقة</div>${esc(hName)}${sh ? `<div class="muted">${esc(sh)}</div>` : ""}</div>
         <div><div class="muted">اتجاه المسار</div>${DIRS[sDir(st)]}<div class="muted">البداية: الجزء ${sStart(st)}</div></div>
         <div><div class="muted">المرحلة الآن (التسميع)</div><b>${d ? esc(dailyTitle(d)) : "—"}</b></div>
-        <div><div class="muted">الاختبار التالي</div><b>${p.hafiz ? '<span class="hafiz">حافظ للقرآن الكريم</span>' : esc(stepLabel(p.steps[p.next]))}</b></div>
+        <div><div class="muted">الاختبار التالي</div><b>${p.hafiz ? '<span class="hafiz">حافظ للقرآن الكريم</span>' : esc(stepLabel(p.steps[p.next]))}</b>
+          ${(() => { if (p.hafiz) return ""; const r = examReady(st), perm = examPermitted(st, p.steps[p.next]);
+            return `<div style="margin-top:4px">${r.ok ? pill("p-ok", readyText(r)) : perm ? pill("p-wa", "مسموح بتصريح من الإدارة") : pill("p-no", esc(readyText(r)))}</div>
+            ${!r.ok && !perm && st.status !== "inactive" ? `<button class="small" style="margin-top:6px" data-eperm="${sid}">تصريح اختبار بدون الشرط</button>` : ""}`; })()}</div>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:14px"><b>التقدم في مسار الحفظ</b><span class="muted">${doneN} من ${total} مرحلة · ${passedJuz(sid).size} جزءاً مجتازاً</span></div>
       <div class="steps">${cells}</div>
@@ -1999,7 +2042,7 @@ function renderDaily(){
       <td>${l ? (ST_TEXT[l.status]||"") + (logHoliday(l) ? ' <span class="muted">(يوم إجازة)</span>' : "") : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
       <td>${l && l.newMem ? `${esc(l.newMem.label)} <b>(${fp(l.newPages)})</b>` : ""}</td>
       <td>${l && (l.reviews||[]).length ? `${reviewsText(l)} <b>= ${fp(l.reviewPages)}</b>` : ""}</td>
-      <td class="muted">${esc(dailyTitle(d))}</td><td>${esc(l ? l.sheikhName||"" : "")}</td>
+      <td class="muted">${esc(dailyTitle(d))}${d.mode === "review_exam" ? (() => { const r = examReady(s); return " " + (r.ok ? pill("p-ok","جاهز ✓") : pill("p-wa", esc(readyText(r)))); })() : ""}</td><td>${esc(l ? l.sheikhName||"" : "")}</td>
       <td class="actions"><button class="small" data-rec="${s.id}">ملف الطالب</button></td></tr>`;
   }).join("");
   $("dBody").innerHTML = rows || `<tr><td colspan="8" class="muted" style="text-align:center">لا يوجد طلاب</td></tr>`;
@@ -2165,6 +2208,10 @@ $("stuPage").addEventListener("click", async ev => {
   const sid = ev.currentTarget.dataset.sid;
   if (b.dataset.sedit){ editStudent(b.dataset.sedit, false); return; }
   if (b.dataset.smove){ transferStudent(b.dataset.smove); return; }
+  if (b.dataset.eperm){ const x = stuById(b.dataset.eperm), stp = studentPath(x).steps[studentPath(x).next];
+    confirmDlg(`السماح لـ ${x.name} بدخول اختبار «${stepLabel(stp)}» بدون شرط تسميع الجزء كاملاً؟ (لمرة واحدة)`, async () => {
+      await addDoc(collection(db,"permits"), { studentId:x.id, studentName:x.name, type:stp.type, startJuz:stp.start, kind:"exam", grantedAtMs: Date.now(), grantedAt: serverTimestamp() });
+      audit("تصريح اختبار بدون شرط التسميع", x.name, stepLabel(stp)); toast("تم التصريح"); }); return; }
   if (b.dataset.sinact){ inactivateStudent(b.dataset.sinact); return; }
   if (b.dataset.sact){ const x = stuById(b.dataset.sact); confirmDlg(`إعادة تفعيل ${x.name}؟ سيظهر من جديد في التطبيق.`, async () => {
     await updateDoc(doc(db,"students",x.id), { status:"approved", inactiveReason:"", inactiveAtMs:null }); audit("إعادة تفعيل طالب", x.name, halaqaName(x.halaqaId)); toast("تم التفعيل"); }); return; }
