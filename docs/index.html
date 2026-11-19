@@ -85,6 +85,9 @@
   #tabs button.active{background:rgba(255,255,255,.11);border-right-color:var(--gold);color:#fff;font-weight:700}
   .badge{background:var(--gold);color:#fff;border-radius:10px;padding:0 7px;font-size:11.5px;line-height:19px;font-weight:700}
   .badge.red{background:#c0504d}
+  .dedline{display:block;text-align:center;color:var(--gold);font-weight:700;font-size:12.5px;cursor:pointer;line-height:1.7}
+  .side-ded{color:#e9c46a;padding:10px 18px 0;font-size:12px}
+  .ded h3{color:var(--green);margin:0 0 8px}.ded p{line-height:1.9;margin:6px 0}.ded .nm{font-weight:700;color:#5c4a1e;margin:3px 0}
   .side .logout{margin:8px 20px 18px;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
   .content{margin-right:240px;min-height:100vh}
   .topbar{display:flex;align-items:center;gap:12px;padding:16px 24px 4px}
@@ -166,6 +169,7 @@
   <input id="loginPass" type="password" placeholder="كلمة السر" autocomplete="current-password">
   <div class="err" id="loginErr"></div>
   <button class="primary" id="loginBtn">دخول</button>
+  <a class="dedline" data-ded="1" style="margin-top:16px">صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله</a>
 </div>
 
 <div id="loading" style="text-align:center;margin-top:120px" class="muted">جارٍ التحميل...</div>
@@ -206,6 +210,7 @@
       <button data-tab="audit">سجل التعديلات</button>
       <button data-tab="settings">الإعدادات</button>
     </nav>
+    <a class="dedline side-ded" data-ded="1">صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله</a>
     <button id="logoutBtn" class="logout">خروج</button>
   </aside>
   <div class="content">
@@ -875,6 +880,16 @@ document.addEventListener("click", ev => {
 });
 (() => { const d = new Date(); $("pageSub").textContent = `${DAY_NAMES_[d.getDay()]} ${d.getDate()} / ${d.getMonth()+1} / ${d.getFullYear()}`; })();
 
+// ===== صدقة جارية =====
+const DED_INTRO = "أُنجز هذا العمل صدقةً جاريةً عن أرواح من وضعوا اللبنات الأولى لمركز التقوى لتعليم وتحفيظ القرآن الكريم، ليبقى أجره موصولاً لهم ما دام في المركز حافظٌ يحفظ، ومُسمِّعٌ يُسمِّع، ومختبِرٌ يختبر:";
+const DED_NAMES = ["الشيخ ياسر العفيفي (أبو حمزة)","الشيخ محمد صيام (أبو أنس)","الشيخ أمجد هتهت (أبو الأدهم)","الشيخ مصطفى المدهون (أبو جعفر)","الشيخ عبد الرحمن العفيفي (أبو صلاح)","الشيخ يوسف العفيفي (أبو الحسن)","الشيخ عبد الرحيم شرف (أبو خالد)"];
+const DED_OUTRO = "رحمهم الله رحمةً واسعة، وأسكنهم الفردوس الأعلى، ونسأل الله أن يتقبّل هذا العمل ويجعله في ميزان حسناتهم.";
+const DED_SHORT = "صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله";
+function showDedication(){
+  openDialog("صدقة جارية", `<div class="ded" style="text-align:center"><p>${DED_INTRO}</p>${DED_NAMES.map(n=>`<div class="nm">${n}</div>`).join("")}<p class="muted" style="font-size:14px">${DED_OUTRO}</p></div>`, [{ text:"إغلاق", cls:"primary" }]);
+}
+document.addEventListener("click", ev => { if (ev.target.closest("[data-ded]")){ ev.preventDefault(); showDedication(); } });
+
 // ===== النافذة =====
 function openDialog(title, bodyHtml, buttons, wide){
   $("dlg").classList.toggle("wide", !!wide);
@@ -1119,6 +1134,7 @@ function printDoc(title, inner){
   <div class="hdr"><img src="${logo}"><div><h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1><img src="${slogan}" style="width:190px;height:auto;display:block;margin:2px 0 4px"><div>${esc(title)}</div></div></div>
   ${inner}
   <p class="muted">تاريخ الطباعة: ${dayKey(new Date())}</p>
+  <p style="text-align:center;color:#8a6d2b;font-size:12px;margin-top:18px;border-top:1px solid #ddd;padding-top:8px">${DED_SHORT}</p>
   <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`);
   w.document.close();
 }
