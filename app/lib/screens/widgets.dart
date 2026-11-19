@@ -197,3 +197,25 @@ class SegmentedRow extends StatelessWidget {
     );
   }
 }
+
+/// اسم المطوّر
+const devCredit = 'Eng. Mohammed F Sharaf';
+
+class DevCredit extends StatelessWidget {
+  const DevCredit({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.only(bottom: 10),
+      child: Text.rich(
+        TextSpan(children: [
+          TextSpan(text: 'تصميم وتطوير: '),
+          TextSpan(text: devCredit, style: TextStyle(fontWeight: FontWeight.bold)),
+        ]),
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Colors.black38, fontSize: 11.5),
+      ),
+    );
+  }
+}

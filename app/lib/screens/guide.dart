@@ -83,6 +83,8 @@ class GuideScreen extends StatelessWidget {
                     '• أحكام التجويد من 20، والأداء من 5.\n'
                     '• المجموع من 100، والنجاح من 85.\n'
                     '• إذا وصل الخصم في سؤال واحد إلى 9 علامات يُغلق الاختبار ويُسجَّل الطالب راسباً.'),
+                const SizedBox(height: 24),
+                const DevCredit(),
               ],
             ),
             ListView(padding: const EdgeInsets.all(12), children: [_pathTable('desc')]),
