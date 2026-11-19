@@ -198,9 +198,9 @@ class DailyStatus {
       case 'review_surah':
         return 'مراجعة سورة ${rangeLabel(segFrom!, segTo!).replaceFirst('سورة ', '')} كاملة (إجباري)';
       case 'review_exam':
-        return juzFrom == juzTo ? 'مراجعة: الجزء $juzFrom (للاختبار)' : 'مراجعة: الأجزاء $juzFrom–$juzTo (للاختبار)';
+        return juzFrom == juzTo ? 'مراجعة الجزء $juzFrom للاختبار' : 'مراجعة الأجزاء $juzFrom–$juzTo للاختبار';
       default:
-        return 'حفظ: الجزء $juz';
+        return 'في الجزء $juz';
     }
   }
 

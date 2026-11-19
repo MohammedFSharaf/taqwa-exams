@@ -238,9 +238,9 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     if (l['status'] != 'recited') return statusText(l['status'] as String?);
     final parts = <String>[];
     final nm = l['newMem'];
-    if (nm is Map) parts.add('حفظ: ${nm['label'] ?? ''} (${fmtPages(((nm['pages'] ?? 0) as num).toDouble())} ص)');
+    if (nm is Map) parts.add('سمّع: ${nm['label'] ?? ''} (${fmtPages(((nm['pages'] ?? 0) as num).toDouble())} ص)');
     final rp = ((l['reviewPages'] ?? 0) as num).toDouble();
-    if (rp > 0) parts.add('مراجعة: ${fmtPages(rp)} ص');
+    if (rp > 0) parts.add('راجع: ${fmtPages(rp)} ص');
     return parts.isEmpty ? 'سمّع' : parts.join(' · ');
   }
 
@@ -351,12 +351,12 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     final lines = <String>[];
     final nm = l['newMem'];
     if (nm is Map) {
-      lines.add('حفظ: ${nm['label'] ?? ''} (${fmtPages(((l['newPages'] ?? 0) as num).toDouble())} ص)');
+      lines.add('سمّع: ${nm['label'] ?? ''} (${fmtPages(((l['newPages'] ?? 0) as num).toDouble())} ص)');
     }
     final revs = ((l['reviews'] as List?) ?? []).whereType<Map>().toList();
     if (revs.isNotEmpty) {
       final labels = revs.map((r) => (r['label'] ?? '').toString()).join('، ');
-      lines.add('مراجعة: $labels (${fmtPages(((l['reviewPages'] ?? 0) as num).toDouble())} ص)');
+      lines.add('راجع: $labels (${fmtPages(((l['reviewPages'] ?? 0) as num).toDouble())} ص)');
     }
     return lines.isEmpty ? 'سمّع' : lines.join('\n');
   }
