@@ -588,6 +588,11 @@
         </div>
       </div>
       <div class="card">
+        <h2>شرط التسميع قبل الاختبار</h2>
+        <p class="muted">عند التفعيل: لا يبدأ المختبر اختبار الطالب إلا إذا أتمّ حفظ الجزء في السجل اليومي وسمّعه كاملاً مراجعةً في جلسة واحدة (أو بتصريح من الإدارة). عند الإيقاف: يظهر للمختبر تنبيه فقط ويستطيع البدء.</p>
+        <label style="flex-direction:row;align-items:center;gap:10px;font-size:15px"><input type="checkbox" id="reqLog" style="width:20px;height:20px"> <b>تفعيل الشرط (إجباري)</b> <span id="reqLogState"></span></label>
+      </div>
+      <div class="card">
         <h2>مدة التوقف</h2>
         <p class="muted">الطالب الذي يبقى على نفس الاختبار في المسار أكثر من هذه المدة يظهر في قائمة "المتوقفين" في الإحصائيات.</p>
         <div class="row">
@@ -2276,7 +2281,18 @@ function renderDailySettings(){
   $("sessDays").innerHTML = '<span class="muted">أيام التحفيظ:</span>' + [6,0,1,2,3,4,5].map(d =>
     `<label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" value="${d}" ${days.includes(d)?'checked':''}> ${DAY_NAMES[d]}</label>`).join("");
   $("minNewPages").value = minNewPages(); $("minReviewPages").value = minReviewPages();
+  $("reqLog").checked = examRequiresLog();
+  $("reqLogState").innerHTML = examRequiresLog() ? pill("p-ok","مفعّل") : pill("p-gr","موقوف — تنبيه فقط");
 }
+function examRequiresLog(){ return !!(S.settings && S.settings.examRequiresLog); }
+$("reqLog").onchange = () => {
+  const on = $("reqLog").checked;
+  $("reqLog").checked = !on;
+  confirmDlg(on ? "تفعيل شرط التسميع؟ لن يُختبر أي طالب لم يُسمِّع الجزء كاملاً في السجل اليومي (إلا بتصريح)." : "إيقاف الشرط؟ سيظهر للمختبر تنبيه فقط.", async () => {
+    await setDoc(doc(db,"settings","app"), { examRequiresLog: on }, { merge:true });
+    audit(on ? "تفعيل شرط التسميع قبل الاختبار" : "إيقاف شرط التسميع قبل الاختبار"); toast("تم الحفظ");
+  });
+};
 $("saveDailySettingsBtn").onclick = async () => {
   const days = [...$("sessDays").querySelectorAll("input:checked")].map(i => +i.value);
   const mn = parseFloat($("minNewPages").value), mr = parseFloat($("minReviewPages").value);

@@ -33,6 +33,8 @@ class _NewExamScreenState extends State<NewExamScreen> {
   StreamSubscription? _logSub, _progSub;
   List<Map<String, dynamic>> _sLogs = [];
   Map<String, dynamic>? _sProg;
+  StreamSubscription? _setSub;
+  bool _enforce = false; // شرط التسميع مفعّل من الإدارة
 
   /// آخر اختبار سابق لنفس الطالب بنفس النوع والأجزاء
   Map<String, dynamic>? get _prev {
@@ -72,7 +74,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
   /// يمرّ الشرط إذا تحقق أو بتصريح اختبار من الإدارة
   bool get _logOk {
     final r = _logReady;
-    return r == null || r.ok || _permitted;
+    return r == null || r.ok || _permitted || !_enforce;
   }
 
   bool get _forcedRetest => _prev != null && _prev!['passed'] != true;
@@ -171,6 +173,9 @@ class _NewExamScreenState extends State<NewExamScreen> {
   @override
   void initState() {
     super.initState();
+    _setSub = Repo.I.settings().listen((v) {
+      if (mounted) setState(() => _enforce = v['examRequiresLog'] == true);
+    }, onError: (_) {});
     if (widget.initialHalaqa != null && widget.initialStudent != null) {
       _halaqa = widget.initialHalaqa;
       _student = widget.initialStudent;
@@ -182,6 +187,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
 
   @override
   void dispose() {
+    _setSub?.cancel();
     _sub?.cancel();
     _permSub?.cancel();
     _logSub?.cancel();
@@ -306,9 +312,14 @@ class _NewExamScreenState extends State<NewExamScreen> {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 'السجل اليومي: ${_logReady!.message(s)}'
-                    '${!_logReady!.ok && _permitted ? '\nمسموح بتصريح من الإدارة' : ''}',
+                    '${!_logReady!.ok && _permitted ? '\nمسموح بتصريح من الإدارة' : ''}'
+                    '${!_logReady!.ok && !_permitted && !_enforce ? '\n(تنبيه فقط — الشرط غير مفعّل حالياً)' : ''}',
                 style: TextStyle(
-                    color: _logReady!.ok || _permitted ? const Color(0xFF1F4E8C) : Colors.red.shade800,
+                    color: _logReady!.ok || _permitted
+                        ? const Color(0xFF1F4E8C)
+                        : _enforce
+                            ? Colors.red.shade800
+                            : const Color(0xFF9A6700),
                     fontWeight: FontWeight.w600),
               ),
             ),
