@@ -209,7 +209,9 @@ const devCredit = 'Eng. Mohammed F Sharaf';
 Future<String> appVersionText() async {
   try {
     final info = await PackageInfo.fromPlatform();
-    return '${info.version} (${info.buildNumber})${kBeta ? ' تجريبي' : ''}';
+    final v = info.version.endsWith('.0') ? info.version.substring(0, info.version.length - 2) : info.version;
+    final first = info.version == '1.0.0' ? 'الإصدار الأول ' : 'الإصدار ';
+    return '$first$v (${info.buildNumber})${kBeta ? ' — تجريبي' : ''}';
   } catch (_) {
     return '';
   }
@@ -233,7 +235,7 @@ class DevCredit extends StatelessWidget {
             if ((snap.data ?? '').isNotEmpty)
               Text.rich(
                 TextSpan(children: [
-                  const TextSpan(text: 'رقم الإصدار: '),
+                  const TextSpan(text: ''),
                   TextSpan(text: snap.data!, style: const TextStyle(fontWeight: FontWeight.bold)),
                 ]),
                 textAlign: TextAlign.center,
