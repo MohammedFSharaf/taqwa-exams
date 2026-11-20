@@ -12,26 +12,26 @@
 <style>
   :root{
     --green:#1f5f46; --green-dark:#174a36; --gold:#b8913a; --line:#e1e6e3; --text:#1e2a25; --muted:#6b7a73;
-    --bg:#f4f6f5; --red:#b23a3a; --amber:#a86a0c;
+    --bg:#f4f6f5; --card:#fff; --zebra:#eef5f1; --hover:#e0eee6; --th:#1f5f46; --thtext:#fff; --red:#b23a3a; --amber:#a86a0c;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:'Cairo',Tahoma,sans-serif;background:var(--bg);color:var(--text);font-size:15px}
   #login .logo{width:130px;height:130px;object-fit:contain;margin-bottom:6px}
   #login .slogan{width:260px;max-width:90%;margin:4px auto 8px;display:block}
-  .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px;overflow-x:auto}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px;overflow-x:auto}
   h2{font-size:17px;margin:0 0 12px}
-  button{font-family:inherit;font-size:14px;cursor:pointer;border-radius:5px;padding:7px 14px;border:1px solid var(--line);background:#fff;color:var(--text)}
+  button{font-family:inherit;font-size:14px;cursor:pointer;border-radius:5px;padding:7px 14px;border:1px solid var(--line);background:var(--card);color:var(--text)}
   button.primary{background:var(--green);border-color:var(--green);color:#fff}
   button.primary:hover{background:var(--green-dark)}
   button.danger{color:var(--red);border-color:#f1c4c0}
   button.small{padding:3px 9px;font-size:13px}
-  input,select,textarea{font-family:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:#fff}
+  input,select,textarea{font-family:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:var(--card)}
   textarea{width:100%;min-height:70px}
   .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
   .row label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-  table{width:100%;border-collapse:collapse;background:#fff}
+  table{width:100%;border-collapse:collapse;background:var(--card)}
   th,td{border-bottom:1px solid #edf0ee;padding:8px 7px;text-align:right;vertical-align:middle}
-  th{background:#f5f7f6;font-weight:700;font-size:12.5px;color:var(--muted);white-space:nowrap}
+  th{background:var(--th);font-weight:700;font-size:12.5px;color:var(--thtext);white-space:nowrap;position:sticky;top:0;z-index:2}
   tr:hover td{background:#fafbfb}
   .muted{color:var(--muted);font-size:13px}
   .pass{color:var(--green);font-weight:700}
@@ -115,7 +115,7 @@
   .shade{display:none}
   /* لوحة اليوم */
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-  .kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
   .kpi .l{color:var(--muted);font-size:12.5px}
   .kpi .v{font-size:26px;font-weight:700;line-height:1.45}
   .kpi .s{font-size:12px;color:var(--muted)}
@@ -147,11 +147,61 @@
   .steps span.on{background:var(--green)} .steps span.cur{background:var(--gold)} .steps span.ex{background:#cfd8d3}
   .gsearch{position:relative;margin-right:auto;width:300px;max-width:52vw}
   .gsearch input{width:100%;padding:7px 12px;border-radius:20px}
-  .gres{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:60;margin-top:4px;max-height:360px;overflow:auto}
+  .gres{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:60;margin-top:4px;max-height:360px;overflow:auto}
   .gres div{padding:8px 12px;cursor:pointer;color:var(--text);font-size:14px;border-bottom:1px solid #f0f2f1}
   .gres div:hover,.gres div.on{background:#eef5f1}
   .gres span{color:var(--muted);font-size:12px}
   .inactive td{color:#9aa3a0}
+
+  /* ===== الجداول ===== */
+  th,td{padding:9px 10px}
+  tbody tr:nth-child(even) > td{background:var(--zebra)}
+  tbody tr:hover > td{background:var(--hover)}
+  tbody tr.grp-row > td{background:transparent !important;font-weight:700;color:var(--green);font-size:13px;padding:14px 10px 6px;border-bottom:2px solid var(--line)}
+  tbody tr.grp-row:hover > td{background:transparent}
+  .tblwrap{max-height:72vh;overflow:auto;border-radius:8px}
+  .rpill{display:inline-block;border-radius:12px;padding:1px 11px;font-size:12.5px;font-weight:700;white-space:nowrap}
+  .rpill.pass{background:#dff1e7;color:#17663f} .rpill.fail{background:#f8e1e1;color:#a62f2f} .rpill.closed{background:#fbefd5;color:#94600a}
+  .mk{font-weight:800}.mk.hi{color:#0f5a36}.mk.ok{color:#2f8a5a}.mk.lo{color:#b23a3a}
+  .hq{display:inline-block;border-radius:10px;padding:0 9px;font-size:12.5px;line-height:21px;background:color-mix(in srgb,var(--c) 16%,transparent);color:color-mix(in srgb,var(--c) 80%,#000);white-space:nowrap}
+  .av{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:#fff;font-size:14px;font-weight:700;margin-left:8px;vertical-align:middle;flex-shrink:0}
+  details.more{position:relative;display:inline-block}
+  details.more summary{list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:1px 10px;font-weight:800;color:var(--muted);background:var(--card);user-select:none}
+  details.more summary::-webkit-details-marker{display:none}
+  details.more[open] summary{background:var(--hover)}
+  details.more .mbox{position:absolute;left:0;top:110%;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 22px rgba(0,0,0,.14);z-index:30;min-width:130px;padding:4px;display:flex;flex-direction:column}
+  details.more .mbox button{border:0;text-align:right;padding:7px 12px;border-radius:6px;background:transparent}
+  details.more .mbox button:hover{background:var(--hover)}
+  details.more .mbox hr{border:0;border-top:1px solid var(--line);margin:3px 0}
+  .moreRow{text-align:center;padding:12px}
+  .empty{text-align:center;padding:26px 10px;color:var(--muted)}
+  .empty svg{display:block;margin:0 auto 8px;opacity:.55}
+  td.empty-td{background:transparent !important}
+  .ntf{position:fixed;bottom:20px;right:20px;z-index:90;display:flex;flex-direction:column;gap:8px}
+  .ntf div{background:var(--card);border:1px solid var(--line);border-right:4px solid var(--green);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:10px 14px;min-width:260px;max-width:360px;cursor:pointer;animation:ntfIn .25s}
+  .ntf div.fail{border-right-color:var(--red)}
+  .ntf b{display:block;font-size:13px;color:var(--muted)}
+  @keyframes ntfIn{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+  .themeBtn{background:transparent;border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:15px}
+  /* ===== الوضع الليلي ===== */
+  body.dark{--bg:#0f1714;--card:#17221d;--line:#2a3a33;--text:#e3ece7;--muted:#9fb3a9;--zebra:#1b2822;--hover:#22342b;--th:#123527;--thtext:#e9f3ee}
+  body.dark th,body.dark td{border-bottom-color:#22302a}
+  body.dark input,body.dark select,body.dark textarea,body.dark button{color:var(--text)}
+  body.dark button.primary{color:#fff}
+  body.dark dialog:not(.deddlg){background:var(--card);color:var(--text)}
+  body.dark .dlg-head,body.dark .dlg-foot{background:var(--card)}
+  body.dark .p-ok,body.dark .rpill.pass{background:#1f3d2e;color:#8fe0b4} body.dark .p-no,body.dark .rpill.fail{background:#43222200;color:#f19a9a;border:1px solid #6b2f2f}
+  body.dark .p-wa,body.dark .rpill.closed{background:#3d3020;color:#f0c674} body.dark .p-gr{background:#26332d;color:#b5c7be}
+  body.dark .mk.hi{color:#7ee0a9}body.dark .mk.ok{color:#a8e6c2}body.dark .mk.lo{color:#f19a9a}
+  body.dark .hq{color:color-mix(in srgb,var(--c) 55%,#fff)}
+  body.dark .topbar h1,body.dark .pagehead h2{color:var(--text)}
+  body.dark a.name{color:var(--text)}
+  body.dark .alert:hover{background:var(--hover)}
+  body.dark .hbar,body.dark .steps span:not(.on):not(.cur){background:#2a3a33}
+  body.dark .pass{color:#7ee0a9} body.dark .fail{color:#f19a9a}
+  body.dark .alert{border-bottom-color:#22302a} body.dark .lnk,body.dark .card h2 .lnk,body.dark .crumb a{color:#8fd0ad}
+  body.dark tbody tr.grp-row > td{color:#8fd0ad}
+  body.dark .gres div{color:var(--text);border-bottom-color:#22302a}
   @media (max-width:900px){
     .side{transform:translateX(100%);transition:transform .2s;box-shadow:-4px 0 18px rgba(0,0,0,.2)}
     body.nav-open .side{transform:none}
@@ -234,6 +284,7 @@
   <div class="topbar">
     <button class="menu" id="menuBtn" aria-label="القائمة">☰</button>
     <div><h1 id="pageTitle">لوحة اليوم</h1><div class="sub" id="pageSub"></div></div>
+    <button class="themeBtn" id="themeBtn" title="الوضع الليلي">🌙</button>
     <div class="gsearch"><input id="gSearch" placeholder="🔍 ابحث عن طالب…" autocomplete="off"><div class="gres hidden" id="gRes"></div></div>
   </div>
   <main>
@@ -310,11 +361,11 @@
         </div>
       </div>
       <div class="stats" id="examStats"></div>
-      <div class="card" style="padding:0;overflow:auto">
+      <div class="card tblwrap" style="padding:0">
         <table>
           <thead><tr>
-            <th>التاريخ</th><th>الطالب</th><th>الحلقة</th><th>النوع</th><th>الأجزاء</th>
-            <th>المختبر</th><th>المجموع</th><th>النتيجة</th><th></th>
+            <th>الوقت</th><th>الطالب</th><th class="hm">الحلقة</th><th class="hm">النوع</th><th class="hm">الأجزاء</th>
+            <th class="hm">المختبر</th><th>المجموع</th><th>النتيجة</th><th></th>
           </tr></thead>
           <tbody id="examsBody"></tbody>
         </table>
@@ -487,10 +538,10 @@
           <label>الحالة<select id="sState"><option value="active">على رأس الحلقة</option><option value="inactive">منقطع</option><option value="">الكل</option></select></label>
           <span class="muted" id="studentsCount"></span>
         </div>
-        <table>
+        <div class="tblwrap"><table>
           <thead><tr><th>الاسم</th><th>الحلقة</th><th>المسار</th><th>الاختبار التالي</th><th>الاختبارات</th><th></th></tr></thead>
           <tbody id="studentsBody"></tbody>
-        </table>
+        </table></div>
       </div>
     </section>
 
@@ -565,6 +616,7 @@
   <div class="dlg-foot" id="dlgFoot"></div>
 </dialog>
 <div class="toast" id="toast"></div>
+<div class="ntf" id="ntf"></div>
 <dialog id="dedDlg" class="deddlg"><button class="dclose" onclick="this.closest('dialog').close()" aria-label="إغلاق">✕</button><div id="dedBody"></div></dialog>
 
 <script type="module">
@@ -836,8 +888,24 @@ onAuthStateChanged(auth, user => {
   }
 });
 
+const SEEN = {};
+function notify(html, cls, onClick){
+  const box = $("ntf"), el = document.createElement("div");
+  el.className = cls || ""; el.innerHTML = html; el.onclick = () => { el.remove(); onClick && onClick(); };
+  box.appendChild(el); setTimeout(() => el.remove(), 9000);
+  while (box.children.length > 4) box.firstChild.remove();
+}
 function listen(name, cb){
   unsubs.push(onSnapshot(collection(db, name), snap => {
+    if (name === "exams" || name === "students"){
+      const ids = new Set(snap.docs.map(d => d.id));
+      if (SEEN[name]){
+        for (const d of snap.docs){ if (SEEN[name].has(d.id)) continue; const x = { id:d.id, ...d.data() };
+          if (name === "exams") notify(`<b>وصل اختبار جديد</b>${esc(x.studentName)} — ${esc(juzLabel(x))} — ${x.closed ? "أُغلق" : (x.passed ? "ناجح " : "راسب ") + fmtNum(x.total)}`, x.passed ? "" : "fail", () => studentRecord(x.studentId));
+          else if (x.status === "pending") notify(`<b>طالب جديد بانتظار الموافقة</b>${esc(x.name)} — ${esc(halaqaName(x.halaqaId))}`, "", () => go("pending")); }
+      }
+      SEEN[name] = ids;
+    }
     S[name] = snap.docs.map(d => ({ id:d.id, ...d.data() }));
     cb && cb();
     renderAll();
@@ -890,6 +958,9 @@ function route(){
   else go(h || "home", false);
 }
 window.addEventListener("popstate", route);
+function setTheme(dark){ document.body.classList.toggle("dark", dark); $("themeBtn").textContent = dark ? "☀️" : "🌙"; try { localStorage.setItem("taqwaTheme", dark ? "dark" : "light"); } catch(_){} }
+try { if (localStorage.getItem("taqwaTheme") === "dark") setTheme(true); } catch(_){}
+$("themeBtn").onclick = () => setTheme(!document.body.classList.contains("dark"));
 $("menuBtn").onclick = () => document.body.classList.toggle("nav-open");
 $("shade").onclick = () => document.body.classList.remove("nav-open");
 document.addEventListener("click", ev => {
@@ -1001,22 +1072,25 @@ function renderExams(){
     <span>ناجح: <b class="pass">${pass}</b></span>
     <span>راسب: <b class="fail">${list.length-pass}</b></span>
     <span>منها أُغلق: <b class="closed">${closed}</b></span>`;
-  $("examsBody").innerHTML = list.length ? list.map(e => `
+  let lastG = null;
+  const shown = list.slice(0, LIM.exams);
+  $("examsBody").innerHTML = list.length ? shown.map(e => {
+    const d = examDate(e), g = dayGroupLabel(d);
+    const head = g !== lastG ? `<tr class="grp-row"><td colspan="9">${g}</td></tr>` : ""; lastG = g;
+    const tm = d ? `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}` : "";
+    return head + `
     <tr>
-      <td>${esc(dateText(e))}</td>
-      <td>${nameLink(e.studentId, e.studentName)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td>
-      <td>${esc(e.halaqaName)}</td>
-      <td>${esc(TYPES[e.type]||e.type)}</td>
-      <td class="muted">${esc(juzLabel(e))}</td>
-      <td>${esc(e.examinerName)}</td>
-      <td><b>${e.closed ? "—" : fmtNum(e.total)}</b></td>
-      <td class="${resultOf(e)}">${resultText(e)}</td>
-      <td class="actions">
-        <button class="small" data-view="${e.id}">عرض</button>
-        <button class="small" data-edit="${e.id}">تعديل</button>
-        <button class="small danger" data-del="${e.id}">حذف</button>
-      </td>
-    </tr>`).join("") : `<tr><td colspan="9" class="muted" style="text-align:center">لا توجد اختبارات</td></tr>`;
+      <td class="muted">${tm}</td>
+      <td style="white-space:nowrap">${nameLink(e.studentId, e.studentName, true)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td>
+      <td class="hm">${hqTag(e.halaqaId, e.halaqaName)}</td>
+      <td class="hm">${esc(TYPES[e.type]||e.type)}</td>
+      <td class="muted hm">${esc(juzLabel(e))}</td>
+      <td class="hm">${esc(e.examinerName)}</td>
+      <td>${markHtml(e)}</td>
+      <td>${resPill(e)}</td>
+      <td class="actions">${moreMenu(`<button data-view="${e.id}">عرض التفاصيل</button><button data-edit="${e.id}">تعديل</button><hr><button class="danger" data-del="${e.id}">حذف</button>`)}</td>
+    </tr>`; }).join("") + moreRow("exams", list.length, 9)
+    : `<tr><td colspan="9" class="empty-td">${emptyHtml("لا توجد اختبارات بهذه الفلاتر")}</td></tr>`;
 }
 $("examsBody").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
@@ -1291,9 +1365,9 @@ function studentRecordHtml(sid, forPrint){
     <table>
       <thead><tr><th>التاريخ</th><th>النوع</th><th>الأجزاء</th><th>المختبر</th><th>المجموع</th><th>النتيجة</th><th>ملاحظات</th></tr></thead>
       <tbody>${exams.map(e => `<tr><td>${esc(dateText(e))}</td><td>${esc(TYPES[e.type]||e.type)}${e.isRetest?' (إعادة)':''}</td>
-        <td>${esc(juzLabel(e))}</td><td>${esc(e.examinerName)}</td><td>${e.closed?'—':fmtNum(e.total)}</td>
-        <td class="${resultOf(e)}">${resultText(e)}</td><td>${esc(e.notes)}</td></tr>`).join("")
-        || `<tr><td colspan="7" class="muted">لا توجد اختبارات</td></tr>`}</tbody>
+        <td>${esc(juzLabel(e))}</td><td>${esc(e.examinerName)}</td><td>${markHtml(e)}</td>
+        <td>${resPill(e)}</td><td>${esc(e.notes)}</td></tr>`).join("")
+        || `<tr><td colspan="7" class="empty-td">${emptyHtml("لا توجد اختبارات لهذا الطالب")}</td></tr>`}</tbody>
     </table>`;
 }
 function studentRecord(sid){
@@ -1305,7 +1379,39 @@ function studentRecord(sid){
 
 // ===== لوحة اليوم =====
 function pill(cls, t){ return `<span class="pill ${cls}">${t}</span>`; }
-function nameLink(sid, name){ return sid ? `<a class="name" data-rec="${esc(sid)}">${esc(name)}</a>` : esc(name); }
+function nameLink(sid, name, avatar){
+  const a = avatar ? avatarOf(sid, name) : "";
+  return sid ? `${a}<a class="name" data-rec="${esc(sid)}">${esc(name)}</a>` : a + esc(name);
+}
+// ===== شكل الجداول =====
+const HQ_COLORS = ["#2e7d5b","#2b6cb0","#b7791f","#9b2c6f","#6b46c1","#c05621","#2c7a7b","#8a6d3b","#4a5568","#b83280"];
+function hqColor(id){ const i = sortAr([...S.halaqat]).findIndex(h => h.id === id); return HQ_COLORS[(i < 0 ? 0 : i) % HQ_COLORS.length]; }
+function hqTag(id, name){ const n = name || halaqaName(id); return n ? `<span class="hq" style="--c:${hqColor(id)}">${esc(n)}</span>` : ""; }
+function avatarOf(sid, name){
+  const st = stuById(sid) || {}; const parts = String(name||"").trim().split(/\s+/);
+  const ini = (parts[0] === "عبد" && parts[1] ? parts[1] : parts[0] || "").charAt(0);
+  return `<span class="av" style="background:${hqColor(st.halaqaId)}">${esc(ini)}</span>`;
+}
+function resPill(e){ return `<span class="rpill ${resultOf(e)}">${e.closed ? "أُغلق" : e.passed ? "ناجح" : "راسب"}</span>`; }
+function markHtml(e){ if (e.closed) return `<span class="mk lo">—</span>`; const t = +e.total || 0; return `<span class="mk ${t >= 95 ? "hi" : t >= 85 ? "ok" : "lo"}">${fmtNum(e.total)}</span>`; }
+function moreMenu(items){ return `<details class="more"><summary>⋯</summary><div class="mbox">${items}</div></details>`; }
+function emptyHtml(text){
+  return `<div class="empty"><svg width="46" height="46" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="7" width="30" height="36" rx="4"/><path d="M16 17h16M16 24h16M16 31h9"/></svg>${esc(text)}</div>`;
+}
+function dayGroupLabel(d){
+  if (!d) return "بدون تاريخ";
+  const k = dayKey(d), t = new Date(), y = new Date(); y.setDate(t.getDate() - 1);
+  const dn = DAY_NAMES_[d.getDay()], ds = `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;
+  if (k === dayKey(t)) return `اليوم — ${dn} ${ds}`;
+  if (k === dayKey(y)) return `أمس — ${dn} ${ds}`;
+  return `${dn} ${ds}`;
+}
+const LIM = { exams: 50, students: 50, audit: 50 };
+document.addEventListener("click", ev => {
+  document.querySelectorAll("details.more[open]").forEach(d => { if (!d.contains(ev.target) || ev.target.closest(".mbox button")) d.open = false; });
+  const m = ev.target.closest("[data-more]"); if (m){ LIM[m.dataset.more] += 50; ({ exams: renderExams, students: renderStudents, audit: renderAudit })[m.dataset.more](); }
+});
+function moreRow(key, total, cols){ return total > LIM[key] ? `<tr class="grp-row"><td colspan="${cols}" class="moreRow"><button data-more="${key}">عرض المزيد (${total - LIM[key]} متبقٍّ)</button></td></tr>` : ""; }
 function approvedStudents(){ return S.students.filter(isActive); }
 function stalledList(){
   const N = stallDays(), now = Date.now(), out = [];
@@ -1419,15 +1525,15 @@ function renderHome(){
   if (pend.length) al.push(["var(--gold)", `${pend.length} طلاب جدد بانتظار الموافقة`, "أضافهم المختبرون من التطبيق", "pending"]);
   if (rdy.length) al.push(["var(--green)", `${rdy.length} جاهزون للاختبار`, "أنهوا حفظ الجزء ويراجعونه", "ready"]);
   $("homeAlerts").innerHTML = al.length ? al.map(([c,t,sub,g]) => `<div class="alert" data-al="${g}"><span class="dot" style="background:${c}"></span><div><b>${t}</b><div class="muted">${sub}</div></div></div>`).join("")
-    : `<p class="muted">لا توجد تنبيهات — كل شيء على ما يرام</p>`;
+    : emptyHtml("لا توجد تنبيهات — كل شيء على ما يرام");
   // آخر الاختبارات
   const last = [...S.exams].sort((a,b)=>(examDate(b)||0)-(examDate(a)||0)).slice(0, 8);
   const tm = e => { const d = examDate(e); if (!d) return ""; return dayKey(d) === tk ? `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}` : dateText(e); };
   $("homeExams").innerHTML = last.length ? `<table><thead><tr><th>الطالب</th><th class="hm">الحلقة</th><th>الاختبار</th><th class="hm">المختبر</th><th>العلامة</th><th>النتيجة</th><th class="hm">الوقت</th></tr></thead><tbody>${
-    last.map(e => `<tr><td>${nameLink(e.studentId, e.studentName)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td><td class="hm">${esc(e.halaqaName)}</td>
-      <td>${esc(juzLabel(e))}</td><td class="hm">${esc(e.examinerName)}</td><td><b>${e.closed?"—":fmtNum(e.total)}</b></td>
-      <td>${e.passed ? pill("p-ok","ناجح") : e.closed ? pill("p-wa","أُغلق") : pill("p-no","راسب")}</td><td class="muted hm">${tm(e)}</td></tr>`).join("")}</tbody></table>`
-    : `<p class="muted">لا توجد اختبارات بعد</p>`;
+    last.map(e => `<tr><td style="white-space:nowrap">${nameLink(e.studentId, e.studentName, true)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td><td class="hm">${hqTag(e.halaqaId, e.halaqaName)}</td>
+      <td>${esc(juzLabel(e))}</td><td class="hm">${esc(e.examinerName)}</td><td>${markHtml(e)}</td>
+      <td>${resPill(e)}</td><td class="muted hm">${tm(e)}</td></tr>`).join("")}</tbody></table>`
+    : emptyHtml("لا توجد اختبارات بعد");
 }
 $("homeAlerts").addEventListener("click", ev => {
   const a = ev.target.closest("[data-al]"); if (!a) return;
@@ -1448,10 +1554,10 @@ function renderPermits(){
   const lab = p => p.type === 30 ? "القرآن كاملاً" : juzLabel({ startJuz:p.startJuz, endJuz:p.startJuz + p.type - 1 });
   $("permitsList").innerHTML = list.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>تاريخ التصريح</th><th></th></tr></thead><tbody>${
     list.map(p => { const st = S.students.find(x=>x.id===p.studentId) || {};
-      return `<tr><td>${nameLink(p.studentId, st.name || p.studentName)}</td><td>${esc(halaqaName(st.halaqaId))}</td>
+      return `<tr><td>${nameLink(p.studentId, st.name || p.studentName)}</td><td>${hqTag(st.halaqaId)}</td>
       <td>${esc(TYPES[p.type]||p.type)} — ${esc(lab(p))} ${p.kind === "exam" ? pill("p-wa","بدون شرط التسميع") : pill("p-gr","إعادة ناجح")}</td><td>${p.grantedAtMs ? dayKey(new Date(p.grantedAtMs)) : ""}</td>
       <td class="actions"><button class="small danger" data-prevoke="${p.id}">إلغاء التصريح</button></td></tr>`; }).join("")}</tbody></table>`
-    : `<p class="muted">لا توجد تصاريح فعّالة الآن</p>`;
+    : emptyHtml("لا توجد تصاريح فعّالة الآن");
 }
 $("permitsList").addEventListener("click", ev => {
   const b = ev.target.closest("button[data-prevoke]"); if (!b) return;
@@ -1516,9 +1622,9 @@ function examsTableHtml(sid){
   return `<table>
       <thead><tr><th>التاريخ</th><th>النوع</th><th>الأجزاء</th><th>المختبر</th><th>المجموع</th><th>النتيجة</th><th>ملاحظات</th></tr></thead>
       <tbody>${exams.map(e => `<tr><td>${esc(dateText(e))}</td><td>${esc(TYPES[e.type]||e.type)}${e.isRetest?' (إعادة)':''}</td>
-        <td>${esc(juzLabel(e))}</td><td>${esc(e.examinerName)}</td><td>${e.closed?'—':fmtNum(e.total)}</td>
-        <td class="${resultOf(e)}">${resultText(e)}</td><td>${esc(e.notes)}</td></tr>`).join("")
-        || `<tr><td colspan="7" class="muted">لا توجد اختبارات</td></tr>`}</tbody>
+        <td>${esc(juzLabel(e))}</td><td>${esc(e.examinerName)}</td><td>${markHtml(e)}</td>
+        <td>${resPill(e)}</td><td>${esc(e.notes)}</td></tr>`).join("")
+        || `<tr><td colspan="7" class="empty-td">${emptyHtml("لا توجد اختبارات لهذا الطالب")}</td></tr>`}</tbody>
     </table>`;
 }
 
@@ -1597,17 +1703,18 @@ $("gRes").addEventListener("mousedown", e => { const d = e.target.closest("[data
 $("gSearch").addEventListener("blur", () => setTimeout(() => $("gRes").classList.add("hidden"), 150));
 
 // ===== سجل التعديلات =====
-["auQ","auSrc"].forEach(id => $(id).addEventListener("input", renderAudit));
+["auQ","auSrc"].forEach(id => $(id).addEventListener("input", () => { LIM.audit = 50; renderAudit(); }));
 function renderAudit(){
   const q = norm($("auQ").value), src = $("auSrc").value;
   const list = S.audit.filter(a => (!src || a.source === src) && (!q || norm(`${a.action} ${a.target} ${a.details} ${a.by}`).includes(q)));
   $("auCount").textContent = `${list.length} عملية`;
   const tm = ms => { if (!ms) return ""; const d = new Date(ms); return `${dayKey(d)} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
-  $("auBody").innerHTML = list.length ? `<table><thead><tr><th>الوقت</th><th>بواسطة</th><th>العملية</th><th>الطالب / البند</th><th>التفاصيل</th><th>قبل</th><th>بعد</th></tr></thead><tbody>${
-    list.map(a => `<tr><td style="white-space:nowrap">${tm(a.atMs)}</td><td>${a.source === "app" ? pill("p-wa", esc(a.by)) : pill("p-gr", esc(a.by || "الإدارة"))}</td>
+  let lastG = null;
+  $("auBody").innerHTML = list.length ? `<div class="tblwrap"><table><thead><tr><th>الوقت</th><th>بواسطة</th><th>العملية</th><th>الطالب / البند</th><th>التفاصيل</th><th>قبل</th><th>بعد</th></tr></thead><tbody>${
+    list.slice(0, LIM.audit).map(a => { const g = dayGroupLabel(a.atMs ? new Date(a.atMs) : null); const h = g !== lastG ? `<tr class="grp-row"><td colspan="7">${g}</td></tr>` : ""; lastG = g; return h + `<tr><td style="white-space:nowrap">${tm(a.atMs).slice(11)}</td><td>${a.source === "app" ? pill("p-wa", esc(a.by)) : pill("p-gr", esc(a.by || "الإدارة"))}</td>
       <td><b>${esc(a.action)}</b></td><td>${a.studentId ? nameLink(a.studentId, a.target) : esc(a.target)}</td><td class="muted">${esc(a.details)}</td>
-      <td class="muted">${esc(a.before || "")}</td><td>${esc(a.after || "")}</td></tr>`).join("")}</tbody></table>`
-    : `<p class="muted">لا توجد عمليات مسجلة بعد</p>`;
+      <td class="muted">${esc(a.before || "")}</td><td>${esc(a.after || "")}</td></tr>`; }).join("")}${moreRow("audit", list.length, 7)}</tbody></table></div>`
+    : emptyHtml("لا توجد عمليات مسجلة بعد");
 }
 
 // ===== الترتيب والتكريم =====
@@ -1632,7 +1739,7 @@ function rankingData(){
 }
 function rankingHtml(d){
   const medal = i => i < 3 ? ["🥇","🥈","🥉"][i] : (i+1);
-  const empty = `<p class="muted">لا توجد بيانات لهذا الشهر</p>`;
+  const empty = emptyHtml("لا توجد بيانات لهذا الشهر");
   return `
     <div class="homegrid">
       <div class="card"><h2>الأكثر حفظاً (صفحات)</h2>${d.topNew.length ? `<table><thead><tr><th>#</th><th>الطالب</th><th>الحلقة</th><th>حفظ</th><th>مراجعة</th></tr></thead><tbody>${
@@ -1644,7 +1751,7 @@ function rankingHtml(d){
       d.hal.map((x,i) => `<tr><td>${medal(i)}</td><td>${esc(x.h.name)}</td><td>${x.n}</td><td><span class="bar"><span style="width:${x.attendance}%"></span></span>${x.attendance}%</td>
       <td>${fp(x.newPages)}</td><td><b>${fp(x.perStudent)}</b></td><td>${fp(x.reviewPages)}</td></tr>`).join("")}</tbody></table>` : empty}</div>
     <div class="card"><h2>الناجحون في اختبارات الشهر (${d.passed.length})</h2>${d.passed.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>العلامة</th><th>التاريخ</th></tr></thead><tbody>${
-      d.passed.map(e => `<tr><td>${nameLink(e.studentId, e.studentName)}</td><td>${esc(e.halaqaName)}</td><td>${esc(TYPES[e.type]||e.type)} — ${esc(juzLabel(e))}</td><td><b>${fmtNum(e.total)}</b></td><td>${esc(dateText(e))}</td></tr>`).join("")}</tbody></table>` : empty}</div>`;
+      d.passed.map(e => `<tr><td>${nameLink(e.studentId, e.studentName)}</td><td>${hqTag(e.halaqaId, e.halaqaName)}</td><td>${esc(TYPES[e.type]||e.type)} — ${esc(juzLabel(e))}</td><td>${markHtml(e)}</td><td>${esc(dateText(e))}</td></tr>`).join("")}</tbody></table>` : empty}</div>`;
 }
 function renderRanking(){ $("rkBody").innerHTML = rankingHtml(rankingData()); }
 $("rkPrint").onclick = () => { const d = rankingData(); printDoc(`الترتيب والتكريم — ${d.m}`, rankingHtml(d).replace(/<a class="name"[^>]*>/g, "").replace(/<\/a>/g, "").replace(/class="homegrid"/g, "")); };
@@ -1835,20 +1942,19 @@ function mergeStudent(s){
 }
 
 // ===== الطلاب =====
-["sSearch","sHalaqa","sState"].forEach(id => $(id).addEventListener("input", renderStudents));
+["sSearch","sHalaqa","sState"].forEach(id => $(id).addEventListener("input", () => { LIM.students = 50; renderStudents(); }));
 function renderStudents(){
   const q = $("sSearch").value.trim(), h = $("sHalaqa").value;
   const stt = $("sState").value;
   const list = sortAr(S.students.filter(s => s.status!=="pending" && (!stt || (stt === "inactive") === (s.status === "inactive")) && (!q || s.name.includes(q)) && (!h || s.halaqaId===h)));
   $("studentsCount").textContent = `${list.length} طالب`;
-  $("studentsBody").innerHTML = list.map(s => `
-    <tr class="${s.status==="inactive"?"inactive":""}"><td>${nameLink(s.id, s.name)}${s.status==="inactive" ? ' <span class="pill p-gr">منقطع</span>' : ""}</td><td>${esc(halaqaName(s.halaqaId))}</td>
+  $("studentsBody").innerHTML = (list.length ? "" : `<tr><td colspan="6" class="empty-td">${emptyHtml("لا يوجد طلاب بهذه الفلاتر")}</td></tr>`) + list.slice(0, LIM.students).map(s => `
+    <tr class="${s.status==="inactive"?"inactive":""}"><td style="white-space:nowrap">${nameLink(s.id, s.name, true)}${s.status==="inactive" ? ' <span class="pill p-gr">منقطع</span>' : ""}</td><td>${hqTag(s.halaqaId)}</td>
     <td class="muted">${sDir(s)==="asc"?"من البقرة":"من الناس"} · من الجزء ${sStart(s)}</td>
     <td>${(() => { const t = nextText(s); return t === "حافظ للقرآن" ? `<span class="hafiz">حافظ للقرآن</span>` : esc(t); })()}</td>
     <td>${examsOfStudent(s.id).length}</td>
     <td class="actions"><button class="small primary" data-rec="${s.id}">الملف</button>
-    <button class="small" data-edit="${s.id}">تعديل</button>
-    <button class="small danger" data-del="${s.id}">حذف</button></td></tr>`).join("");
+    ${moreMenu(`<button data-edit="${s.id}">تعديل البيانات</button><hr><button class="danger" data-del="${s.id}">حذف</button>`)}</td></tr>`).join("") + moreRow("students", list.length, 6);
 }
 $("studentsBody").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
