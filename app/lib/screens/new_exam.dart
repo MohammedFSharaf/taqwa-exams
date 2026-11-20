@@ -12,7 +12,9 @@ import 'widgets.dart';
 
 /// بيانات الاختبار: الحلقة، الطالب، النوع، جزء البداية، إعادة
 class NewExamScreen extends StatefulWidget {
-  const NewExamScreen({super.key});
+  final Halaqa? initialHalaqa;
+  final Student? initialStudent;
+  const NewExamScreen({super.key, this.initialHalaqa, this.initialStudent});
 
   @override
   State<NewExamScreen> createState() => _NewExamScreenState();
@@ -164,6 +166,18 @@ class _NewExamScreenState extends State<NewExamScreen> {
       setState(() => _sExams = list);
       _applySuggestion();
     }, onError: (_) {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialHalaqa != null && widget.initialStudent != null) {
+      _halaqa = widget.initialHalaqa;
+      _student = widget.initialStudent;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _watchStudent();
+      });
+    }
   }
 
   @override
