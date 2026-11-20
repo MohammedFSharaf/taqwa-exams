@@ -519,7 +519,7 @@
           <label>اسم الطالب<input id="newStudentName" style="min-width:260px"></label>
           <label>الحلقة<select id="newStudentHalaqa"></select></label>
           <label>الاتجاه<select id="newDir"></select></label>
-          <label>جزء البداية<select id="newStart"></select></label>
+          <label>مرحلة البداية<select id="newStart" style="max-width:300px"></select></label>
           <button class="primary" id="addStudentBtn">إضافة</button>
         </div>
       </div>
@@ -680,9 +680,10 @@ function buildPath(dir){
   s.push(P(30,1));
   return s;
 }
-function pathStatus(dir, start, passed){
+function pathStatus(dir, start, passed, fromKey){
   const steps = buildPath(dir);
-  let first = steps.findIndex(x => x.type === 1 && x.start === start);
+  let first = fromKey ? steps.findIndex(x => x.key === fromKey) : -1;
+  if (first < 0) first = steps.findIndex(x => x.type === 1 && x.start === start);
   if (first < 0) first = 0;
   for (let i=first;i<steps.length;i++) if (!passed.has(steps[i].key)) return { steps, first, next: i, hafiz: false };
   return { steps, first, next: null, hafiz: true };
@@ -732,9 +733,9 @@ function memOrder(dir){
   return (_ORDER[dir] = { order, pos, jStart, jEnd });
 }
 // حالة الطالب في السجل اليومي
-function dailyStatus(dir, start, passedKeys, logs, progress, minNew){
+function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
   const O = memOrder(dir);
-  const p = pathStatus(dir, start, passedKeys);
+  const p = pathStatus(dir, start, passedKeys, fromKey);
   if (p.hafiz) return { mode: "hafiz" };
   const step = p.steps[p.next];
   if (step.type > 1) return { mode: "review_exam", step, juzFrom: step.start, juzTo: step.end };
@@ -778,7 +779,12 @@ function stepShort(st){ return st.type === 1 ? String(st.start) : st.type === 30
 function sDir(s){ return s && s.pathDir === "asc" ? "asc" : "desc"; }
 function sStart(s){ const v = parseInt(s && s.pathStart); return v >= 1 && v <= 30 ? v : (sDir(s) === "asc" ? 1 : 30); }
 function passedKeys(sid){ return new Set(S.exams.filter(e=>e.studentId===sid && e.passed).map(e=>e.type+"|"+e.startJuz)); }
-function studentPath(s){ return pathStatus(sDir(s), sStart(s), passedKeys(s.id)); }
+function studentPath(s){ return pathStatus(sDir(s), sStart(s), passedKeys(s.id), s.pathFrom); }
+// مرحلة البداية: جزء مفرد أو اختبار تجميعي (للطالب الذي بدأ قبل النظام)
+function startKey(s){ return s && s.pathFrom ? s.pathFrom : `1|${sStart(s)}`; }
+function startLabel(s){ const st = buildPath(sDir(s)).find(x => x.key === startKey(s)); return st ? stepLabel(st) : `الجزء ${sStart(s)}`; }
+function stepOptions(dir, sel){ return buildPath(dir).map((st, i) => `<option value="${st.key}" ${st.key === sel ? "selected" : ""}>${i+1}. ${esc(stepLabel(st))}</option>`).join(""); }
+function readStart(key){ const [t, j] = String(key).split("|").map(Number); return t === 1 ? { pathStart: j, pathFrom: "" } : { pathStart: j, pathFrom: key }; }
 function nextText(s){ const p = studentPath(s); return p.hafiz ? "حافظ للقرآن" : stepLabel(p.steps[p.next]); }
 function blockName(p){
   if (p.hafiz) return "حافظ للقرآن";
@@ -786,15 +792,14 @@ function blockName(p){
   return ["العشرة الأولى","العشرة الثانية","العشرة الثالثة"][Math.floor(p.next/13)];
 }
 function stallDays(){ const v = parseInt(S.settings && S.settings.stallDays); return v > 0 ? v : DEFAULT_STALL_DAYS; }
-function pathFields(dir, start, idp){
+function pathFields(dir, sel, idp){
   return `<label>الاتجاه<select id="${idp}Dir">${Object.entries(DIRS).map(([k,v])=>`<option value="${k}" ${k===dir?'selected':''}>${v}</option>`).join("")}</select></label>
-  <label>جزء البداية<select id="${idp}Start">${Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}" ${j===start?'selected':''}>${j}: ${JUZ[j]}</option>`).join("")}</select></label>`;
+  <label>مرحلة البداية<select id="${idp}Start">${stepOptions(dir, sel)}</select></label>`;
 }
-function fillPathSelects(dirSel, startSel, dir, start){
+function fillPathSelects(dirSel, startSel, dir, sel){
   dirSel.innerHTML = Object.entries(DIRS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
-  startSel.innerHTML = Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}">${j}: ${JUZ[j]}</option>`).join("");
-  dirSel.value = dir; startSel.value = String(start);
-  dirSel.onchange = () => { startSel.value = dirSel.value === "asc" ? "1" : "30"; };
+  dirSel.value = dir; startSel.innerHTML = stepOptions(dir, sel);
+  dirSel.onchange = () => { startSel.innerHTML = stepOptions(dirSel.value, dirSel.value === "asc" ? "1|1" : "1|30"); };
 }
 
 function fmtNum(n){ return (n === null || n === undefined) ? "" : (Math.round(n*100)/100).toString(); }
@@ -1348,7 +1353,7 @@ function studentRecordHtml(sid, forPrint){
       return `<span class="${cls} ${x.type>1?'big':''}" title="${i+1}. ${esc(stepLabel(x))}">${stepShort(x)}</span>`;
     }).join("");
     pathHtml = `
-      <tr><td>المسار</td><td>${DIRS[sDir(st)]} — بدأ من الجزء ${sStart(st)}</td></tr>
+      <tr><td>المسار</td><td>${DIRS[sDir(st)]} — البداية: ${esc(startLabel(st))}</td></tr>
       <tr><td>المرحلة</td><td>${stage}<div class="progress"><span style="width:${pct(doneSteps,total)}%"></span></div></td></tr>
       <tr><td>الاختبار التالي</td><td><b>${p.hafiz ? "—" : esc(stepLabel(p.steps[p.next]))}</b></td></tr>
       ${forPrint ? "" : `<tr><td>خريطة المراحل</td><td><div class="chips">${chips}</div>
@@ -1440,7 +1445,7 @@ function reviewsCover(reviews, a, b){
   return cur > b;
 }
 function examReady(s){
-  const passed = passedKeys(s.id), p = pathStatus(sDir(s), sStart(s), passed);
+  const passed = passedKeys(s.id), p = pathStatus(sDir(s), sStart(s), passed, s.pathFrom);
   if (p.hafiz) return { ok:true, hafiz:true, reason:"hafiz", missing:[] };
   const step = p.steps[p.next], O = memOrder(sDir(s)), logs = logsOf(s.id), pr = progressOf(s.id);
   const ms = S.exams.filter(e => e.studentId === s.id).map(examMs).filter(Boolean);
@@ -1593,7 +1598,7 @@ function renderStudentPage(){
     pathCard = `<div class="card">
       <div class="info4">
         <div><div class="muted">الحلقة</div>${esc(hName)}${sh ? `<div class="muted">${esc(sh)}</div>` : ""}</div>
-        <div><div class="muted">اتجاه المسار</div>${DIRS[sDir(st)]}<div class="muted">البداية: الجزء ${sStart(st)}</div></div>
+        <div><div class="muted">اتجاه المسار</div>${DIRS[sDir(st)]}<div class="muted">البداية: ${esc(startLabel(st))}</div></div>
         <div><div class="muted">المرحلة الآن (التسميع)</div><b>${d ? esc(dailyTitle(d)) : "—"}</b></div>
         <div><div class="muted">الاختبار التالي</div><b>${p.hafiz ? '<span class="hafiz">حافظ للقرآن الكريم</span>' : esc(stepLabel(p.steps[p.next]))}</b>
           ${(() => { if (p.hafiz) return ""; const r = examReady(st), perm = examPermitted(st, p.steps[p.next]);
@@ -1956,7 +1961,7 @@ function renderStudents(){
   $("studentsCount").textContent = `${list.length} طالب`;
   $("studentsBody").innerHTML = (list.length ? "" : `<tr><td colspan="6" class="empty-td">${emptyHtml("لا يوجد طلاب بهذه الفلاتر")}</td></tr>`) + list.slice(0, LIM.students).map(s => `
     <tr class="${s.status==="inactive"?"inactive":""}"><td style="white-space:nowrap">${nameLink(s.id, s.name, true)}${s.status==="inactive" ? ' <span class="pill p-gr">منقطع</span>' : ""}</td><td>${hqTag(s.halaqaId)}</td>
-    <td class="muted">${sDir(s)==="asc"?"من البقرة":"من الناس"} · من الجزء ${sStart(s)}</td>
+    <td class="muted">${sDir(s)==="asc"?"من البقرة":"من الناس"} · ${s.pathFrom ? esc(startLabel(s)) : "من الجزء " + sStart(s)}</td>
     <td>${(() => { const t = nextText(s); return t === "حافظ للقرآن" ? `<span class="hafiz">حافظ للقرآن</span>` : esc(t); })()}</td>
     <td>${examsOfStudent(s.id).length}</td>
     <td class="actions"><button class="small primary" data-rec="${s.id}">الملف</button>
@@ -1979,38 +1984,39 @@ function editStudent(id, approving){
     <div class="grid2">
       <label>الاسم<input id="esName" value="${esc(s.name)}"></label>
       ${approving ? `<label>الحلقة<select id="esHalaqa">${hs}</select></label>` : `<label>الحلقة<select id="esHalaqa" disabled>${hs}</select><span class="muted" style="font-size:12px">للتغيير: زر «نقل لحلقة أخرى» في ملف الطالب</span></label>`}
-      ${pathFields(sDir(s), sStart(s), "es")}
+      ${pathFields(sDir(s), startKey(s), "es")}
+      <div class="muted" style="font-size:12px">مرحلة البداية: أول اختبار مطلوب من الطالب. لطالب بدأ قبل النظام يمكن اختيار اختبار تجميعي (مثل 10 أجزاء).</div>
     </div>`, [
     { text: approving ? "اعتماد" : "حفظ", cls:"primary", onClick: async () => {
       const name = $("esName").value.trim(), halaqaId = $("esHalaqa").value;
       if (!name) return false;
       const batch = writeBatch(db);
       batch.update(doc(db,"students",id), { name, halaqaId, status:"approved",
-        pathDir: $("esDir").value, pathStart: parseInt($("esStart").value) });
+        pathDir: $("esDir").value, ...readStart($("esStart").value) });
       examsOfStudent(id).forEach(e => batch.update(doc(db,"exams",e.id),
         { studentName:name, halaqaId, halaqaName:halaqaName(halaqaId) }));
       await batch.commit();
       const pd = d => d === "asc" ? "من البقرة" : "من الناس";
       audit(approving ? "اعتماد طالب جديد" : "تعديل بيانات طالب", name, "",
-        `${s.name} · ${halaqaName(s.halaqaId)} · ${pd(sDir(s))} من الجزء ${sStart(s)}`,
-        `${name} · ${halaqaName(halaqaId)} · ${pd($("esDir").value)} من الجزء ${$("esStart").value}`);
+        `${s.name} · ${halaqaName(s.halaqaId)} · ${pd(sDir(s))} · ${startLabel(s)}`,
+        `${name} · ${halaqaName(halaqaId)} · ${pd($("esDir").value)} · ${startLabel({ pathDir: $("esDir").value, ...readStart($("esStart").value) })}`);
       toast("تم الحفظ");
     }},
     { text:"إلغاء" }
   ]);
-  $("esDir").onchange = () => { $("esStart").value = $("esDir").value === "asc" ? "1" : "30"; };
+  $("esDir").onchange = () => { $("esStart").innerHTML = stepOptions($("esDir").value, $("esDir").value === "asc" ? "1|1" : "1|30"); };
 }
 $("addStudentBtn").onclick = async () => {
   const name = $("newStudentName").value.trim(), halaqaId = $("newStudentHalaqa").value;
   if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة (أضف حلقة أولاً إن لم توجد)"); return; }
   if (S.students.some(s=>s.name===name && s.halaqaId===halaqaId)){ toast("الطالب موجود بنفس الحلقة"); return; }
   await addDoc(collection(db,"students"), { name, halaqaId, status:"approved", createdBy:"الإدارة", createdAt: serverTimestamp(),
-    pathDir: $("newDir").value, pathStart: parseInt($("newStart").value) });
+    pathDir: $("newDir").value, ...readStart($("newStart").value) });
   audit("إضافة طالب", name, halaqaName(halaqaId));
   $("newStudentName").value = ""; $("newStudentName").focus(); toast("تمت الإضافة");
 };
 $("newStudentName").addEventListener("keydown", e => { if (e.key==="Enter") $("addStudentBtn").click(); });
-fillPathSelects($("newDir"), $("newStart"), "desc", 30);
+fillPathSelects($("newDir"), $("newStart"), "desc", "1|30");
 
 $("importBtn").onclick = async () => {
   const file = $("importFile").files[0];
@@ -2108,7 +2114,7 @@ function minReviewPages(){ const v = parseFloat(S.settings && S.settings.minRevi
 const fp = n => (Math.round((n||0)*10)/10).toFixed(1);
 function logsOf(sid){ return S.logs.filter(l => l.studentId === sid); }
 function progressOf(sid){ return S.progress.find(p => p.id === sid) || null; }
-function dailyOf(s){ return dailyStatus(sDir(s), sStart(s), passedKeys(s.id), logsOf(s.id), progressOf(s.id), minNewPages()); }
+function dailyOf(s){ return dailyStatus(sDir(s), sStart(s), passedKeys(s.id), logsOf(s.id), progressOf(s.id), minNewPages(), s.pathFrom); }
 function dailyTitle(d){
   switch (d.mode){
     case "hafiz": return "حافظ للقرآن الكريم";

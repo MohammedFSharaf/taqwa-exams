@@ -211,9 +211,9 @@ class DailyStatus {
 int? _int(dynamic v) => v is num ? v.toInt() : null;
 
 DailyStatus dailyStatus(String dir, int start, Set<String> passedKeys, List<Map<String, dynamic>> logs,
-    Map<String, dynamic>? progress, double minNew) {
+    Map<String, dynamic>? progress, double minNew, {String? fromKey}) {
   final o = memOrder(dir);
-  final step = nextPathStep(dir, start, passedKeys);
+  final step = nextPathStep(dir, start, passedKeys, fromKey);
   if (step == null) return DailyStatus('hafiz');
   if (step.type > 1) return DailyStatus('review_exam', step: step, juzFrom: step.start, juzTo: step.end);
   final j = step.start;
@@ -323,8 +323,8 @@ bool reviewsCoverRange(dynamic reviews, int a, int b) {
 }
 
 ExamReady examReadiness(String dir, int start, Set<String> passedKeys, List<Map<String, dynamic>> logs,
-    Map<String, dynamic>? progress, String lastExamDate) {
-  final step = nextPathStep(dir, start, passedKeys);
+    Map<String, dynamic>? progress, String lastExamDate, {String? fromKey}) {
+  final step = nextPathStep(dir, start, passedKeys, fromKey);
   if (step == null) return const ExamReady(true, 'ok');
   final o = memOrder(dir);
   var since = lastExamDate;

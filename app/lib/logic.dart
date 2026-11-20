@@ -136,9 +136,11 @@ List<PathStep> buildPath(String dir) {
 }
 
 /// الاختبار التالي للطالب، أو null إذا أتمّ المسار (حافظ)
-PathStep? nextPathStep(String dir, int start, Set<String> passedKeys) {
+/// [fromKey] مرحلة البداية (مثل "10|21") إن حدّدتها الإدارة، وإلا يبدأ من جزء البداية
+PathStep? nextPathStep(String dir, int start, Set<String> passedKeys, [String? fromKey]) {
   final steps = buildPath(dir);
-  var first = steps.indexWhere((x) => x.type == 1 && x.start == start);
+  var first = fromKey == null ? -1 : steps.indexWhere((x) => x.key == fromKey);
+  if (first < 0) first = steps.indexWhere((x) => x.type == 1 && x.start == start);
   if (first < 0) first = 0;
   for (var i = first; i < steps.length; i++) {
     if (!passedKeys.contains(steps[i].key)) return steps[i];

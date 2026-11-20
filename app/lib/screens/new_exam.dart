@@ -68,7 +68,8 @@ class _NewExamScreenState extends State<NewExamScreen> {
       for (final e in _sExams!)
         if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
     };
-    return examReadiness(_student!.pathDir, _student!.pathStart, passed, _sLogs, _sProg, _lastExamDate);
+    return examReadiness(_student!.pathDir, _student!.pathStart, passed, _sLogs, _sProg, _lastExamDate,
+        fromKey: _student!.pathFrom);
   }
 
   /// يمرّ الشرط إذا تحقق أو بتصريح اختبار من الإدارة
@@ -103,7 +104,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
       for (final e in _sExams!)
         if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
     };
-    return nextPathStep(_student!.pathDir, _student!.pathStart, passed);
+    return nextPathStep(_student!.pathDir, _student!.pathStart, passed, _student!.pathFrom);
   }
 
   /// اختبارات ناجحة سابقاً معها إذن إعادة من الإدارة لم يُستخدم بعد

@@ -188,7 +188,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     }
     final last = m == 0 ? '' : dayKey(DateTime.fromMillisecondsSinceEpoch(m));
     final pr = _progress.where((p) => p['id'] == s.id);
-    return examReadiness(s.pathDir, s.pathStart, passed, logs, pr.isEmpty ? null : pr.first, last);
+    return examReadiness(s.pathDir, s.pathStart, passed, logs, pr.isEmpty ? null : pr.first, last, fromKey: s.pathFrom);
   }
 
   List<Map<String, dynamic>> _logsOf(String sid) => _logs.where((l) => l['studentId'] == sid).toList();
@@ -203,7 +203,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         if (e['studentId'] == s.id && e['passed'] == true) '${e['type']}|${e['startJuz']}'
     };
     final pr = _progress.where((p) => p['id'] == s.id);
-    return dailyStatus(s.pathDir, s.pathStart, passed, _logsOf(s.id), pr.isEmpty ? null : pr.first, _minNew);
+    return dailyStatus(s.pathDir, s.pathStart, passed, _logsOf(s.id), pr.isEmpty ? null : pr.first, _minNew,
+        fromKey: s.pathFrom);
   }
 
   Map<String, dynamic> _base(Student s, DailyStatus st) => {
@@ -625,7 +626,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         if (e['studentId'] == s.id && e['passed'] == true) '${e['type']}|${e['startJuz']}'
     };
     final pr = _progress.where((p) => p['id'] == s.id);
-    final st = dailyStatus(s.pathDir, s.pathStart, passed, before, pr.isEmpty ? null : pr.first, _minNew);
+    final st = dailyStatus(s.pathDir, s.pathStart, passed, before, pr.isEmpty ? null : pr.first, _minNew,
+        fromKey: s.pathFrom);
     return DayCtx(st, _todayLog(s.id), _base(s, st), before.take(5).toList(),
         ready: st.mode == 'review_exam' ? _readiness(s, before) : null);
   }

@@ -16,7 +16,8 @@ class Student {
   final bool inactive; // منقطع: لا يظهر في القوائم
   final String pathDir; // desc = من الناس، asc = من البقرة
   final int pathStart;
-  Student(this.id, this.name, this.halaqaId, this.pending, {this.pathDir = 'desc', int? pathStart, this.inactive = false})
+  final String? pathFrom; // مرحلة البداية (اختيارية)
+  Student(this.id, this.name, this.halaqaId, this.pending, {this.pathDir = 'desc', int? pathStart, this.inactive = false, this.pathFrom})
       : pathStart = pathStart ?? (pathDir == 'asc' ? 1 : 30);
 
   static Student fromDoc(String id, Map<String, dynamic> d) {
@@ -24,7 +25,10 @@ class Student {
     final st = d['pathStart'];
     final start = (st is num && st >= 1 && st <= 30) ? st.toInt() : null;
     return Student(id, (d['name'] ?? '').toString(), (d['halaqaId'] ?? '').toString(), d['status'] == 'pending',
-        pathDir: dir, pathStart: start, inactive: d['status'] == 'inactive');
+        pathDir: dir,
+        pathStart: start,
+        inactive: d['status'] == 'inactive',
+        pathFrom: d['pathFrom'] is String && (d['pathFrom'] as String).isNotEmpty ? d['pathFrom'] as String : null);
   }
 }
 

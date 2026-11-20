@@ -91,7 +91,7 @@ class ReadyWatcher extends ChangeNotifier {
         for (final e in ex)
           if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
       };
-      final step = nextPathStep(s.pathDir, s.pathStart, passed);
+      final step = nextPathStep(s.pathDir, s.pathStart, passed, s.pathFrom);
       if (step == null) continue;
       var last = 0;
       for (final e in ex) {
@@ -114,7 +114,7 @@ class ReadyWatcher extends ChangeNotifier {
       final logs = logsBy[s.id] ?? const <Map<String, dynamic>>[];
       final hasDaily = logs.isNotEmpty || progBy.containsKey(s.id);
       if (!hasDaily && !permit) continue;
-      final r = examReadiness(s.pathDir, s.pathStart, passed, logs, progBy[s.id], lastDate);
+      final r = examReadiness(s.pathDir, s.pathStart, passed, logs, progBy[s.id], lastDate, fromKey: s.pathFrom);
       if (r.ok || permit) out.add(ReadyEntry(s, hById[s.halaqaId], step, !r.ok && permit));
     }
     out.sort((a, b) {
