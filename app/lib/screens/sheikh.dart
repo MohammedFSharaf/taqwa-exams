@@ -725,7 +725,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
 
   bool get _surahReviewDone {
     if (_st.mode != 'review_surah') return true;
-    return _reviews.any((r) => (r['fromG'] as num) <= _st.segFrom! && (r['toG'] as num) >= _st.segTo!);
+    return reviewsCoverRange(_reviews, _st.segFrom!, _st.segTo!);
   }
 
   bool get _canNew {

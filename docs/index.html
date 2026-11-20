@@ -750,9 +750,10 @@ function dailyStatus(dir, start, passedKeys, logs, progress, minNew){
     if (cursor === O.pos[sb]){
       const ps = O.pos[sa], pe = O.pos[sb];
       const touching = logs.filter(l => l.newMem && O.pos[l.newMem.fromG] <= pe && O.pos[l.newMem.toG] >= ps);
-      if (touching.length >= 2){
-        const doneDate = touching.map(l => l.date).sort().pop();
-        const reviewed = logs.some(l => l.date >= doneDate && (l.reviews || []).some(r => r.fromG <= sa && r.toG >= sb));
+      const lg = progress && progress.lastG, pre = !!lg && O.pos[lg] >= ps && O.pos[lg] <= pe;
+      if (touching.length >= 2 || pre){
+        const doneDate = touching.map(l => l.date).sort().pop() || "";
+        const reviewed = logs.some(l => (l.date||"") >= doneDate && reviewsCover(l.reviews, sa, sb));
         if (!reviewed) return { mode: "review_surah", step, juz: J, segFrom: sa, segTo: sb };
       }
     }

@@ -247,13 +247,15 @@ DailyStatus dailyStatus(String dir, int start, Set<String> passedKeys, List<Map<
         if (nm is! Map || _int(nm['fromG']) == null || _int(nm['toG']) == null) return false;
         return o.pos[_int(nm['fromG'])!] <= pe && o.pos[_int(nm['toG'])!] >= ps;
       }).toList();
-      if (touching.length >= 2) {
+      // جزء من السورة حُفظ قبل السجل (نقطة البداية داخلها أو عند آخرها) ← تُعدّ مقطّعة
+      final lg = progress == null ? null : _int(progress['lastG']);
+      final pre = lg != null && lg >= 1 && lg <= nAyah && o.pos[lg] >= ps && o.pos[lg] <= pe;
+      if (touching.length >= 2 || pre) {
         final dates = touching.map((l) => (l['date'] ?? '').toString()).toList()..sort();
-        final doneDate = dates.last;
+        final doneDate = dates.isEmpty ? '' : dates.last;
+        // كاملة في جلسة واحدة: مراجعات نفس الجلسة مجتمعةً تغطي السورة
         final reviewed = logs.any((l) =>
-            (l['date'] ?? '').toString().compareTo(doneDate) >= 0 &&
-            ((l['reviews'] as List?) ?? []).any((r) =>
-                r is Map && (_int(r['fromG']) ?? 1 << 30) <= sa && (_int(r['toG']) ?? -1) >= sb));
+            (l['date'] ?? '').toString().compareTo(doneDate) >= 0 && reviewsCoverRange(l['reviews'], sa, sb));
         if (!reviewed) return DailyStatus('review_surah', step: step, juz: j, segFrom: sa, segTo: sb);
       }
     }
