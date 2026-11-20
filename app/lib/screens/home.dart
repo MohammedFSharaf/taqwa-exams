@@ -7,6 +7,7 @@ import 'examiner.dart';
 import 'guide.dart';
 import 'my_exams.dart';
 import 'new_exam.dart';
+import 'ready.dart';
 import 'widgets.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => checkForUpdate(context));
+    ReadyWatcher.I.start();
   }
 
   @override
@@ -52,7 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
+                  const ReadyCard(),
+                  const SizedBox(height: 14),
                   BigButton(
                     icon: Icons.add_circle_outline,
                     text: 'اختبار جديد',
@@ -75,6 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 16),
                   const SyncStatus(),
+                  const SizedBox(height: 16),
+                  const AyahLine(),
                 ],
               ),
             ),

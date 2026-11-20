@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'repo.dart';
 import 'screens/gate.dart';
 import 'screens/widgets.dart';
+import 'update_check.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,7 @@ Future<void> main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
   await Repo.I.init();
+  UpdateWatcher.I.start();
   runApp(const TaqwaApp());
 }
 
@@ -49,6 +51,7 @@ class TaqwaApp extends StatelessWidget {
           fillColor: Colors.white,
         ),
       ),
+      navigatorKey: appNavigatorKey,
       home: const GateScreen(),
     );
   }

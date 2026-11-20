@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../daily.dart';
 import '../logic.dart';
 import '../repo.dart';
 import 'exam.dart';
@@ -11,7 +12,9 @@ import 'widgets.dart';
 
 /// بيانات الاختبار: الحلقة، الطالب، النوع، جزء البداية، إعادة
 class NewExamScreen extends StatefulWidget {
-  const NewExamScreen({super.key});
+  final Halaqa? initialHalaqa;
+  final Student? initialStudent;
+  const NewExamScreen({super.key, this.initialHalaqa, this.initialStudent});
 
   @override
   State<NewExamScreen> createState() => _NewExamScreenState();
@@ -27,6 +30,11 @@ class _NewExamScreenState extends State<NewExamScreen> {
   List<Map<String, dynamic>>? _sExams; // كل اختبارات الطالب المختار
   StreamSubscription? _permSub;
   List<Map<String, dynamic>> _permits = []; // أذونات الإدارة لإعادة اختبار ناجح
+  StreamSubscription? _logSub, _progSub;
+  List<Map<String, dynamic>> _sLogs = [];
+  Map<String, dynamic>? _sProg;
+  StreamSubscription? _setSub;
+  bool _enforce = false; // شرط التسميع مفعّل من الإدارة
 
   /// آخر اختبار سابق لنفس الطالب بنفس النوع والأجزاء
   Map<String, dynamic>? get _prev {
@@ -39,6 +47,34 @@ class _NewExamScreenState extends State<NewExamScreen> {
       return 0;
     });
     return m.first;
+  }
+
+  /// تاريخ آخر اختبار للطالب (أي نتيجة)
+  String get _lastExamDate {
+    var m = 0;
+    for (final e in _sExams ?? const <Map<String, dynamic>>[]) {
+      final t = _ms(e['createdAt']);
+      if (t > m) m = t;
+    }
+    return m == 0 ? '' : dayKey(DateTime.fromMillisecondsSinceEpoch(m));
+  }
+
+  /// شرط السجل اليومي: يُطبَّق على الاختبار التالي في المسار فقط (لا على إعادة ناجح بإذن)
+  ExamReady? get _logReady {
+    final s = _suggested;
+    if (s == null || _student == null || _sExams == null) return null;
+    if (_type != s.type || _startJuz != s.start) return null;
+    final passed = {
+      for (final e in _sExams!)
+        if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
+    };
+    return examReadiness(_student!.pathDir, _student!.pathStart, passed, _sLogs, _sProg, _lastExamDate);
+  }
+
+  /// يمرّ الشرط إذا تحقق أو بتصريح اختبار من الإدارة
+  bool get _logOk {
+    final r = _logReady;
+    return r == null || r.ok || _permitted || !_enforce;
   }
 
   bool get _forcedRetest => _prev != null && _prev!['passed'] != true;
@@ -111,7 +147,17 @@ class _NewExamScreenState extends State<NewExamScreen> {
     _permSub?.cancel();
     _permSub = null;
     _permits = [];
+    _logSub?.cancel();
+    _progSub?.cancel();
+    _sLogs = [];
+    _sProg = null;
     if (_student == null) return;
+    _logSub = Repo.I.studentLogs(_student!.id).listen((l) {
+      if (mounted) setState(() => _sLogs = l);
+    }, onError: (_) {});
+    _progSub = Repo.I.studentProgress(_student!.id).listen((p) {
+      if (mounted) setState(() => _sProg = p);
+    }, onError: (_) {});
     _permSub = Repo.I.permitsFor(_student!.id).listen((list) {
       if (!mounted) return;
       setState(() => _permits = list);
@@ -125,15 +171,33 @@ class _NewExamScreenState extends State<NewExamScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _setSub = Repo.I.settings().listen((v) {
+      if (mounted) setState(() => _enforce = v['examRequiresLog'] == true);
+    }, onError: (_) {});
+    if (widget.initialHalaqa != null && widget.initialStudent != null) {
+      _halaqa = widget.initialHalaqa;
+      _student = widget.initialStudent;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _watchStudent();
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    _setSub?.cancel();
     _sub?.cancel();
     _permSub?.cancel();
+    _logSub?.cancel();
+    _progSub?.cancel();
     super.dispose();
   }
 
   int? get _endJuz => (_type == null || _startJuz == null) ? null : _startJuz! + _type! - 1;
   bool get _ready =>
-      _halaqa != null && _student != null && _type != null && _startJuz != null && _selectedAllowed && !_blocked;
+      _halaqa != null && _student != null && _type != null && _startJuz != null && _selectedAllowed && !_blocked && _logOk;
 
   Future<void> _pickStudent() async {
     final res = await showModalBottomSheet<Student>(
@@ -243,6 +307,22 @@ class _NewExamScreenState extends State<NewExamScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 15, height: 1.5)),
+          if (s != null && _logReady != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'السجل اليومي: ${_logReady!.message(s)}'
+                    '${!_logReady!.ok && _permitted ? '\nمسموح بتصريح من الإدارة' : ''}'
+                    '${!_logReady!.ok && !_permitted && !_enforce ? '\n(تنبيه فقط — الشرط غير مفعّل حالياً)' : ''}',
+                style: TextStyle(
+                    color: _logReady!.ok || _permitted
+                        ? const Color(0xFF1F4E8C)
+                        : _enforce
+                            ? Colors.red.shade800
+                            : const Color(0xFF9A6700),
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
         ],
       ),
     );
@@ -256,7 +336,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('اختبار جديد')),
+      appBar: AppBar(title: const BrandTitle('اختبار جديد')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -375,9 +455,11 @@ class _NewExamScreenState extends State<NewExamScreen> {
               child: Text(
                   _blocked
                       ? 'لا يمكن بدء الاختبار: الطالب ناجح فيه سابقاً، ويحتاج إذن الإدارة.'
-                      : (_student == null ? 'اختر الطالب لبدء الاختبار' : 'لا يوجد اختبار متاح لبدئه'),
+                      : !_logOk
+                          ? 'لا يمكن بدء الاختبار قبل تسميع ${(_suggested?.type ?? 1) == 1 ? 'الجزء كاملاً في جلسة واحدة' : 'كل الأجزاء المطلوبة كاملة'} في السجل اليومي، أو بتصريح من الإدارة.'
+                          : (_student == null ? 'اختر الطالب لبدء الاختبار' : 'لا يوجد اختبار متاح لبدئه'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: _blocked ? Colors.red.shade700 : Colors.grey)),
+                  style: TextStyle(color: _blocked || !_logOk ? Colors.red.shade700 : Colors.grey)),
             ),
         ],
       ),

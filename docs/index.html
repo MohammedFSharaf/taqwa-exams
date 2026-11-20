@@ -4,44 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>إدارة اختبارات مركز التقوى</title>
+<meta name="author" content="Eng. Mohammed F Sharaf">
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
   :root{
-    --green:#1f5f46; --green-dark:#174a36; --line:#d9dde1; --text:#222; --muted:#6b7280;
-    --bg:#f6f7f8; --red:#b42318; --amber:#9a6700;
+    --green:#1f5f46; --green-dark:#174a36; --gold:#b8913a; --line:#e1e6e3; --text:#1e2a25; --muted:#6b7a73;
+    --bg:#f4f6f5; --card:#fff; --zebra:#eef5f1; --hover:#e0eee6; --th:#1f5f46; --thtext:#fff; --red:#b23a3a; --amber:#a86a0c;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:'Cairo',Tahoma,sans-serif;background:var(--bg);color:var(--text);font-size:15px}
-  header{background:var(--green);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
-  header h1{margin:0;font-size:19px;font-weight:700}
-  header .brand{display:flex;align-items:center;gap:12px}
-  header .brand > img{width:46px;height:46px;object-fit:contain;background:#fff;border-radius:50%;padding:2px}
   #login .logo{width:130px;height:130px;object-fit:contain;margin-bottom:6px}
   #login .slogan{width:260px;max-width:90%;margin:4px auto 8px;display:block}
-  header .brand .slogan{height:30px;width:auto;display:block;margin-top:3px;background:none;border-radius:0;padding:0}
-  header button{background:transparent;border:1px solid rgba(255,255,255,.6);color:#fff}
-  nav{background:#fff;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;padding:0 12px}
-  nav button{background:none;border:none;border-bottom:3px solid transparent;border-radius:0;padding:12px 14px;color:var(--muted);font-weight:600}
-  nav button.active{color:var(--green);border-bottom-color:var(--green)}
-  nav .badge{background:var(--red);color:#fff;border-radius:10px;padding:0 7px;font-size:12px;margin-right:4px}
-  main{padding:20px;max-width:1300px;margin:auto}
-  .card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px;overflow-x:auto}
   h2{font-size:17px;margin:0 0 12px}
-  button{font-family:inherit;font-size:14px;cursor:pointer;border-radius:5px;padding:7px 14px;border:1px solid var(--line);background:#fff;color:var(--text)}
+  button{font-family:inherit;font-size:14px;cursor:pointer;border-radius:5px;padding:7px 14px;border:1px solid var(--line);background:var(--card);color:var(--text)}
   button.primary{background:var(--green);border-color:var(--green);color:#fff}
   button.primary:hover{background:var(--green-dark)}
   button.danger{color:var(--red);border-color:#f1c4c0}
   button.small{padding:3px 9px;font-size:13px}
-  input,select,textarea{font-family:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:#fff}
+  input,select,textarea{font-family:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:var(--card)}
   textarea{width:100%;min-height:70px}
   .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
   .row label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-  table{width:100%;border-collapse:collapse;background:#fff}
-  th,td{border-bottom:1px solid var(--line);padding:8px 7px;text-align:right;vertical-align:middle}
-  th{background:#f0f2f3;font-weight:600;font-size:13px;white-space:nowrap}
+  table{width:100%;border-collapse:collapse;background:var(--card)}
+  th,td{border-bottom:1px solid #edf0ee;padding:8px 7px;text-align:right;vertical-align:middle}
+  th{background:var(--th);font-weight:700;font-size:12.5px;color:var(--thtext);white-space:nowrap;position:sticky;top:0;z-index:2}
   tr:hover td{background:#fafbfb}
   .muted{color:var(--muted);font-size:13px}
   .pass{color:var(--green);font-weight:700}
@@ -80,40 +70,273 @@
   .progress span{display:block;height:100%;background:var(--green)}
   .toast{position:fixed;bottom:20px;left:20px;background:#222;color:#fff;padding:10px 16px;border-radius:6px;opacity:0;transition:.3s}
   .toast.show{opacity:1}
+
+  /* ===== التخطيط: قائمة جانبية ===== */
+  .side{position:fixed;top:0;right:0;bottom:0;width:240px;background:var(--green-dark);color:#e6efe9;overflow-y:auto;z-index:40;display:flex;flex-direction:column}
+  .side .brand{text-align:center;padding:18px 14px 12px;border-bottom:1px solid rgba(255,255,255,.12)}
+  .side .brand .lg{width:66px;height:66px;border-radius:50%;background:#fff;border:2px solid var(--gold);padding:3px;object-fit:contain}
+  .side .brand b{display:block;color:#fff;font-size:13.5px;line-height:1.6;margin-top:6px}
+  .side .brand .slogan{height:26px;margin-top:2px}
+  .betatag{display:inline-block;background:#E9C46A;color:#174A36;border-radius:6px;padding:0 8px;font-size:12px;font-weight:700;margin-top:4px}
+  #tabs{padding:6px 0 10px;flex:1}
+  #tabs .grp{font-size:11.5px;color:#9fb8ad;padding:12px 20px 3px;font-weight:700}
+  #tabs button{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;border-right:3px solid transparent;border-radius:0;color:#e6efe9;padding:7px 20px;font-size:14px;text-align:right}
+  #tabs button:hover{background:rgba(255,255,255,.06)}
+  #tabs button.active{background:rgba(255,255,255,.11);border-right-color:var(--gold);color:#fff;font-weight:700}
+  .badge{background:var(--gold);color:#fff;border-radius:10px;padding:0 7px;font-size:11.5px;line-height:19px;font-weight:700}
+  .badge.red{background:#c0504d}
+  .dedline{display:block;text-align:center;color:var(--gold);font-weight:700;font-size:12.5px;cursor:pointer;line-height:1.7}
+  .side-ded{color:#e9c46a;padding:10px 18px 0;font-size:12px}
+  .ded h3{color:var(--green);margin:0 0 8px}.ded p{line-height:1.9;margin:6px 0}.ded .nm{font-weight:700;color:#5c4a1e;margin:3px 0}
+  dialog.deddlg{width:min(460px,94vw);border:0;border-radius:24px;padding:30px 26px 24px;color:#fff;position:relative;
+    background:radial-gradient(120% 80% at 80% 0%,#2a7a5b 0%,#14432f 45%,#0b261b 100%)}
+  dialog.deddlg::backdrop{background:rgba(5,20,14,.6)}
+  .deddlg .dclose{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.1);border:0;color:#fff;border-radius:50%;width:32px;height:32px;padding:0;font-size:14px}
+  .deddlg .dhead{display:flex;align-items:center;gap:12px}
+  .deddlg .dhead img{width:48px;height:48px;border-radius:50%;background:#fff;padding:2px;border:1.5px solid #c9a24a}
+  .deddlg .dhead span{display:block;color:#e9c46a;font-size:12px;letter-spacing:2px;font-weight:600}
+  .deddlg .dhead b{color:#d6e6dd;font-size:13.5px}
+  .deddlg .dtitle{height:62px;display:block;margin-top:20px}
+  .deddlg .dbar{width:56px;height:3px;border-radius:3px;background:#c9a24a;margin:8px 0 12px}
+  .deddlg .dintro{color:#d9e7df;font-size:14.5px;line-height:1.9;margin:0 0 16px}
+  .deddlg .dglass{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:4px 16px}
+  .deddlg .dr{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+  .deddlg .dr:last-child{border-bottom:0}
+  .deddlg .dr b{font-size:15.5px}
+  .deddlg .dr i{font-style:normal;font-size:12px;color:#e9c46a;background:rgba(201,162,74,.15);border-radius:10px;padding:1px 9px;font-weight:600}
+  .deddlg .dout{text-align:center;color:#cfe0d7;font-size:13.5px;line-height:1.85;margin:16px 0 0}
+  .side .logout{margin:8px 20px 18px;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
+  .content{margin-right:240px;min-height:100vh}
+  .topbar{display:flex;align-items:center;gap:12px;padding:16px 24px 4px}
+  .topbar h1{margin:0;font-size:21px}
+  .topbar .sub{color:var(--muted);font-size:13px}
+  .topbar .menu{display:none;font-size:20px;padding:4px 12px}
+  main{padding:12px 24px 24px;max-width:1400px}
+  .shade{display:none}
+  /* لوحة اليوم */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+  .kpi .l{color:var(--muted);font-size:12.5px}
+  .kpi .v{font-size:26px;font-weight:700;line-height:1.45}
+  .kpi .s{font-size:12px;color:var(--muted)}
+  .kpi .s.up{color:var(--green)} .kpi .s.dn{color:var(--red)}
+  .homegrid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+  .card h2 .lnk,.lnk{font-size:12.5px;color:var(--green);font-weight:400;cursor:pointer;background:none;border:0;padding:0}
+  .card h2{display:flex;justify-content:space-between;align-items:center}
+  .pill{display:inline-block;border-radius:10px;padding:0 9px;font-size:12px;line-height:21px;white-space:nowrap}
+  .p-ok{background:#e3f1ea;color:var(--green)} .p-no{background:#f7e4e4;color:var(--red)} .p-wa{background:#fbf0dc;color:var(--amber)} .p-gr{background:#eef0ef;color:var(--muted)}
+  .alert{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid #f0f2f1;cursor:pointer;border-radius:6px}
+  .alert:hover{background:#f7f9f8}
+  .alert:last-child{border-bottom:0}
+  .alert .dot{width:9px;height:9px;border-radius:50%;margin-top:8px;flex-shrink:0}
+  .alert b{font-size:14px}
+  .hbar{height:7px;background:#edf0ee;border-radius:4px;overflow:hidden;min-width:80px}
+  .hbar i{display:block;height:100%;background:var(--green)}
+  tr.click{cursor:pointer}
+  a.name{color:var(--text);text-decoration:none;cursor:pointer;border-bottom:1px dashed #b9c3be}
+  a.name:hover{color:var(--green)}
+  /* ملف الطالب */
+  .pagehead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .pagehead h2{font-size:22px;margin:2px 0}
+  .crumb{font-size:13px;color:var(--muted)}
+  .info4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:14px}
+  .info4 .muted{font-size:12px}
+  .crumb a{color:var(--green);cursor:pointer}
+  .steps{display:grid;grid-template-columns:repeat(20,1fr);gap:3px;margin:8px 0 6px}
+  .steps span{height:16px;border-radius:3px;background:#edf0ee}
+  .steps span.on{background:var(--green)} .steps span.cur{background:var(--gold)} .steps span.ex{background:#cfd8d3}
+  .gsearch{position:relative;margin-right:auto;width:300px;max-width:52vw}
+  .gsearch input{width:100%;padding:7px 12px;border-radius:20px}
+  .gres{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:60;margin-top:4px;max-height:360px;overflow:auto}
+  .gres div{padding:8px 12px;cursor:pointer;color:var(--text);font-size:14px;border-bottom:1px solid #f0f2f1}
+  .gres div:hover,.gres div.on{background:#eef5f1}
+  .gres span{color:var(--muted);font-size:12px}
+  .inactive td{color:#9aa3a0}
+
+  /* ===== الجداول ===== */
+  th,td{padding:9px 10px}
+  tbody tr:nth-child(even) > td{background:var(--zebra)}
+  tbody tr:hover > td{background:var(--hover)}
+  tbody tr.grp-row > td{background:transparent !important;font-weight:700;color:var(--green);font-size:13px;padding:14px 10px 6px;border-bottom:2px solid var(--line)}
+  tbody tr.grp-row:hover > td{background:transparent}
+  .tblwrap{max-height:72vh;overflow:auto;border-radius:8px}
+  .rpill{display:inline-block;border-radius:12px;padding:1px 11px;font-size:12.5px;font-weight:700;white-space:nowrap}
+  .rpill.pass{background:#dff1e7;color:#17663f} .rpill.fail{background:#f8e1e1;color:#a62f2f} .rpill.closed{background:#fbefd5;color:#94600a}
+  .mk{font-weight:800}.mk.hi{color:#0f5a36}.mk.ok{color:#2f8a5a}.mk.lo{color:#b23a3a}
+  .hq{display:inline-block;border-radius:10px;padding:0 9px;font-size:12.5px;line-height:21px;background:color-mix(in srgb,var(--c) 16%,transparent);color:color-mix(in srgb,var(--c) 80%,#000);white-space:nowrap}
+  .av{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:#fff;font-size:14px;font-weight:700;margin-left:8px;vertical-align:middle;flex-shrink:0}
+  details.more{position:relative;display:inline-block}
+  details.more summary{list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:1px 10px;font-weight:800;color:var(--muted);background:var(--card);user-select:none}
+  details.more summary::-webkit-details-marker{display:none}
+  details.more[open] summary{background:var(--hover)}
+  details.more .mbox{position:absolute;left:0;top:110%;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 22px rgba(0,0,0,.14);z-index:30;min-width:130px;padding:4px;display:flex;flex-direction:column}
+  details.more .mbox button{border:0;text-align:right;padding:7px 12px;border-radius:6px;background:transparent}
+  details.more .mbox button:hover{background:var(--hover)}
+  details.more .mbox hr{border:0;border-top:1px solid var(--line);margin:3px 0}
+  .moreRow{text-align:center;padding:12px}
+  .empty{text-align:center;padding:26px 10px;color:var(--muted)}
+  .empty svg{display:block;margin:0 auto 8px;opacity:.55}
+  td.empty-td{background:transparent !important}
+  .ntf{position:fixed;bottom:20px;right:20px;z-index:90;display:flex;flex-direction:column;gap:8px}
+  .ntf div{background:var(--card);border:1px solid var(--line);border-right:4px solid var(--green);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:10px 14px;min-width:260px;max-width:360px;cursor:pointer;animation:ntfIn .25s}
+  .ntf div.fail{border-right-color:var(--red)}
+  .ntf b{display:block;font-size:13px;color:var(--muted)}
+  @keyframes ntfIn{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+  .themeBtn{background:transparent;border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:15px}
+  /* ===== الوضع الليلي ===== */
+  body.dark{--bg:#0f1714;--card:#17221d;--line:#2a3a33;--text:#e3ece7;--muted:#9fb3a9;--zebra:#1b2822;--hover:#22342b;--th:#123527;--thtext:#e9f3ee}
+  body.dark th,body.dark td{border-bottom-color:#22302a}
+  body.dark input,body.dark select,body.dark textarea,body.dark button{color:var(--text)}
+  body.dark button.primary{color:#fff}
+  body.dark dialog:not(.deddlg){background:var(--card);color:var(--text)}
+  body.dark .dlg-head,body.dark .dlg-foot{background:var(--card)}
+  body.dark .p-ok,body.dark .rpill.pass{background:#1f3d2e;color:#8fe0b4} body.dark .p-no,body.dark .rpill.fail{background:#43222200;color:#f19a9a;border:1px solid #6b2f2f}
+  body.dark .p-wa,body.dark .rpill.closed{background:#3d3020;color:#f0c674} body.dark .p-gr{background:#26332d;color:#b5c7be}
+  body.dark .mk.hi{color:#7ee0a9}body.dark .mk.ok{color:#a8e6c2}body.dark .mk.lo{color:#f19a9a}
+  body.dark .hq{color:color-mix(in srgb,var(--c) 55%,#fff)}
+  body.dark .topbar h1,body.dark .pagehead h2{color:var(--text)}
+  body.dark a.name{color:var(--text)}
+  body.dark .alert:hover{background:var(--hover)}
+  body.dark .hbar,body.dark .steps span:not(.on):not(.cur){background:#2a3a33}
+  body.dark .pass{color:#7ee0a9} body.dark .fail{color:#f19a9a}
+  body.dark .alert{border-bottom-color:#22302a} body.dark .lnk,body.dark .card h2 .lnk,body.dark .crumb a{color:#8fd0ad}
+  body.dark tbody tr.grp-row > td{color:#8fd0ad}
+  body.dark .gres div{color:var(--text);border-bottom-color:#22302a}
+  @media (max-width:900px){
+    .side{transform:translateX(100%);transition:transform .2s;box-shadow:-4px 0 18px rgba(0,0,0,.2)}
+    body.nav-open .side{transform:none}
+    body.nav-open .shade{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:30}
+    .content{margin-right:0}
+    .topbar{background:var(--green-dark);color:#fff;padding:10px 14px;position:sticky;top:0;z-index:20}
+    .topbar .sub{color:#cfe0d7}
+    .topbar h1{font-size:17px}
+    .topbar .menu{display:inline-block;background:transparent;border:0;color:#fff}
+    main{padding:12px}
+    .kpis{grid-template-columns:1fr 1fr;gap:8px}
+    .kpi .v{font-size:22px}
+    .homegrid{grid-template-columns:1fr}
+    .steps{grid-template-columns:repeat(10,1fr)}
+    .info4{grid-template-columns:1fr 1fr}
+    .hm{display:none}
+    .gsearch{width:auto;flex:1;max-width:none}
+    .gsearch input{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff}
+    .gsearch input::placeholder{color:#cfe0d7}
+  }
+  @media print{.side,.topbar{display:none}.content{margin:0}}
 </style>
 </head>
 <body>
 
 <!-- شاشة الدخول -->
 <div id="login" class="card hidden">
-  <img class="logo" src="logo.png" alt="">
+  <img class="logo" src="logo.png" alt="" title="تصميم وتطوير: Eng. Mohammed F Sharaf">
   <h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1>
   <img class="slogan" src="slogan_dark.png" alt="نحو مدرسة قرآنية">
   <div class="muted">لوحة إدارة الاختبارات</div>
   <input id="loginPass" type="password" placeholder="كلمة السر" autocomplete="current-password">
   <div class="err" id="loginErr"></div>
   <button class="primary" id="loginBtn">دخول</button>
+  <a class="dedline" data-ded="1" style="margin-top:16px">صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله</a>
 </div>
 
 <div id="loading" style="text-align:center;margin-top:120px" class="muted">جارٍ التحميل...</div>
 
 <!-- اللوحة -->
 <div id="app" class="hidden">
-  <header>
-    <div class="brand"><img src="logo.png" alt=""><div><h1>إدارة اختبارات مركز التقوى</h1><img class="slogan" src="slogan_gold.png" alt="نحو مدرسة قرآنية"></div></div>
-    <button id="logoutBtn">خروج</button>
-  </header>
-  <nav id="tabs">
-    <button data-tab="exams" class="active">الاختبارات</button>
-    <button data-tab="retests">بانتظار الإعادة <span class="badge hidden" id="retestBadge"></span></button>
-    <button data-tab="stats">الإحصائيات والتقارير</button>
-    <button data-tab="pending">طلاب جدد <span class="badge hidden" id="pendingBadge"></span></button>
-    <button data-tab="students">الطلاب</button>
-    <button data-tab="halaqat">الحلقات</button>
-    <button data-tab="examiners">المختبرين</button>
-    <button data-tab="settings">الإعدادات</button>
-  </nav>
+  <div class="shade" id="shade"></div>
+  <aside class="side" id="side">
+    <div class="brand">
+      <img class="lg" src="logo.png" alt="" title="تصميم وتطوير: Eng. Mohammed F Sharaf">
+      <b>مركز التقوى لتعليم وتحفيظ القرآن الكريم</b>
+      <img class="slogan" src="slogan_gold.png" alt="نحو مدرسة قرآنية">
+      <!--BETA-->
+    </div>
+    <nav id="tabs">
+      <button data-tab="home" class="active">لوحة اليوم</button>
+      <div class="grp">الاختبارات</div>
+      <button data-tab="exams">سجل الاختبارات</button>
+      <button data-tab="retests">بانتظار الإعادة <span class="badge red hidden" id="retestBadge"></span></button>
+      <button data-tab="permits">تصاريح الإعادة <span class="badge hidden" id="permitBadge"></span></button>
+      <div class="grp">التسميع اليومي</div>
+      <button data-tab="daily">سجل اليوم</button>
+      <button data-tab="dstats">إحصائيات التسميع</button>
+      <button data-tab="absence">الغياب المتكرر <span class="badge hidden" id="absentBadge"></span></button>
+      <button data-tab="holidays">الإجازات</button>
+      <div class="grp">الطلاب والحلقات</div>
+      <button data-tab="students">الطلاب</button>
+      <button data-tab="pending">طلاب جدد <span class="badge hidden" id="pendingBadge"></span></button>
+      <button data-tab="halaqat">الحلقات</button>
+      <div class="grp">الكادر</div>
+      <button data-tab="examiners">المختبرين</button>
+      <button data-tab="sheikhs">المشايخ</button>
+      <div class="grp">التقارير</div>
+      <button data-tab="report">التقرير الشهري</button>
+      <button data-tab="ranking">الترتيب والتكريم</button>
+      <button data-tab="stats">إحصائيات الاختبارات</button>
+      <div class="grp"></div>
+      <button data-tab="audit">سجل التعديلات</button>
+      <button data-tab="settings">الإعدادات</button>
+    </nav>
+    <a class="dedline side-ded" data-ded="1">صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله</a>
+    <button id="logoutBtn" class="logout">خروج</button>
+  </aside>
+  <div class="content">
+  <div class="topbar">
+    <button class="menu" id="menuBtn" aria-label="القائمة">☰</button>
+    <div><h1 id="pageTitle">لوحة اليوم</h1><div class="sub" id="pageSub"></div></div>
+    <button class="themeBtn" id="themeBtn" title="الوضع الليلي">🌙</button>
+    <div class="gsearch"><input id="gSearch" placeholder="🔍 ابحث عن طالب…" autocomplete="off"><div class="gres hidden" id="gRes"></div></div>
+  </div>
   <main>
+    <!-- لوحة اليوم -->
+    <section id="tab-home">
+      <div class="kpis" id="homeKpis"></div>
+      <div class="homegrid">
+        <div class="card"><h2>التسميع اليومي حسب الحلقة <button class="lnk" data-go="daily">سجل اليوم ←</button></h2><div id="homeHalaqat"></div></div>
+        <div class="card"><h2>تنبيهات تحتاج متابعة</h2><div id="homeAlerts"></div></div>
+      </div>
+      <div class="card"><h2>آخر الاختبارات <button class="lnk" data-go="exams">كل الاختبارات ←</button></h2><div id="homeExams"></div></div>
+    </section>
+
+    <!-- الترتيب والتكريم -->
+    <section id="tab-ranking" class="hidden">
+      <div class="card">
+        <div class="row">
+          <label>الشهر<input type="month" id="rkMonth"></label>
+          <button class="primary" id="rkPrint">طباعة</button>
+          <button id="rkExcel">تصدير Excel</button>
+          <span class="muted">الحضور لا يحسب أيام الإجازة، وترتيب الحضور لمن حضر 3 جلسات أو أكثر.</span>
+        </div>
+      </div>
+      <div id="rkBody"></div>
+    </section>
+
+    <!-- سجل التعديلات -->
+    <section id="tab-audit" class="hidden">
+      <div class="card">
+        <h2>سجل التعديلات</h2>
+        <p class="muted">كل تعديل أو حذف من لوحة الإدارة، وتعديلات المشايخ على تسميع سبق تسجيله. يظهر آخر 500 عملية.</p>
+        <div class="row" style="margin-bottom:10px">
+          <label>بحث<input id="auQ" placeholder="اسم طالب، نوع العملية…"></label>
+          <label>المصدر<select id="auSrc"><option value="">الكل</option><option value="admin">الإدارة</option><option value="app">المشايخ (التطبيق)</option></select></label>
+          <span class="muted" id="auCount"></span>
+        </div>
+        <div id="auBody"></div>
+      </div>
+    </section>
+
+    <!-- تصاريح الإعادة -->
+    <section id="tab-permits" class="hidden">
+      <div class="card">
+        <h2>تصاريح إعادة الاختبارات الناجحة</h2>
+        <p class="muted">الاختبار الناجح لا يُعاد إلا بتصريح من الإدارة. يُعطى التصريح من ملف الطالب، ويسمح بإعادة واحدة وينتهي تلقائياً بعدها.</p>
+        <div id="permitsList"></div>
+      </div>
+    </section>
+
+    <!-- ملف الطالب -->
+    <section id="tab-student" class="hidden"><div id="stuPage"></div></section>
+
     <!-- الاختبارات -->
     <section id="tab-exams">
       <div class="card">
@@ -138,11 +361,11 @@
         </div>
       </div>
       <div class="stats" id="examStats"></div>
-      <div class="card" style="padding:0;overflow:auto">
+      <div class="card tblwrap" style="padding:0">
         <table>
           <thead><tr>
-            <th>التاريخ</th><th>الطالب</th><th>الحلقة</th><th>النوع</th><th>الأجزاء</th>
-            <th>المختبر</th><th>المجموع</th><th>النتيجة</th><th></th>
+            <th>الوقت</th><th>الطالب</th><th class="hm">الحلقة</th><th class="hm">النوع</th><th class="hm">الأجزاء</th>
+            <th class="hm">المختبر</th><th>المجموع</th><th>النتيجة</th><th></th>
           </tr></thead>
           <tbody id="examsBody"></tbody>
         </table>
@@ -176,20 +399,104 @@
           <button id="stAll">كل الفترات</button>
         </div>
       </div>
-      <div class="card">
-        <h2>التقرير الشهري</h2>
-        <div class="row">
-          <label>الشهر<input type="month" id="repMonth"></label>
-          <button class="primary" id="repExcel">تصدير Excel</button>
-          <button id="repPrint">طباعة / PDF</button>
-        </div>
-      </div>
       <div class="card"><h2>تقدّم الطلاب في المسار</h2><div id="stPath"></div></div>
       <div class="stats" id="stSummary"></div>
       <div class="card"><h2>حسب الحلقة</h2><div id="stByHalaqa"></div></div>
       <div class="card"><h2>حسب المختبر</h2><div id="stByExaminer"></div></div>
       <div class="card"><h2>حسب نوع الاختبار</h2><div id="stByType"></div></div>
       <div class="card"><h2>حسب الشهر</h2><div id="stByMonth"></div></div>
+    </section>
+
+    <!-- التقرير الشهري -->
+    <section id="tab-report" class="hidden">
+      <div class="card">
+        <h2>التقرير الشهري للاختبارات</h2>
+        <p class="muted">ملخص الشهر حسب الحلقة والمختبر ونوع الاختبار، مع قائمة الاختبارات والطلاب بانتظار الإعادة.</p>
+        <div class="row">
+          <label>الشهر<input type="month" id="repMonth"></label>
+          <button class="primary" id="repExcel">تصدير Excel</button>
+          <button id="repPrint">طباعة / PDF</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>تقرير التسميع اليومي</h2>
+        <p class="muted">إحصائيات الحضور والصفحات لأي فترة، مع تصدير Excel.</p>
+        <button data-go="dstats">فتح إحصائيات التسميع ←</button>
+      </div>
+    </section>
+
+    <!-- السجل اليومي -->
+    <section id="tab-daily" class="hidden">
+      <div class="card">
+        <h2>سجل يوم</h2>
+        <div class="row">
+          <label>التاريخ<input type="date" id="dDate"></label>
+          <label>الحلقة<select id="dHalaqa"></select></label>
+          <span class="muted" id="dInfo"></span>
+        </div>
+      </div>
+      <div class="stats" id="dSummary"></div>
+      <div class="card" style="padding:0;overflow:auto">
+        <table>
+          <thead><tr><th>الطالب</th><th>الحلقة</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>المرحلة الآن</th><th>الشيخ</th><th></th></tr></thead>
+          <tbody id="dBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- إحصائيات التسميع -->
+    <section id="tab-dstats" class="hidden">
+      <div class="card">
+        <h2>إحصائيات فترة</h2>
+        <div class="row">
+          <label>من تاريخ<input type="date" id="dsFrom"></label>
+          <label>إلى تاريخ<input type="date" id="dsTo"></label>
+          <label>الحلقة<select id="dsHalaqa"></select></label>
+          <button id="dsWeek">هذا الأسبوع</button>
+          <button id="dsMonth">هذا الشهر</button>
+          <button class="primary" id="dsExcel">تصدير Excel</button>
+        </div>
+        <h2 style="margin-top:14px">حسب الحلقة</h2><div id="dsByHalaqa"></div>
+        <h2 style="margin-top:14px">حسب الطالب</h2><div id="dsByStudent"></div>
+      </div>
+    </section>
+
+    <!-- الغياب المتكرر -->
+    <section id="tab-absence" class="hidden">
+      <div class="card">
+        <h2>غياب متكرر</h2>
+        <p class="muted">طلاب غابوا آخر جلستين أو أكثر متتاليتين (بدون عذر، ولا تُحسب أيام الإجازة).</p>
+        <div id="dsAbsent"></div>
+      </div>
+    </section>
+
+    <!-- الإجازات -->
+    <section id="tab-holidays" class="hidden">
+      <div class="card">
+        <h2>الإجازات</h2>
+        <div class="row" style="margin-bottom:10px">
+          <label>التاريخ<input type="date" id="hDate"></label>
+          <label>لمن<select id="hHalaqa"></select></label>
+          <label>السبب<input id="hReason" placeholder="مثلاً: عيد، ظرف طارئ"></label>
+          <button class="primary" id="addHolidayBtn">إضافة إجازة</button>
+        </div>
+        <table><thead><tr><th>التاريخ</th><th>لمن</th><th>السبب</th><th>أضافها</th><th></th></tr></thead><tbody id="hBody"></tbody></table>
+      </div>
+    </section>
+
+    <!-- المشايخ -->
+    <section id="tab-sheikhs" class="hidden">
+      <div class="card">
+        <h2>حسابات المشايخ</h2>
+        <p class="muted">كل شيخ يدخل التطبيق باسمه ورمزه، ويرى طلاب حلقته فقط. الحلقة يمكن أن يكون لها أكثر من شيخ.</p>
+        <div class="row" style="margin-bottom:12px">
+          <label>اسم الشيخ<input id="newShName" style="min-width:220px"></label>
+          <label>الحلقة<select id="newShHalaqa"></select></label>
+          <label>رمز الدخول<input id="newShPin" style="width:120px" inputmode="numeric" placeholder="4 أرقام"></label>
+          <button class="primary" id="addShBtn">إضافة</button>
+        </div>
+        <table><thead><tr><th>الاسم</th><th>الحلقة</th><th>الرمز</th><th></th></tr></thead><tbody id="shBody"></tbody></table>
+      </div>
     </section>
 
     <!-- طلاب جدد -->
@@ -228,12 +535,13 @@
         <div class="row" style="margin-bottom:10px">
           <label>بحث<input id="sSearch"></label>
           <label>الحلقة<select id="sHalaqa"></select></label>
+          <label>الحالة<select id="sState"><option value="active">على رأس الحلقة</option><option value="inactive">منقطع</option><option value="">الكل</option></select></label>
           <span class="muted" id="studentsCount"></span>
         </div>
-        <table>
+        <div class="tblwrap"><table>
           <thead><tr><th>الاسم</th><th>الحلقة</th><th>المسار</th><th>الاختبار التالي</th><th>الاختبارات</th><th></th></tr></thead>
           <tbody id="studentsBody"></tbody>
-        </table>
+        </table></div>
       </div>
     </section>
 
@@ -271,6 +579,20 @@
     <!-- الإعدادات -->
     <section id="tab-settings" class="hidden">
       <div class="card">
+        <h2>أيام التحفيظ والحد الأدنى للصفحات (السجل اليومي)</h2>
+        <div class="row" id="sessDays" style="margin-bottom:10px"></div>
+        <div class="row">
+          <label>حد الحفظ الجديد اليومي (صفحات)<input type="number" step="0.5" min="0" id="minNewPages" style="width:110px"></label>
+          <label>حد المراجعة اليومي (صفحات)<input type="number" step="0.5" min="0" id="minReviewPages" style="width:110px"></label>
+          <button class="primary" id="saveDailySettingsBtn">حفظ</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>شرط التسميع قبل الاختبار</h2>
+        <p class="muted">عند التفعيل: لا يبدأ المختبر اختبار الطالب إلا إذا أتمّ حفظ الجزء في السجل اليومي وسمّعه كاملاً مراجعةً في جلسة واحدة (أو بتصريح من الإدارة). عند الإيقاف: يظهر للمختبر تنبيه فقط ويستطيع البدء.</p>
+        <label style="flex-direction:row;align-items:center;gap:10px;font-size:15px"><input type="checkbox" id="reqLog" style="width:20px;height:20px"> <b>تفعيل الشرط (إجباري)</b> <span id="reqLogState"></span></label>
+      </div>
+      <div class="card">
         <h2>مدة التوقف</h2>
         <p class="muted">الطالب الذي يبقى على نفس الاختبار في المسار أكثر من هذه المدة يظهر في قائمة "المتوقفين" في الإحصائيات.</p>
         <div class="row">
@@ -289,6 +611,7 @@
       </div>
     </section>
   </main>
+  </div>
 </div>
 
 <!-- نافذة عامة -->
@@ -298,13 +621,15 @@
   <div class="dlg-foot" id="dlgFoot"></div>
 </dialog>
 <div class="toast" id="toast"></div>
+<div class="ntf" id="ntf"></div>
+<dialog id="dedDlg" class="deddlg"><button class="dclose" onclick="this.closest('dialog').close()" aria-label="إغلاق">✕</button><div id="dedBody"></div></dialog>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc,
-  writeBatch, serverTimestamp }
+  writeBatch, serverTimestamp, query, orderBy, limit }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -367,6 +692,87 @@ function stepLabel(st){
   if (st.type === 30) return "المصحف كاملاً (30 جزءاً)";
   return `${TYPES[st.type]}: من الجزء ${st.start} إلى الجزء ${st.end}`;
 }
+const Q = {"names":["الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه","الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم","لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر","فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق","الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة","الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس","التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد","الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات","القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر","المسد","الإخلاص","الفلق","الناس"],"counts":[7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6],"pageStart":[1,8,13,24,32,37,45,56,65,69,77,84,91,96,101,109,113,120,127,134,142,149,153,161,171,177,184,189,194,198,204,210,218,223,227,232,238,241,245,253,256,260,264,267,272,277,282,289,290,294,303,309,316,323,331,339,346,355,364,371,377,385,394,402,409,415,426,434,442,447,451,459,467,474,480,488,494,500,505,508,513,517,520,527,531,538,545,553,559,568,573,580,585,588,595,599,607,615,621,628,634,641,648,656,664,669,672,675,679,683,687,693,701,706,711,715,720,727,734,740,746,752,759,765,773,778,783,790,798,808,817,825,834,842,849,858,863,871,880,884,891,900,908,914,921,927,932,936,941,947,955,966,977,985,992,998,1006,1012,1022,1028,1036,1042,1050,1059,1075,1085,1092,1098,1104,1110,1114,1118,1125,1133,1142,1150,1161,1169,1177,1186,1194,1201,1206,1213,1222,1230,1236,1242,1249,1256,1262,1267,1272,1276,1283,1290,1297,1304,1308,1315,1322,1329,1335,1342,1347,1353,1358,1365,1371,1379,1385,1390,1398,1407,1418,1426,1435,1443,1453,1462,1471,1479,1486,1493,1502,1511,1519,1527,1536,1545,1555,1562,1571,1582,1591,1601,1611,1619,1627,1634,1640,1649,1660,1666,1675,1683,1692,1700,1708,1713,1721,1726,1736,1742,1750,1756,1761,1769,1775,1784,1793,1803,1818,1834,1854,1873,1893,1908,1916,1928,1936,1944,1956,1966,1974,1981,1989,1995,2004,2012,2020,2030,2037,2047,2057,2068,2079,2088,2096,2105,2116,2126,2134,2145,2156,2161,2168,2175,2186,2194,2202,2215,2224,2238,2251,2262,2276,2289,2302,2315,2327,2346,2361,2386,2400,2413,2425,2436,2447,2462,2474,2484,2494,2508,2519,2528,2541,2556,2565,2574,2585,2596,2601,2611,2619,2626,2634,2642,2651,2660,2668,2674,2691,2701,2716,2733,2748,2763,2778,2792,2802,2812,2819,2823,2828,2835,2845,2850,2853,2858,2867,2876,2888,2899,2911,2923,2933,2952,2972,2993,3016,3044,3069,3092,3116,3139,3160,3173,3182,3195,3204,3215,3223,3236,3248,3258,3266,3274,3281,3288,3296,3303,3312,3323,3330,3337,3347,3355,3364,3371,3379,3386,3393,3404,3415,3425,3434,3442,3451,3460,3470,3481,3489,3498,3504,3515,3524,3534,3540,3549,3556,3564,3569,3577,3584,3588,3596,3607,3614,3621,3629,3638,3646,3655,3664,3672,3679,3691,3699,3705,3718,3733,3746,3760,3776,3789,3813,3840,3865,3891,3915,3942,3971,3987,3997,4013,4032,4054,4064,4069,4080,4090,4099,4106,4115,4126,4133,4141,4150,4159,4167,4174,4183,4192,4200,4211,4219,4230,4239,4248,4257,4265,4273,4283,4288,4295,4304,4317,4324,4336,4348,4359,4373,4386,4399,4415,4433,4454,4474,4487,4496,4506,4516,4525,4531,4539,4546,4557,4565,4575,4584,4593,4599,4607,4612,4617,4624,4631,4646,4666,4682,4706,4727,4750,4767,4785,4811,4829,4853,4874,4896,4918,4942,4969,4996,5030,5056,5079,5087,5094,5100,5105,5111,5116,5126,5130,5136,5143,5151,5156,5162,5169,5178,5186,5193,5200,5209,5218,5223,5230,5237,5242,5254,5268,5287,5314,5332,5358,5386,5415,5430,5448,5461,5476,5495,5513,5543,5571,5597,5617,5642,5673,5703,5728,5759,5801,5830,5855,5883,5910,5932,5964,5994,6017,6044,6073,6099,6126,6138,6156,6177,6194,6208,6222,6237],"juz":[[1,148],[149,259],[260,385],[386,516],[517,640],[641,750],[751,899],[900,1041],[1042,1200],[1201,1327],[1328,1478],[1479,1648],[1649,1802],[1803,2029],[2030,2214],[2215,2483],[2484,2673],[2674,2855],[2856,3159],[3160,3340],[3341,3533],[3534,3705],[3706,4058],[4059,4218],[4219,4510],[4511,4675],[4676,5104],[5105,5241],[5242,5672],[5673,6236]]};
+
+// ===== محرك السجل اليومي =====
+const SURAH_START = (() => { const s = [0]; let g = 1; for (let i = 0; i < 114; i++){ s.push(g); g += Q.counts[i]; } return s; })();
+const N_AYAH = 6236;
+function surahOf(g){ let lo = 1, hi = 114; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (SURAH_START[m] <= g) lo = m; else hi = m - 1; } return lo; }
+function ayahNo(g){ return g - SURAH_START[surahOf(g)] + 1; }
+function gidOf(s, a){ return SURAH_START[s] + a - 1; }
+function surahEnd(s){ return SURAH_START[s] + Q.counts[s-1] - 1; }
+function pageOf(g){ let lo = 1, hi = 604; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (Q.pageStart[m-1] <= g) lo = m; else hi = m - 1; } return lo; }
+function ayahFrac(g){ const p = pageOf(g); return 1 / (Q.pageStart[p] - Q.pageStart[p-1]); }
+function pagesOfRange(a, b){ let t = 0; for (let g = a; g <= b; g++) t += ayahFrac(g); return t; }
+function juzOfG(g){ for (let j = 1; j <= 30; j++) if (g >= Q.juz[j-1][0] && g <= Q.juz[j-1][1]) return j; return 30; }
+function segmentOf(g){ const j = juzOfG(g), s = surahOf(g), [a, b] = Q.juz[j-1]; return [Math.max(a, SURAH_START[s]), Math.min(b, surahEnd(s))]; }
+function posLabel(g){ return `${Q.names[surahOf(g)-1]} ${ayahNo(g)}`; }
+function rangeLabel(a, b){
+  const sa = surahOf(a), sb = surahOf(b);
+  if (sa === sb){
+    if (a === SURAH_START[sa] && b === surahEnd(sa)) return `سورة ${Q.names[sa-1]}`;
+    return `${Q.names[sa-1]} ${ayahNo(a)}–${ayahNo(b)}`;
+  }
+  return `${posLabel(a)} ← ${posLabel(b)}`;
+}
+const _ORDER = {};
+function memOrder(dir){
+  if (_ORDER[dir]) return _ORDER[dir];
+  const order = [];
+  if (dir === "asc"){ for (let g = 1; g <= N_AYAH; g++) order.push(g); }
+  else {
+    for (let j = 30; j >= 1; j--){
+      const [a, b] = Q.juz[j-1], sa = surahOf(a), sb = surahOf(b);
+      for (let s = sb; s >= sa; s--){ const lo = Math.max(a, SURAH_START[s]), hi = Math.min(b, surahEnd(s)); for (let g = lo; g <= hi; g++) order.push(g); }
+    }
+  }
+  const pos = new Int32Array(N_AYAH + 1); order.forEach((g, i) => pos[g] = i);
+  const jStart = [], jEnd = [];
+  for (let j = 1; j <= 30; j++){ const [a, b] = Q.juz[j-1]; let mn = 1e9, mx = -1; for (let g = a; g <= b; g++){ mn = Math.min(mn, pos[g]); mx = Math.max(mx, pos[g]); } jStart[j] = mn; jEnd[j] = mx; }
+  return (_ORDER[dir] = { order, pos, jStart, jEnd });
+}
+// حالة الطالب في السجل اليومي
+function dailyStatus(dir, start, passedKeys, logs, progress, minNew){
+  const O = memOrder(dir);
+  const p = pathStatus(dir, start, passedKeys);
+  if (p.hafiz) return { mode: "hafiz" };
+  const step = p.steps[p.next];
+  if (step.type > 1) return { mode: "review_exam", step, juzFrom: step.start, juzTo: step.end };
+  const J = step.start;
+  let cursor = null, hasData = false;
+  if (progress){ hasData = true; if (progress.lastG) cursor = O.pos[progress.lastG]; }
+  for (const l of logs) if (l.newMem && l.newMem.toG){ hasData = true; const c = O.pos[l.newMem.toG]; if (cursor === null || c > cursor) cursor = c; }
+  if (!hasData) return { mode: "needs_start", step, juz: J };
+  if (cursor !== null && cursor >= O.jEnd[J]) return { mode: "review_exam", step, juzFrom: J, juzTo: J, ready: true };
+  if (cursor === null || cursor < O.jStart[J] - 1) cursor = O.jStart[J] - 1;
+  if (cursor >= O.jStart[J]){
+    const [sa, sb] = segmentOf(O.order[cursor]);
+    if (cursor === O.pos[sb]){
+      const ps = O.pos[sa], pe = O.pos[sb];
+      const touching = logs.filter(l => l.newMem && O.pos[l.newMem.fromG] <= pe && O.pos[l.newMem.toG] >= ps);
+      if (touching.length >= 2){
+        const doneDate = touching.map(l => l.date).sort().pop();
+        const reviewed = logs.some(l => l.date >= doneDate && (l.reviews || []).some(r => r.fromG <= sa && r.toG >= sb));
+        if (!reviewed) return { mode: "review_surah", step, juz: J, segFrom: sa, segTo: sb };
+      }
+    }
+  }
+  const fromPos = cursor + 1;
+  let t = 0, toPos = fromPos;
+  for (let i = fromPos; i <= O.jEnd[J]; i++){ t += ayahFrac(O.order[i]); toPos = i; if (t >= (minNew || 1) - 1e-9) break; }
+  return { mode: "memorize", step, juz: J, fromG: O.order[fromPos], suggestToG: O.order[toPos], juzEndG: O.order[O.jEnd[J]] };
+}
+// صفحات مدى في ترتيب الحفظ (للحفظ الجديد)
+function memRangePages(dir, fromG, toG){ const O = memOrder(dir); let t = 0; for (let i = O.pos[fromG]; i <= O.pos[toG]; i++) t += ayahFrac(O.order[i]); return t; }
+function memRangeLabel(dir, fromG, toG){
+  const O = memOrder(dir), a = O.pos[fromG], b = O.pos[toG];
+  if (dir === "asc") return rangeLabel(fromG, toG);
+  // من الناس: قد يشمل عدة سور تنازلياً
+  const parts = []; let i = a;
+  while (i <= b){ const s = surahOf(O.order[i]); let j = i; while (j + 1 <= b && surahOf(O.order[j+1]) === s) j++; parts.push(rangeLabel(O.order[i], O.order[j])); i = j + 1; }
+  return parts.join("، ");
+}
+
 function stepShort(st){ return st.type === 1 ? String(st.start) : st.type === 30 ? "المصحف" : `م${st.type}`; }
 function sDir(s){ return s && s.pathDir === "asc" ? "asc" : "desc"; }
 function sStart(s){ const v = parseInt(s && s.pathStart); return v >= 1 && v <= 30 ? v : (sDir(s) === "asc" ? 1 : 30); }
@@ -434,7 +840,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const S = { halaqat:[], students:[], examiners:[], exams:[], permits:[], settings:{} };
+const DAY_NAMES_ = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+const S = { halaqat:[], students:[], examiners:[], exams:[], permits:[], sheikhs:[], logs:[], progress:[], holidays:[], audit:[], settings:{} };
 let unsubs = [];
 const $ = id => document.getElementById(id);
 
@@ -442,6 +849,15 @@ function toast(msg){
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
   setTimeout(()=>t.classList.remove("show"), 2500);
 }
+function isActive(s){ return s && s.status !== "pending" && s.status !== "inactive"; }
+function stuById(id){ return S.students.find(x => x.id === id); }
+async function audit(action, target, details, before, after){
+  try {
+    await addDoc(collection(db,"audit"), { atMs: Date.now(), at: serverTimestamp(), by: "الإدارة", source: "admin",
+      action, target: target || "", details: details || "", before: before ?? null, after: after ?? null });
+  } catch(e){ console.error(e); }
+}
+function examBrief(e){ return e ? `${TYPES[e.type]||e.type} — ${juzLabel(e)} — ${e.closed ? "أُغلق" : fmtNum(e.total)} (${resultText(e)})` : ""; }
 function halaqaName(id){ return (S.halaqat.find(h=>h.id===id)||{}).name || ""; }
 function sortAr(arr, key="name"){ return arr.sort((a,b)=>(a[key]||"").localeCompare(b[key]||"","ar")); }
 
@@ -469,6 +885,7 @@ onAuthStateChanged(auth, user => {
   if (user && user.email === ADMIN_EMAIL){
     $("login").classList.add("hidden"); $("app").classList.remove("hidden");
     startListeners();
+    route();
   } else {
     if (user) signOut(auth);
     $("app").classList.add("hidden"); $("login").classList.remove("hidden");
@@ -476,8 +893,24 @@ onAuthStateChanged(auth, user => {
   }
 });
 
+const SEEN = {};
+function notify(html, cls, onClick){
+  const box = $("ntf"), el = document.createElement("div");
+  el.className = cls || ""; el.innerHTML = html; el.onclick = () => { el.remove(); onClick && onClick(); };
+  box.appendChild(el); setTimeout(() => el.remove(), 9000);
+  while (box.children.length > 4) box.firstChild.remove();
+}
 function listen(name, cb){
   unsubs.push(onSnapshot(collection(db, name), snap => {
+    if (name === "exams" || name === "students"){
+      const ids = new Set(snap.docs.map(d => d.id));
+      if (SEEN[name]){
+        for (const d of snap.docs){ if (SEEN[name].has(d.id)) continue; const x = { id:d.id, ...d.data() };
+          if (name === "exams") notify(`<b>وصل اختبار جديد</b>${esc(x.studentName)} — ${esc(juzLabel(x))} — ${x.closed ? "أُغلق" : (x.passed ? "ناجح " : "راسب ") + fmtNum(x.total)}`, x.passed ? "" : "fail", () => studentRecord(x.studentId));
+          else if (x.status === "pending") notify(`<b>طالب جديد بانتظار الموافقة</b>${esc(x.name)} — ${esc(halaqaName(x.halaqaId))}`, "", () => go("pending")); }
+      }
+      SEEN[name] = ids;
+    }
     S[name] = snap.docs.map(d => ({ id:d.id, ...d.data() }));
     cb && cb();
     renderAll();
@@ -485,21 +918,79 @@ function listen(name, cb){
 }
 function startListeners(){
   listen("halaqat"); listen("students"); listen("examiners"); listen("exams"); listen("permits");
+  listen("sheikhs"); listen("logs"); listen("progress"); listen("holidays");
+  unsubs.push(onSnapshot(query(collection(db,"audit"), orderBy("atMs","desc"), limit(500)), snap => {
+    S.audit = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    if (curTab === "audit") renderAudit();
+  }, err => console.error(err)));
   unsubs.push(onSnapshot(doc(db, "settings", "app"), d => {
     S.settings = d.exists() ? d.data() : {};
     $("curAppPass").value = S.settings.password || "(لم تُحدد بعد)";
     $("stallDays").value = stallDays();
+    renderDailySettings();
     renderStats();
   }));
 }
 
-// ===== التبويبات =====
-document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
-  document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");
-  document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
-  $("tab-"+b.dataset.tab).classList.remove("hidden");
+// ===== التنقل =====
+let curTab = "home", curStudent = null;
+const TAB_TITLE = {};
+document.querySelectorAll("#tabs button").forEach(b => {
+  TAB_TITLE[b.dataset.tab] = b.childNodes[0].textContent.trim();
+  b.onclick = () => go(b.dataset.tab);
 });
+TAB_TITLE.student = "ملف الطالب";
+function go(tab, push = true){
+  if (!$("tab-"+tab)) tab = "home";
+  curTab = tab;
+  const navTab = tab === "student" ? "students" : tab;
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x.dataset.tab === navTab));
+  document.querySelectorAll("main section").forEach(x => x.classList.add("hidden"));
+  $("tab-"+tab).classList.remove("hidden");
+  $("pageTitle").textContent = TAB_TITLE[tab] || "";
+  document.body.classList.remove("nav-open");
+  const hash = tab === "student" ? "#student/" + curStudent : "#" + tab;
+  if (push && location.hash !== hash) history.pushState(null, "", hash);
+  if (tab === "home") renderHome();
+  if (tab === "student") renderStudentPage();
+  if (tab === "audit") renderAudit();
+  if (tab === "ranking") renderRanking();
+  window.scrollTo(0, 0);
+}
+function route(){
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h.startsWith("student/")){ curStudent = h.slice(8); go("student", false); }
+  else go(h || "home", false);
+}
+window.addEventListener("popstate", route);
+function setTheme(dark){ document.body.classList.toggle("dark", dark); $("themeBtn").textContent = dark ? "☀️" : "🌙"; try { localStorage.setItem("taqwaTheme", dark ? "dark" : "light"); } catch(_){} }
+try { if (localStorage.getItem("taqwaTheme") === "dark") setTheme(true); } catch(_){}
+$("themeBtn").onclick = () => setTheme(!document.body.classList.contains("dark"));
+$("menuBtn").onclick = () => document.body.classList.toggle("nav-open");
+$("shade").onclick = () => document.body.classList.remove("nav-open");
+document.addEventListener("click", ev => {
+  const g = ev.target.closest("[data-go]"); if (g){ ev.preventDefault(); go(g.dataset.go); return; }
+  const r = ev.target.closest("a[data-rec],tr[data-rec]"); if (r){ ev.preventDefault(); studentRecord(r.dataset.rec); }
+});
+(() => { const d = new Date(); $("pageSub").textContent = `${DAY_NAMES_[d.getDay()]} ${d.getDate()} / ${d.getMonth()+1} / ${d.getFullYear()}`; })();
+
+// ===== صدقة جارية =====
+const DED_INTRO = "أُنجز هذا العمل صدقةً جاريةً عن أرواح من وضعوا اللبنات الأولى لمركز التقوى لتعليم وتحفيظ القرآن الكريم، ليبقى أجره موصولاً لهم ما دام في المركز حافظٌ يحفظ، ومُسمِّعٌ يُسمِّع، ومختبِرٌ يختبر:";
+const DED_NAMES = ["الشيخ ياسر العفيفي (أبو حمزة)","الشيخ محمد صيام (أبو أنس)","الشيخ أمجد هتهت (أبو الأدهم)","الشيخ مصطفى المدهون (أبو جعفر)","الشيخ عبد الرحمن العفيفي (أبو صلاح)","الشيخ يوسف العفيفي (أبو الحسن)","الشيخ عبد الرحيم شرف (أبو خالد)"];
+const DED_OUTRO = "رحمهم الله رحمةً واسعة، وأسكنهم الفردوس الأعلى، ونسأل الله أن يتقبّل هذا العمل ويجعله في ميزان حسناتهم.";
+const DED_SHORT = "صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله";
+function showDedication(){
+  const rows = DED_NAMES.map(n => { const i = n.indexOf(" ("); const nm = i > 0 ? n.slice(0, i) : n, k = i > 0 ? n.slice(i + 2, -1) : "";
+    return `<div class="dr"><b>${nm}</b>${k ? `<i>${k}</i>` : ""}</div>`; }).join("");
+  $("dedBody").innerHTML = `
+    <div class="dhead"><img src="logo.png" alt=""><div><span>إهداء</span><b>مركز التقوى لتعليم وتحفيظ القرآن الكريم</b></div></div>
+    <img class="dtitle" src="ded_title.png" alt="صدقة جارية"><div class="dbar"></div>
+    <p class="dintro">${DED_INTRO}</p>
+    <div class="dglass">${rows}</div>
+    <p class="dout">${DED_OUTRO}</p>`;
+  $("dedDlg").showModal();
+}
+document.addEventListener("click", ev => { if (ev.target.closest("[data-ded]")){ ev.preventDefault(); showDedication(); } });
 
 // ===== النافذة =====
 function openDialog(title, bodyHtml, buttons, wide){
@@ -525,7 +1016,11 @@ function confirmDlg(msg, onYes){
 // ===== رسم الكل =====
 function renderAll(){
   fillSelects();
-  renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers(); renderRetests(); renderStats();
+  renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers(); renderRetests(); renderStats(); renderDaily(); renderSheikhs();
+  renderPermits(); renderBadges();
+  if (curTab === "home") renderHome();
+  if (curTab === "student") renderStudentPage();
+  if (curTab === "ranking") renderRanking();
 }
 
 function fillSelect(sel, items, allText){
@@ -539,6 +1034,10 @@ function fillSelects(){
   fillSelect($("fHalaqa"), hs, "الكل");
   fillSelect($("sHalaqa"), hs, "الكل");
   fillSelect($("rHalaqa"), hs, "الكل");
+  fillSelect($("dHalaqa"), hs, "الكل");
+  fillSelect($("dsHalaqa"), hs, "الكل");
+  fillSelect($("newShHalaqa"), hs, null);
+  fillSelect($("hHalaqa"), [{value:"all", text:"المركز كله"}, ...hs], null);
   fillSelect($("newStudentHalaqa"), hs, null);
   const exNames = [...new Set(S.exams.map(e=>e.examinerName).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
   fillSelect($("fExaminer"), exNames.map(n=>({value:n,text:n})), "الكل");
@@ -578,22 +1077,25 @@ function renderExams(){
     <span>ناجح: <b class="pass">${pass}</b></span>
     <span>راسب: <b class="fail">${list.length-pass}</b></span>
     <span>منها أُغلق: <b class="closed">${closed}</b></span>`;
-  $("examsBody").innerHTML = list.length ? list.map(e => `
+  let lastG = null;
+  const shown = list.slice(0, LIM.exams);
+  $("examsBody").innerHTML = list.length ? shown.map(e => {
+    const d = examDate(e), g = dayGroupLabel(d);
+    const head = g !== lastG ? `<tr class="grp-row"><td colspan="9">${g}</td></tr>` : ""; lastG = g;
+    const tm = d ? `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}` : "";
+    return head + `
     <tr>
-      <td>${esc(dateText(e))}</td>
-      <td>${esc(e.studentName)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td>
-      <td>${esc(e.halaqaName)}</td>
-      <td>${esc(TYPES[e.type]||e.type)}</td>
-      <td class="muted">${esc(juzLabel(e))}</td>
-      <td>${esc(e.examinerName)}</td>
-      <td><b>${e.closed ? "—" : fmtNum(e.total)}</b></td>
-      <td class="${resultOf(e)}">${resultText(e)}</td>
-      <td class="actions">
-        <button class="small" data-view="${e.id}">عرض</button>
-        <button class="small" data-edit="${e.id}">تعديل</button>
-        <button class="small danger" data-del="${e.id}">حذف</button>
-      </td>
-    </tr>`).join("") : `<tr><td colspan="9" class="muted" style="text-align:center">لا توجد اختبارات</td></tr>`;
+      <td class="muted">${tm}</td>
+      <td style="white-space:nowrap">${nameLink(e.studentId, e.studentName, true)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td>
+      <td class="hm">${hqTag(e.halaqaId, e.halaqaName)}</td>
+      <td class="hm">${esc(TYPES[e.type]||e.type)}</td>
+      <td class="muted hm">${esc(juzLabel(e))}</td>
+      <td class="hm">${esc(e.examinerName)}</td>
+      <td>${markHtml(e)}</td>
+      <td>${resPill(e)}</td>
+      <td class="actions">${moreMenu(`<button data-view="${e.id}">عرض التفاصيل</button><button data-edit="${e.id}">تعديل</button><hr><button class="danger" data-del="${e.id}">حذف</button>`)}</td>
+    </tr>`; }).join("") + moreRow("exams", list.length, 9)
+    : `<tr><td colspan="9" class="empty-td">${emptyHtml("لا توجد اختبارات بهذه الفلاتر")}</td></tr>`;
 }
 $("examsBody").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
@@ -602,7 +1104,7 @@ $("examsBody").addEventListener("click", ev => {
   if (b.dataset.del) {
     const e = S.exams.find(x=>x.id===b.dataset.del);
     confirmDlg(`حذف اختبار الطالب ${e.studentName}؟ لا يمكن التراجع.`, async () => {
-      await deleteDoc(doc(db,"exams",e.id)); toast("تم الحذف");
+      await deleteDoc(doc(db,"exams",e.id)); audit("حذف اختبار", e.studentName, dateText(e), examBrief(e), null); toast("تم الحذف");
     });
   }
 });
@@ -666,8 +1168,10 @@ function editExam(id){
       const num = v => v === "" ? null : parseFloat(v);
       const r = computeExam(questions, num($("eTaj").value), num($("ePerf").value));
       if (r.error){ $("eErr").textContent = r.error; return false; }
-      await updateDoc(doc(db,"exams",id), { ...r, type, startJuz, endJuz: startJuz + type - 1, isRetest: $("eRetest").checked,
-        notes: $("eNotes").value.trim(), editedAt: serverTimestamp() });
+      const upd = { ...r, type, startJuz, endJuz: startJuz + type - 1, isRetest: $("eRetest").checked,
+        notes: $("eNotes").value.trim(), editedAt: serverTimestamp() };
+      await updateDoc(doc(db,"exams",id), upd);
+      audit("تعديل اختبار", e.studentName, dateText(e), examBrief(e), examBrief({ ...e, ...upd }));
       toast("تم الحفظ");
     }},
     { text:"إلغاء" }
@@ -735,6 +1239,7 @@ function printDoc(title, inner){
   <div class="hdr"><img src="${logo}"><div><h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1><img src="${slogan}" style="width:190px;height:auto;display:block;margin:2px 0 4px"><div>${esc(title)}</div></div></div>
   ${inner}
   <p class="muted">تاريخ الطباعة: ${dayKey(new Date())}</p>
+  <p style="text-align:center;color:#8a6d2b;font-size:12px;margin-top:18px;border-top:1px solid #ddd;padding-top:8px">${DED_SHORT}</p>
   <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`);
   w.document.close();
 }
@@ -751,7 +1256,7 @@ function pendingRetests(){
   for (const arr of groups.values()){
     arr.sort((a,b)=>(examDate(a)||0)-(examDate(b)||0));
     const last = arr[arr.length-1];
-    if (!last.passed) out.push({ last, attempts: arr.length });
+    if (!last.passed && !(stuById(last.studentId) || {}).status?.startsWith("inactive")) out.push({ last, attempts: arr.length });
   }
   return out.sort((a,b)=>(examDate(a.last)||0)-(examDate(b.last)||0));
 }
@@ -767,7 +1272,7 @@ function renderRetests(){
     <tr><td>${esc(e.studentName)}</td><td>${esc(e.halaqaName)}</td><td>${esc(TYPES[e.type]||e.type)}</td>
     <td class="muted">${esc(juzLabel(e))}</td><td>${esc(dateText(e))}</td><td>${daysSince(e)} يوم</td>
     <td>${attempts}</td><td class="${resultOf(e)}">${resultText(e)}</td>
-    <td class="actions"><button class="small" data-rec="${e.studentId}">سجل الطالب</button></td></tr>`).join("")
+    <td class="actions"><button class="small" data-rec="${e.studentId}">ملف الطالب</button></td></tr>`).join("")
     : `<tr><td colspan="9" class="muted" style="text-align:center">لا يوجد طلاب بانتظار الإعادة</td></tr>`;
 }
 $("rHalaqa").addEventListener("input", renderRetests);
@@ -802,23 +1307,26 @@ function permitsHtml(sid){
     <table><thead><tr><th>الاختبار</th><th>تاريخ النجاح</th><th>المجموع</th><th>الإذن</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="muted">الإذن يسمح بإعادة واحدة، وينتهي تلقائياً بعد أن يُعاد الاختبار. يصل للجوالات عند اتصالها بالإنترنت.</p>`;
 }
-$("dlgBody").addEventListener("click", async ev => {
+const onStudentClick = async ev => {
   const b = ev.target.closest("button"); if (!b) return;
-  const sid = $("dlgBody").dataset.sid;
+  const sid = ev.currentTarget.dataset.sid;
   if (b.dataset.permit && sid){
     const [type, startJuz] = b.dataset.permit.split("|").map(Number);
     const st = S.students.find(x=>x.id===sid) || {};
     b.disabled = true;
     await addDoc(collection(db,"permits"), { studentId:sid, studentName:st.name||"", type, startJuz,
       grantedAtMs: Date.now(), grantedAt: serverTimestamp() });
+    audit("تصريح إعادة اختبار", st.name, juzLabel({ startJuz, endJuz: startJuz + type - 1 }));
     toast("تم السماح بالإعادة"); setTimeout(()=>studentRecord(sid), 300);
   }
   if (b.dataset.revoke && sid){
     b.disabled = true;
-    await deleteDoc(doc(db,"permits",b.dataset.revoke));
+    const pm = S.permits.find(x => x.id === b.dataset.revoke) || {};
+    await deleteDoc(doc(db,"permits",b.dataset.revoke)); audit("إلغاء تصريح إعادة", pm.studentName, juzLabel({ startJuz: pm.startJuz, endJuz: pm.startJuz + pm.type - 1 }));
     toast("تم إلغاء الإذن"); setTimeout(()=>studentRecord(sid), 300);
   }
-});
+};
+$("stuPage").addEventListener("click", onStudentClick);
 
 function studentRecordHtml(sid, forPrint){
   const st = S.students.find(x=>x.id===sid) || {};
@@ -857,24 +1365,409 @@ function studentRecordHtml(sid, forPrint){
     </table>
     ${forPrint ? `<p>الأجزاء المجتازة: ${juzChips.join("، ") || "لا يوجد"}</p>` : `<div class="chips" style="margin:10px 0">${juzChips.join("")}</div>`}
     ${forPrint ? "" : permitsHtml(sid)}
+    ${forPrint ? "" : dailyRecordHtml(sid)}
     <h2>الاختبارات</h2>
     <table>
       <thead><tr><th>التاريخ</th><th>النوع</th><th>الأجزاء</th><th>المختبر</th><th>المجموع</th><th>النتيجة</th><th>ملاحظات</th></tr></thead>
       <tbody>${exams.map(e => `<tr><td>${esc(dateText(e))}</td><td>${esc(TYPES[e.type]||e.type)}${e.isRetest?' (إعادة)':''}</td>
-        <td>${esc(juzLabel(e))}</td><td>${esc(e.examinerName)}</td><td>${e.closed?'—':fmtNum(e.total)}</td>
-        <td class="${resultOf(e)}">${resultText(e)}</td><td>${esc(e.notes)}</td></tr>`).join("")
-        || `<tr><td colspan="7" class="muted">لا توجد اختبارات</td></tr>`}</tbody>
+        <td>${esc(juzLabel(e))}</td><td>${esc(e.examinerName)}</td><td>${markHtml(e)}</td>
+        <td>${resPill(e)}</td><td>${esc(e.notes)}</td></tr>`).join("")
+        || `<tr><td colspan="7" class="empty-td">${emptyHtml("لا توجد اختبارات لهذا الطالب")}</td></tr>`}</tbody>
     </table>`;
 }
 function studentRecord(sid){
-  const st = S.students.find(x=>x.id===sid) || {};
   if ($("dlg").open) $("dlg").close();
-  openDialog("سجل الطالب", studentRecordHtml(sid, false), [
-    { text:"طباعة", cls:"primary", onClick: () => { printDoc(`سجل الطالب: ${st.name||""}`, studentRecordHtml(sid, true)); return false; } },
-    { text:"إغلاق" }
-  ], true);
-  $("dlgBody").dataset.sid = sid;
+  curStudent = sid;
+  go("student", !(curTab === "student" && location.hash === "#student/" + sid));
 }
+
+
+// ===== لوحة اليوم =====
+function pill(cls, t){ return `<span class="pill ${cls}">${t}</span>`; }
+function nameLink(sid, name, avatar){
+  const a = avatar ? avatarOf(sid, name) : "";
+  return sid ? `${a}<a class="name" data-rec="${esc(sid)}">${esc(name)}</a>` : a + esc(name);
+}
+// ===== شكل الجداول =====
+const HQ_COLORS = ["#2e7d5b","#2b6cb0","#b7791f","#9b2c6f","#6b46c1","#c05621","#2c7a7b","#8a6d3b","#4a5568","#b83280"];
+function hqColor(id){ const i = sortAr([...S.halaqat]).findIndex(h => h.id === id); return HQ_COLORS[(i < 0 ? 0 : i) % HQ_COLORS.length]; }
+function hqTag(id, name){ const n = name || halaqaName(id); return n ? `<span class="hq" style="--c:${hqColor(id)}">${esc(n)}</span>` : ""; }
+function avatarOf(sid, name){
+  const st = stuById(sid) || {}; const parts = String(name||"").trim().split(/\s+/);
+  const ini = (parts[0] === "عبد" && parts[1] ? parts[1] : parts[0] || "").charAt(0);
+  return `<span class="av" style="background:${hqColor(st.halaqaId)}">${esc(ini)}</span>`;
+}
+function resPill(e){ return `<span class="rpill ${resultOf(e)}">${e.closed ? "أُغلق" : e.passed ? "ناجح" : "راسب"}</span>`; }
+function markHtml(e){ if (e.closed) return `<span class="mk lo">—</span>`; const t = +e.total || 0; return `<span class="mk ${t >= 95 ? "hi" : t >= 85 ? "ok" : "lo"}">${fmtNum(e.total)}</span>`; }
+function moreMenu(items){ return `<details class="more"><summary>⋯</summary><div class="mbox">${items}</div></details>`; }
+function emptyHtml(text){
+  return `<div class="empty"><svg width="46" height="46" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="7" width="30" height="36" rx="4"/><path d="M16 17h16M16 24h16M16 31h9"/></svg>${esc(text)}</div>`;
+}
+function dayGroupLabel(d){
+  if (!d) return "بدون تاريخ";
+  const k = dayKey(d), t = new Date(), y = new Date(); y.setDate(t.getDate() - 1);
+  const dn = DAY_NAMES_[d.getDay()], ds = `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;
+  if (k === dayKey(t)) return `اليوم — ${dn} ${ds}`;
+  if (k === dayKey(y)) return `أمس — ${dn} ${ds}`;
+  return `${dn} ${ds}`;
+}
+const LIM = { exams: 50, students: 50, audit: 50 };
+document.addEventListener("click", ev => {
+  document.querySelectorAll("details.more[open]").forEach(d => { if (!d.contains(ev.target) || ev.target.closest(".mbox button")) d.open = false; });
+  const m = ev.target.closest("[data-more]"); if (m){ LIM[m.dataset.more] += 50; ({ exams: renderExams, students: renderStudents, audit: renderAudit })[m.dataset.more](); }
+});
+function moreRow(key, total, cols){ return total > LIM[key] ? `<tr class="grp-row"><td colspan="${cols}" class="moreRow"><button data-more="${key}">عرض المزيد (${total - LIM[key]} متبقٍّ)</button></td></tr>` : ""; }
+function approvedStudents(){ return S.students.filter(isActive); }
+function stalledList(){
+  const N = stallDays(), now = Date.now(), out = [];
+  for (const s of approvedStudents()){
+    const p = studentPath(s); if (p.hafiz) continue;
+    const keys = new Set(p.steps.map(x=>x.key));
+    const ex = S.exams.filter(e=>e.studentId===s.id);
+    const lastPass = ex.filter(e=>e.passed && keys.has(e.type+"|"+e.startJuz)).map(examDate).filter(Boolean).sort((a,b)=>b-a)[0];
+    const since = lastPass || (s.createdAt && s.createdAt.toDate ? s.createdAt.toDate() : null);
+    if (since){ const d = Math.floor((now - since)/86400000); if (d > N) out.push({ s, d }); }
+  }
+  return out.sort((a,b)=>b.d-a.d);
+}
+function readyForExam(){ return approvedStudents().filter(s => { try { const r = examReady(s); return r.ok && !r.hafiz && r.reason === "ok"; } catch(_){ return false; } }); }
+// ===== شرط الاختبار: أتمّ الحفظ ثم سمّع الجزء كاملاً مراجعةً في جلسة واحدة =====
+function reviewsCover(reviews, a, b){
+  const iv = (reviews||[]).filter(r => r && r.fromG && r.toG).map(r => [Math.min(r.fromG, r.toG), Math.max(r.fromG, r.toG)]).sort((x,y)=>x[0]-y[0]);
+  let cur = a;
+  for (const [f,t] of iv){ if (f > cur) break; if (t + 1 > cur) cur = t + 1; if (cur > b) return true; }
+  return cur > b;
+}
+function examReady(s){
+  const passed = passedKeys(s.id), p = pathStatus(sDir(s), sStart(s), passed);
+  if (p.hafiz) return { ok:true, hafiz:true, reason:"hafiz", missing:[] };
+  const step = p.steps[p.next], O = memOrder(sDir(s)), logs = logsOf(s.id), pr = progressOf(s.id);
+  const ms = S.exams.filter(e => e.studentId === s.id).map(examMs).filter(Boolean);
+  let since = ms.length ? dayKey(new Date(Math.max(...ms))) : "";
+  if (step.type === 1){
+    const J = step.start; let cursor = null, hasData = !!pr, doneDate = "";
+    if (pr && pr.lastG) cursor = O.pos[pr.lastG];
+    for (const l of logs){ const tg = l.newMem && l.newMem.toG; if (!tg) continue; hasData = true; const c = O.pos[tg];
+      if (cursor === null || c > cursor) cursor = c; if (c >= O.jStart[J] && c <= O.jEnd[J] && (l.date||"") > doneDate) doneDate = l.date; }
+    if (!hasData) return { ok:false, reason:"needs_start", step, missing:[J] };
+    if (cursor === null || cursor < O.jEnd[J]) return { ok:false, reason:"memorizing", step, missing:[J] };
+    if (doneDate > since) since = doneDate;
+  }
+  const missing = [];
+  for (let j = step.start; j <= step.end; j++){
+    const [a, b] = Q.juz[j-1];
+    if (!logs.some(l => (l.date||"") >= since && l.status === "recited" && reviewsCover(l.reviews, a, b))) missing.push(j);
+  }
+  return { ok: !missing.length, reason: missing.length ? "review" : "ok", step, missing };
+}
+function examPermitted(s, step){
+  const last = Math.max(0, ...S.exams.filter(e => e.studentId === s.id && e.type === step.type && e.startJuz === step.start).map(examMs));
+  return S.permits.some(p => p.studentId === s.id && p.type === step.type && p.startJuz === step.start && (p.grantedAtMs||0) > last);
+}
+function readyText(r){
+  if (r.hafiz) return "";
+  if (r.ok) return "جاهز للاختبار ✓";
+  if (r.reason === "needs_start") return "لم تُحدَّد نقطة البداية في السجل اليومي";
+  if (r.reason === "memorizing") return `ما زال يحفظ الجزء ${r.step.start}`;
+  return r.step.type === 1 ? `لم يُسمِّع الجزء ${r.step.start} كاملاً في جلسة واحدة` : `بقي تسميع: ${r.missing.map(j => "الجزء " + j).join("، ")}`;
+}
+function activePermits(){ return S.permits.filter(p => { const a = activePermit(p.studentId, p.type, p.startJuz); return a && a.id === p.id; }); }
+function renderBadges(){
+  const n = frequentAbsence().length;
+  $("absentBadge").textContent = n; $("absentBadge").classList.toggle("hidden", !n);
+  const k = activePermits().length;
+  $("permitBadge").textContent = k; $("permitBadge").classList.toggle("hidden", !k);
+}
+function renderHome(){
+  const now = new Date(), tk = dayKey(now), mk = tk.slice(0,7);
+  const pm = dayKey(new Date(now.getFullYear(), now.getMonth()-1, 1)).slice(0,7);
+  const exToday = S.exams.filter(e => { const d = examDate(e); return d && dayKey(d) === tk; });
+  const exPass = exToday.filter(e=>e.passed).length;
+  const inMonth = m => S.exams.filter(e => { const d = examDate(e); return d && dayKey(d).slice(0,7) === m; });
+  const mList = inMonth(mk), pList = inMonth(pm);
+  const mRate = pct(mList.filter(e=>e.passed).length, mList.length), pRate = pct(pList.filter(e=>e.passed).length, pList.length);
+  const diff = Math.round((mRate - pRate) * 10) / 10;
+  const isSession = sessionDays().includes(now.getDay());
+  // التسميع حسب الحلقة
+  const studs = approvedStudents();
+  let totS = 0, totP = 0, newP = 0, revP = 0, anyLog = false;
+  const rows = sortAr([...S.halaqat]).map(h => {
+    const hs = studs.filter(s => s.halaqaId === h.id);
+    const ids = new Set(hs.map(s=>s.id));
+    const ls = S.logs.filter(l => l.date === tk && ids.has(l.studentId));
+    const hol = isHoliday(tk, h.id);
+    const pres = ls.filter(l => l.status === "recited" || l.status === "norecite").length;
+    const np = ls.reduce((a,l)=>a+(l.status==="recited"?(l.newPages||0):0),0);
+    newP += np; revP += ls.reduce((a,l)=>a+(l.status==="recited"?(l.reviewPages||0):0),0);
+    if (ls.length) anyLog = true;
+    if (!hol){ totS += hs.length; totP += pres; }
+    let st;
+    if (hol) st = pill("p-gr","إجازة");
+    else if (hs.length && ls.length >= hs.length) st = pill("p-ok","مكتمل");
+    else if (ls.length) st = pill("p-wa","جارٍ");
+    else st = isSession ? pill("p-no","لم تسجّل") : pill("p-gr","ليس يوم تحفيظ");
+    const sh = S.sheikhs.filter(x => x.halaqaId === h.id).map(x => x.name).join("، ");
+    const w = hs.length ? Math.min(100, Math.round(ls.length*100/hs.length)) : 0;
+    return `<tr class="click" data-hq="${h.id}"><td>${esc(h.name)}</td><td class="muted hm">${esc(sh) || "—"}</td>
+      <td class="hm" style="width:28%"><div class="hbar"><i style="width:${hol?0:w}%"></i></div></td>
+      <td>${hol||!ls.length ? "—" : `${pres}/${hs.length}`}</td><td>${np ? fp(np)+" ص" : "—"}</td><td>${st}</td></tr>`;
+  }).join("");
+  $("homeHalaqat").innerHTML = rows ? `<table><thead><tr><th>الحلقة</th><th class="hm">الشيخ</th><th class="hm">التسجيل</th><th>الحضور</th><th>حفظ</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+    : `<p class="muted">لا توجد حلقات بعد</p>`;
+  const att = totS ? Math.round(totP*100/totS) : 0;
+  $("homeKpis").innerHTML = `
+    <div class="kpi"><div class="l">اختبارات اليوم</div><div class="v">${exToday.length}</div><div class="s">${exToday.length ? `${exPass} ناجح · ${exToday.length-exPass} راسب` : "لا يوجد اختبارات اليوم"}</div></div>
+    <div class="kpi"><div class="l">نسبة النجاح هذا الشهر</div><div class="v">${mList.length ? mRate + "%" : "—"}</div>
+      <div class="s ${pList.length && mList.length ? (diff >= 0 ? "up" : "dn") : ""}">${pList.length && mList.length ? `${diff >= 0 ? "▲" : "▼"} ${Math.abs(diff)}% عن الشهر الماضي` : `${mList.length} اختبار هذا الشهر`}</div></div>
+    <div class="kpi"><div class="l">حضور التسميع اليوم</div><div class="v">${anyLog ? att + "%" : "—"}</div><div class="s">${anyLog ? `${totP} من ${totS} طالب` : (isSession ? "لم يُسجَّل تسميع بعد" : "ليس من أيام التحفيظ")}</div></div>
+    <div class="kpi"><div class="l">صفحات الحفظ اليوم</div><div class="v">${fp(newP)}</div><div class="s">مراجعة: ${fp(revP)} صفحة</div></div>`;
+  // التنبيهات
+  const pr = pendingRetests(), stl = stalledList(), fa = frequentAbsence(), pend = S.students.filter(s=>s.status==="pending"), rdy = readyForExam();
+  const al = [];
+  if (pr.length) al.push(["#c0504d", `${pr.length} بانتظار الإعادة`, `أقدمهم: ${esc(pr[0].last.studentName)} — منذ ${daysSince(pr[0].last)} يوم`, "retests"]);
+  if (stl.length) al.push(["var(--amber)", `${stl.length} متوقفون أكثر من ${stallDays()} يوماً`, "بدون اختبار جديد في المسار", "stats"]);
+  if (fa.length) al.push(["var(--amber)", `${fa.length} غياب متكرر`, "غابوا آخر جلستين أو أكثر", "absence"]);
+  if (pend.length) al.push(["var(--gold)", `${pend.length} طلاب جدد بانتظار الموافقة`, "أضافهم المختبرون من التطبيق", "pending"]);
+  if (rdy.length) al.push(["var(--green)", `${rdy.length} جاهزون للاختبار`, "أنهوا حفظ الجزء ويراجعونه", "ready"]);
+  $("homeAlerts").innerHTML = al.length ? al.map(([c,t,sub,g]) => `<div class="alert" data-al="${g}"><span class="dot" style="background:${c}"></span><div><b>${t}</b><div class="muted">${sub}</div></div></div>`).join("")
+    : emptyHtml("لا توجد تنبيهات — كل شيء على ما يرام");
+  // آخر الاختبارات
+  const last = [...S.exams].sort((a,b)=>(examDate(b)||0)-(examDate(a)||0)).slice(0, 8);
+  const tm = e => { const d = examDate(e); if (!d) return ""; return dayKey(d) === tk ? `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}` : dateText(e); };
+  $("homeExams").innerHTML = last.length ? `<table><thead><tr><th>الطالب</th><th class="hm">الحلقة</th><th>الاختبار</th><th class="hm">المختبر</th><th>العلامة</th><th>النتيجة</th><th class="hm">الوقت</th></tr></thead><tbody>${
+    last.map(e => `<tr><td style="white-space:nowrap">${nameLink(e.studentId, e.studentName, true)}${e.isRetest?' <span class="muted">(إعادة)</span>':''}</td><td class="hm">${hqTag(e.halaqaId, e.halaqaName)}</td>
+      <td>${esc(juzLabel(e))}</td><td class="hm">${esc(e.examinerName)}</td><td>${markHtml(e)}</td>
+      <td>${resPill(e)}</td><td class="muted hm">${tm(e)}</td></tr>`).join("")}</tbody></table>`
+    : emptyHtml("لا توجد اختبارات بعد");
+}
+$("homeAlerts").addEventListener("click", ev => {
+  const a = ev.target.closest("[data-al]"); if (!a) return;
+  if (a.dataset.al !== "ready"){ go(a.dataset.al); return; }
+  const list = sortAr(readyForExam());
+  openDialog("طلاب جاهزون للاختبار", `<p class="muted">أنهوا حفظ الجزء حسب السجل اليومي، ويراجعونه الآن قبل الاختبار.</p>
+    <table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار التالي</th></tr></thead><tbody>${
+    list.map(s => `<tr><td>${nameLink(s.id, s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td><td>${esc(nextText(s))}</td></tr>`).join("")}</tbody></table>`, [{ text:"إغلاق" }], true);
+});
+$("homeHalaqat").addEventListener("click", ev => {
+  const r = ev.target.closest("tr[data-hq]"); if (!r) return;
+  $("dDate").value = dayKey(new Date()); $("dHalaqa").value = r.dataset.hq; renderDaily(); go("daily");
+});
+
+// ===== تصاريح الإعادة =====
+function renderPermits(){
+  const list = activePermits().sort((a,b)=>(b.grantedAtMs||0)-(a.grantedAtMs||0));
+  const lab = p => p.type === 30 ? "القرآن كاملاً" : juzLabel({ startJuz:p.startJuz, endJuz:p.startJuz + p.type - 1 });
+  $("permitsList").innerHTML = list.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>تاريخ التصريح</th><th></th></tr></thead><tbody>${
+    list.map(p => { const st = S.students.find(x=>x.id===p.studentId) || {};
+      return `<tr><td>${nameLink(p.studentId, st.name || p.studentName)}</td><td>${hqTag(st.halaqaId)}</td>
+      <td>${esc(TYPES[p.type]||p.type)} — ${esc(lab(p))} ${p.kind === "exam" ? pill("p-wa","بدون شرط التسميع") : pill("p-gr","إعادة ناجح")}</td><td>${p.grantedAtMs ? dayKey(new Date(p.grantedAtMs)) : ""}</td>
+      <td class="actions"><button class="small danger" data-prevoke="${p.id}">إلغاء التصريح</button></td></tr>`; }).join("")}</tbody></table>`
+    : emptyHtml("لا توجد تصاريح فعّالة الآن");
+}
+$("permitsList").addEventListener("click", ev => {
+  const b = ev.target.closest("button[data-prevoke]"); if (!b) return;
+  const pm = S.permits.find(x => x.id === b.dataset.prevoke) || {};
+  confirmDlg("إلغاء هذا التصريح؟", async () => { await deleteDoc(doc(db,"permits",b.dataset.prevoke)); audit("إلغاء تصريح إعادة", pm.studentName, juzLabel({ startJuz: pm.startJuz, endJuz: pm.startJuz + pm.type - 1 })); toast("تم إلغاء التصريح"); });
+});
+
+// ===== صفحة ملف الطالب =====
+function renderStudentPage(){
+  const sid = curStudent, el = $("stuPage");
+  el.dataset.sid = sid || "";
+  const st = S.students.find(x=>x.id===sid);
+  const exams = S.exams.filter(e=>e.studentId===sid);
+  if (!st && !exams.length){ el.innerHTML = `<div class="card"><p class="muted">لم يُعثر على الطالب (قد يكون حُذف أو لم تُحمَّل البيانات بعد).</p><button data-go="students">العودة للطلاب</button></div>`; return; }
+  const name = (st && st.name) || exams[0].studentName || "", hName = halaqaName(st && st.halaqaId) || (exams[0]||{}).halaqaName || "";
+  const ls = logsOf(sid);
+  const now = new Date(), wk = new Date(now); wk.setDate(now.getDate() - ((now.getDay() + 1) % 7));
+  const W = aggLogs(ls.filter(l => l.date >= dayKey(wk))), M = aggLogs(ls.filter(l => l.date >= dayKey(new Date(now.getFullYear(), now.getMonth(), 1))));
+  const pass = exams.filter(e=>e.passed).length;
+  const sh = st ? S.sheikhs.filter(x => x.halaqaId === st.halaqaId).map(x=>x.name).join("، ") : "";
+  let pathCard = "";
+  if (st){
+    const p = studentPath(st), passed = passedKeys(sid);
+    const doneN = p.steps.slice(p.first).filter(x => passed.has(x.key)).length, total = p.steps.length - p.first;
+    let d = null; try { d = dailyOf(st); } catch(_){}
+    const cells = p.steps.map((x,i) => `<span class="${i < p.first ? "ex" : passed.has(x.key) ? "on" : (i === p.next && !p.hafiz) ? "cur" : ""}" title="${i+1}. ${esc(stepLabel(x))}"></span>`).join("");
+    pathCard = `<div class="card">
+      <div class="info4">
+        <div><div class="muted">الحلقة</div>${esc(hName)}${sh ? `<div class="muted">${esc(sh)}</div>` : ""}</div>
+        <div><div class="muted">اتجاه المسار</div>${DIRS[sDir(st)]}<div class="muted">البداية: الجزء ${sStart(st)}</div></div>
+        <div><div class="muted">المرحلة الآن (التسميع)</div><b>${d ? esc(dailyTitle(d)) : "—"}</b></div>
+        <div><div class="muted">الاختبار التالي</div><b>${p.hafiz ? '<span class="hafiz">حافظ للقرآن الكريم</span>' : esc(stepLabel(p.steps[p.next]))}</b>
+          ${(() => { if (p.hafiz) return ""; const r = examReady(st), perm = examPermitted(st, p.steps[p.next]);
+            return `<div style="margin-top:4px">${r.ok ? pill("p-ok", readyText(r)) : perm ? pill("p-wa", "مسموح بتصريح من الإدارة") : pill("p-no", esc(readyText(r)))}</div>
+            ${!r.ok && !perm && st.status !== "inactive" ? `<button class="small" style="margin-top:6px" data-eperm="${sid}">تصريح اختبار بدون الشرط</button>` : ""}`; })()}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px"><b>التقدم في مسار الحفظ</b><span class="muted">${doneN} من ${total} مرحلة · ${passedJuz(sid).size} جزءاً مجتازاً</span></div>
+      <div class="steps">${cells}</div>
+      <div class="muted"><span style="color:var(--green)">■</span> اجتازها &nbsp; <span style="color:var(--gold)">■</span> التالية &nbsp; <span style="color:#cfd8d3">■</span> قبل نقطة البداية &nbsp; <span style="color:#e3e7e5">■</span> لم تبدأ — مرّر الماوس على المربع لترى المرحلة</div>
+    </div>`;
+  }
+  el.innerHTML = `
+    <div class="pagehead">
+      <div><div class="crumb"><a data-go="students">→ العودة لقائمة الطلاب</a></div><h2>${esc(name)}</h2>${st && st.status === "pending" ? pill("p-wa","بانتظار الاعتماد") : ""}${st && st.status === "inactive" ? pill("p-no", `منقطع منذ ${st.inactiveAtMs ? dayKey(new Date(st.inactiveAtMs)) : "—"}${st.inactiveReason ? " — " + esc(st.inactiveReason) : ""}`) : ""}
+        ${st && (st.transfers||[]).length ? `<div class="muted" style="margin-top:4px">${st.transfers.map(t => `نُقل من ${esc(halaqaName(t.from) || "حلقة محذوفة")} إلى ${esc(halaqaName(t.to))} بتاريخ ${dayKey(new Date(t.atMs))}`).join(" · ")}</div>` : ""}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${st && st.status !== "pending" ? `<button data-sedit="${sid}">تعديل البيانات</button><button data-smove="${sid}">نقل لحلقة أخرى</button>
+        ${st.status === "inactive" ? `<button data-sact="${sid}">إعادة تفعيل</button>` : `<button class="danger" data-sinact="${sid}">منقطع</button>`}` : ""}<button class="primary" data-sprint="1">طباعة الملف</button></div>
+    </div>
+    ${pathCard}
+    <div class="kpis">
+      <div class="kpi"><div class="l">حفظ هذا الأسبوع</div><div class="v">${fp(W.newPages)} ص</div><div class="s">${W.sessions} جلسة</div></div>
+      <div class="kpi"><div class="l">مراجعة هذا الأسبوع</div><div class="v">${fp(W.reviewPages)} ص</div><div class="s">الشهر: ${fp(M.reviewPages)} ص</div></div>
+      <div class="kpi"><div class="l">الحضور هذا الشهر</div><div class="v">${M.sessions ? M.attendance + "%" : "—"}</div><div class="s">${M.sessions} جلسة · غائب ${M.absent} · بعذر ${M.excused}</div></div>
+      <div class="kpi"><div class="l">الاختبارات</div><div class="v">${exams.length}</div><div class="s">${pass} ناجح · ${exams.length - pass} راسب</div></div>
+    </div>
+    ${st ? `<div class="card">${dailyRecordHtml(sid)}</div>` : ""}
+    <div class="card"><h2>الاختبارات</h2>${examsTableHtml(sid)}</div>
+    ${(() => { const h = permitsHtml(sid); return h ? `<div class="card">${h}</div>` : ""; })()}`;
+}
+function examsTableHtml(sid){
+  const exams = S.exams.filter(e=>e.studentId===sid).sort((a,b)=>(examDate(b)||0)-(examDate(a)||0));
+  return `<table>
+      <thead><tr><th>التاريخ</th><th>النوع</th><th>الأجزاء</th><th>المختبر</th><th>المجموع</th><th>النتيجة</th><th>ملاحظات</th></tr></thead>
+      <tbody>${exams.map(e => `<tr><td>${esc(dateText(e))}</td><td>${esc(TYPES[e.type]||e.type)}${e.isRetest?' (إعادة)':''}</td>
+        <td>${esc(juzLabel(e))}</td><td>${esc(e.examinerName)}</td><td>${markHtml(e)}</td>
+        <td>${resPill(e)}</td><td>${esc(e.notes)}</td></tr>`).join("")
+        || `<tr><td colspan="7" class="empty-td">${emptyHtml("لا توجد اختبارات لهذا الطالب")}</td></tr>`}</tbody>
+    </table>`;
+}
+
+
+// ===== نقل طالب / انقطاع =====
+function cursorG(s){
+  const O = memOrder(sDir(s)), pr = progressOf(s.id);
+  let c = pr && pr.lastG ? O.pos[pr.lastG] : null;
+  for (const l of logsOf(s.id)) if (l.newMem && l.newMem.toG){ const k = O.pos[l.newMem.toG]; if (c === null || k > c) c = k; }
+  return c === null ? null : O.order[c];
+}
+function transferStudent(id){
+  const s = stuById(id);
+  const hs = sortAr([...S.halaqat]).filter(h => h.id !== s.halaqaId).map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join("");
+  if (!hs){ toast("لا توجد حلقة أخرى"); return; }
+  openDialog(`نقل ${s.name}`, `
+    <p>الحلقة الحالية: <b>${esc(halaqaName(s.halaqaId))}</b></p>
+    <label class="muted">الحلقة الجديدة</label><select id="mvTo" style="width:100%;margin:6px 0 12px">${hs}</select>
+    <p class="muted">يكمل الطالب حفظه مع شيخ الحلقة الجديدة من حيث وصل. اختباراته وسجله السابق تبقى باسم الحلقة القديمة لأنه كان فيها.</p>
+    <label style="display:block"><input type="checkbox" id="mvFix"> تصحيح خطأ (أُضيف للحلقة الخطأ من البداية): انقل اختباراته وسجله السابق للحلقة الجديدة أيضاً</label>`, [
+    { text:"نقل", cls:"primary", onClick: async () => {
+      const to = $("mvTo").value, fix = $("mvFix").checked, from = s.halaqaId;
+      const batch = writeBatch(db);
+      batch.update(doc(db,"students",id), { halaqaId: to, transfers: [...(s.transfers||[]), { from, to, atMs: Date.now(), fix }] });
+      const pr = progressOf(id), hasLogs = logsOf(id).length > 0;
+      if (pr || hasLogs){ const g = cursorG(s); batch.set(doc(db,"progress",id), { halaqaId: to, lastG: g, fresh: g === null, setBy: "الإدارة (نقل)" }, { merge:true }); }
+      if (fix){
+        examsOfStudent(id).forEach(e => batch.update(doc(db,"exams",e.id), { halaqaId: to, halaqaName: halaqaName(to) }));
+        logsOf(id).forEach(l => batch.update(doc(db,"logs",l.id), { halaqaId: to }));
+      }
+      await batch.commit();
+      audit(fix ? "نقل طالب (تصحيح)" : "نقل طالب", s.name, "", halaqaName(from), halaqaName(to));
+      toast("تم النقل");
+    }}, { text:"إلغاء" }]);
+}
+function inactivateStudent(id){
+  const s = stuById(id);
+  openDialog(`تسجيل ${s.name} منقطعاً`, `
+    <p class="muted">يختفي من قوائم المشايخ والمختبرين في التطبيق، ولا يدخل في الحضور والإحصائيات. سجله يبقى محفوظاً، ويمكن إعادة تفعيله في أي وقت.</p>
+    <label class="muted">السبب (اختياري)</label><input id="inReason" style="width:100%;margin-top:6px" placeholder="مثلاً: سافر، انتقل لمركز آخر">`, [
+    { text:"تسجيل منقطع", cls:"primary danger", onClick: async () => {
+      const reason = $("inReason").value.trim();
+      await updateDoc(doc(db,"students",id), { status:"inactive", inactiveReason: reason, inactiveAtMs: Date.now() });
+      audit("تسجيل طالب منقطع", s.name, `${halaqaName(s.halaqaId)}${reason ? " — " + reason : ""}`); toast("تم");
+    }}, { text:"إلغاء" }]);
+}
+
+// ===== البحث السريع =====
+const norm = t => String(t||"").replace(/[ً-ْـ]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").trim();
+let gSel = 0;
+function gMatches(){
+  const q = norm($("gSearch").value); if (!q) return [];
+  const parts = q.split(/\s+/);
+  return S.students.filter(s => { const n = norm(s.name); return parts.every(p => n.includes(p)); })
+    .sort((a,b) => (norm(a.name).startsWith(q) ? 0 : 1) - (norm(b.name).startsWith(q) ? 0 : 1) || (a.status==="inactive") - (b.status==="inactive") || a.name.localeCompare(b.name,"ar")).slice(0, 10);
+}
+function renderG(){
+  const m = gMatches(), box = $("gRes");
+  if (!$("gSearch").value.trim()){ box.classList.add("hidden"); return; }
+  gSel = Math.min(gSel, Math.max(0, m.length - 1));
+  box.innerHTML = m.length ? m.map((s,i) => `<div data-gid="${s.id}" class="${i===gSel?"on":""}">${esc(s.name)} <span>— ${esc(halaqaName(s.halaqaId))}${s.status==="inactive"?" · منقطع":s.status==="pending"?" · جديد":""}</span></div>`).join("")
+    : `<div style="cursor:default"><span>لا يوجد طالب بهذا الاسم</span></div>`;
+  box.classList.remove("hidden");
+}
+function gOpen(id){ $("gSearch").value = ""; $("gRes").classList.add("hidden"); $("gSearch").blur(); studentRecord(id); }
+$("gSearch").addEventListener("input", () => { gSel = 0; renderG(); });
+$("gSearch").addEventListener("focus", renderG);
+$("gSearch").addEventListener("keydown", e => {
+  const m = gMatches();
+  if (e.key === "ArrowDown"){ gSel = Math.min(gSel+1, m.length-1); renderG(); e.preventDefault(); }
+  else if (e.key === "ArrowUp"){ gSel = Math.max(gSel-1, 0); renderG(); e.preventDefault(); }
+  else if (e.key === "Enter" && m[gSel]) gOpen(m[gSel].id);
+  else if (e.key === "Escape"){ $("gSearch").value = ""; renderG(); }
+});
+$("gRes").addEventListener("mousedown", e => { const d = e.target.closest("[data-gid]"); if (d){ e.preventDefault(); gOpen(d.dataset.gid); } });
+$("gSearch").addEventListener("blur", () => setTimeout(() => $("gRes").classList.add("hidden"), 150));
+
+// ===== سجل التعديلات =====
+["auQ","auSrc"].forEach(id => $(id).addEventListener("input", () => { LIM.audit = 50; renderAudit(); }));
+function renderAudit(){
+  const q = norm($("auQ").value), src = $("auSrc").value;
+  const list = S.audit.filter(a => (!src || a.source === src) && (!q || norm(`${a.action} ${a.target} ${a.details} ${a.by}`).includes(q)));
+  $("auCount").textContent = `${list.length} عملية`;
+  const tm = ms => { if (!ms) return ""; const d = new Date(ms); return `${dayKey(d)} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+  let lastG = null;
+  $("auBody").innerHTML = list.length ? `<div class="tblwrap"><table><thead><tr><th>الوقت</th><th>بواسطة</th><th>العملية</th><th>الطالب / البند</th><th>التفاصيل</th><th>قبل</th><th>بعد</th></tr></thead><tbody>${
+    list.slice(0, LIM.audit).map(a => { const g = dayGroupLabel(a.atMs ? new Date(a.atMs) : null); const h = g !== lastG ? `<tr class="grp-row"><td colspan="7">${g}</td></tr>` : ""; lastG = g; return h + `<tr><td style="white-space:nowrap">${tm(a.atMs).slice(11)}</td><td>${a.source === "app" ? pill("p-wa", esc(a.by)) : pill("p-gr", esc(a.by || "الإدارة"))}</td>
+      <td><b>${esc(a.action)}</b></td><td>${a.studentId ? nameLink(a.studentId, a.target) : esc(a.target)}</td><td class="muted">${esc(a.details)}</td>
+      <td class="muted">${esc(a.before || "")}</td><td>${esc(a.after || "")}</td></tr>`; }).join("")}${moreRow("audit", list.length, 7)}</tbody></table></div>`
+    : emptyHtml("لا توجد عمليات مسجلة بعد");
+}
+
+// ===== الترتيب والتكريم =====
+(() => { $("rkMonth").value = dayKey(new Date()).slice(0,7); })();
+$("rkMonth").addEventListener("input", renderRanking);
+function rankingData(){
+  const m = $("rkMonth").value;
+  const logs = S.logs.filter(l => (l.date||"").slice(0,7) === m);
+  const act = approvedStudents(), byId = new Map(act.map(s => [s.id, s]));
+  const per = new Map();
+  for (const l of logs){ if (!byId.has(l.studentId)) continue; if (!per.has(l.studentId)) per.set(l.studentId, []); per.get(l.studentId).push(l); }
+  const rows = [...per.entries()].map(([id, ls]) => ({ s: byId.get(id), ...aggLogs(ls) }));
+  const topNew = rows.filter(r => r.newPages > 0).sort((a,b) => b.newPages - a.newPages || b.reviewPages - a.reviewPages).slice(0, 10);
+  const topAtt = rows.filter(r => r.sessions >= 3 && r.attendance > 0).sort((a,b) => b.attendance - a.attendance || b.sessions - a.sessions || b.newPages - a.newPages).slice(0, 10);
+  const hal = sortAr([...S.halaqat]).map(h => {
+    const n = act.filter(s => s.halaqaId === h.id).length;
+    const a = aggLogs(logs.filter(l => l.halaqaId === h.id && byId.has(l.studentId)));
+    return { h, n, ...a, perStudent: n ? a.newPages / n : 0 };
+  }).filter(x => x.n).sort((a,b) => b.attendance - a.attendance || b.perStudent - a.perStudent);
+  const passed = S.exams.filter(e => { const d = examDate(e); return e.passed && d && dayKey(d).slice(0,7) === m; }).sort((a,b) => (b.total||0) - (a.total||0));
+  return { m, topNew, topAtt, hal, passed };
+}
+function rankingHtml(d){
+  const medal = i => i < 3 ? ["🥇","🥈","🥉"][i] : (i+1);
+  const empty = emptyHtml("لا توجد بيانات لهذا الشهر");
+  return `
+    <div class="homegrid">
+      <div class="card"><h2>الأكثر حفظاً (صفحات)</h2>${d.topNew.length ? `<table><thead><tr><th>#</th><th>الطالب</th><th>الحلقة</th><th>حفظ</th><th>مراجعة</th></tr></thead><tbody>${
+        d.topNew.map((r,i) => `<tr><td>${medal(i)}</td><td>${nameLink(r.s.id, r.s.name)}</td><td>${esc(halaqaName(r.s.halaqaId))}</td><td><b>${fp(r.newPages)}</b></td><td>${fp(r.reviewPages)}</td></tr>`).join("")}</tbody></table>` : empty}</div>
+      <div class="card"><h2>الأكثر التزاماً بالحضور</h2>${d.topAtt.length ? `<table><thead><tr><th>#</th><th>الطالب</th><th>الحلقة</th><th>الحضور</th><th>الجلسات</th></tr></thead><tbody>${
+        d.topAtt.map((r,i) => `<tr><td>${medal(i)}</td><td>${nameLink(r.s.id, r.s.name)}</td><td>${esc(halaqaName(r.s.halaqaId))}</td><td><b>${r.attendance}%</b></td><td>${r.sessions}</td></tr>`).join("")}</tbody></table>` : empty}</div>
+    </div>
+    <div class="card"><h2>ترتيب الحلقات</h2>${d.hal.some(x => x.sessions) ? `<table><thead><tr><th>#</th><th>الحلقة</th><th>الطلاب</th><th>نسبة الحضور</th><th>صفحات الحفظ</th><th>معدل الحفظ لكل طالب</th><th>صفحات المراجعة</th></tr></thead><tbody>${
+      d.hal.map((x,i) => `<tr><td>${medal(i)}</td><td>${esc(x.h.name)}</td><td>${x.n}</td><td><span class="bar"><span style="width:${x.attendance}%"></span></span>${x.attendance}%</td>
+      <td>${fp(x.newPages)}</td><td><b>${fp(x.perStudent)}</b></td><td>${fp(x.reviewPages)}</td></tr>`).join("")}</tbody></table>` : empty}</div>
+    <div class="card"><h2>الناجحون في اختبارات الشهر (${d.passed.length})</h2>${d.passed.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>العلامة</th><th>التاريخ</th></tr></thead><tbody>${
+      d.passed.map(e => `<tr><td>${nameLink(e.studentId, e.studentName)}</td><td>${hqTag(e.halaqaId, e.halaqaName)}</td><td>${esc(TYPES[e.type]||e.type)} — ${esc(juzLabel(e))}</td><td>${markHtml(e)}</td><td>${esc(dateText(e))}</td></tr>`).join("")}</tbody></table>` : empty}</div>`;
+}
+function renderRanking(){ $("rkBody").innerHTML = rankingHtml(rankingData()); }
+$("rkPrint").onclick = () => { const d = rankingData(); printDoc(`الترتيب والتكريم — ${d.m}`, rankingHtml(d).replace(/<a class="name"[^>]*>/g, "").replace(/<\/a>/g, "").replace(/class="homegrid"/g, "")); };
+$("rkExcel").onclick = () => {
+  const d = rankingData(), wb = newBook();
+  addSheet(wb, d.topNew.map((r,i) => ({ "الترتيب": i+1, "الطالب": r.s.name, "الحلقة": halaqaName(r.s.halaqaId), "صفحات الحفظ": +fp(r.newPages), "صفحات المراجعة": +fp(r.reviewPages) })), "الأكثر حفظاً");
+  addSheet(wb, d.topAtt.map((r,i) => ({ "الترتيب": i+1, "الطالب": r.s.name, "الحلقة": halaqaName(r.s.halaqaId), "نسبة الحضور %": r.attendance, "الجلسات": r.sessions })), "الأكثر حضوراً");
+  addSheet(wb, d.hal.map((x,i) => ({ "الترتيب": i+1, "الحلقة": x.h.name, "الطلاب": x.n, "نسبة الحضور %": x.attendance, "صفحات الحفظ": +fp(x.newPages), "معدل الحفظ لكل طالب": +fp(x.perStudent), "صفحات المراجعة": +fp(x.reviewPages) })), "الحلقات");
+  addSheet(wb, d.passed.map(e => ({ "الطالب": e.studentName, "الحلقة": e.halaqaName, "الاختبار": `${TYPES[e.type]||e.type} — ${juzLabel(e)}`, "العلامة": e.total, "التاريخ": dateText(e) })), "الناجحون");
+  XLSX.writeFile(wb, `الترتيب-والتكريم-${d.m}.xlsx`);
+};
 
 // ===== الإحصائيات والتقارير =====
 function statsRange(){
@@ -913,7 +1806,7 @@ function statRowsForExcel(rows, labelTitle){
 }
 const byCount = (a,b) => b.count - a.count;
 function renderPathStats(){
-  const studs = S.students.filter(s=>s.status!=="pending");
+  const studs = S.students.filter(isActive);
   const blocks = new Map([["العشرة الأولى",0],["العشرة الثانية",0],["العشرة الثالثة",0],["اختبار المصحف كاملاً",0],["حافظ للقرآن",0]]);
   const hafiz = [], stalled = [];
   const N = stallDays(), now = Date.now();
@@ -945,7 +1838,7 @@ function renderPathStats(){
     <h2 style="margin-top:16px">المتوقفون (أكثر من ${N} يوماً على نفس الاختبار) — ${stalled.length}</h2>
     ${stalled.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار الحالي</th><th>منذ</th><th></th></tr></thead><tbody>
       ${stalled.map(x => `<tr><td>${esc(x.s.name)}</td><td>${esc(halaqaName(x.s.halaqaId))}</td><td>${esc(stepLabel(x.step))}</td>
-      <td>${x.d} يوم</td><td><button class="small" data-rec="${x.s.id}">سجل الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`}
+      <td>${x.d} يوم</td><td><button class="small" data-rec="${x.s.id}">ملف الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`}
     <h2 style="margin-top:16px">الحفّاظ — ${hafiz.length}</h2>
     ${hafiz.length ? `<p>${hafiz.map(s=>`${esc(s.name)} <span class="muted">(${esc(halaqaName(s.halaqaId))})</span>`).join("، ")}</p>` : `<p class="muted">لا يوجد بعد</p>`}`;
 }
@@ -1029,7 +1922,7 @@ $("pendingBody").addEventListener("click", ev => {
   if (b.dataset.merge) mergeStudent(s);
   if (b.dataset.reject){
     if (examsOfStudent(id).length){ toast("للطالب اختبارات — ادمجه مع طالب موجود بدل الحذف"); return; }
-    confirmDlg(`حذف الطالب ${s.name}؟`, async () => { await deleteDoc(doc(db,"students",id)); toast("تم الحذف"); });
+    confirmDlg(`حذف الطالب ${s.name}؟`, async () => { await deleteDoc(doc(db,"students",id)); audit("حذف طالب جديد", s.name, halaqaName(s.halaqaId)); toast("تم الحذف"); });
   }
 });
 function mergeStudent(s){
@@ -1047,26 +1940,26 @@ function mergeStudent(s){
       examsOfStudent(s.id).forEach(e => batch.update(doc(db,"exams",e.id),
         { studentId:t.id, studentName:t.name, halaqaId:t.halaqaId, halaqaName:halaqaName(t.halaqaId) }));
       batch.delete(doc(db,"students",s.id));
-      await batch.commit(); toast("تم الدمج");
+      await batch.commit(); audit("دمج طالب", t.name, `دُمج «${s.name}» (${halaqaName(s.halaqaId)}) مع «${t.name}»`, null, null); toast("تم الدمج");
     }},
     { text:"إلغاء" }
   ]);
 }
 
 // ===== الطلاب =====
-["sSearch","sHalaqa"].forEach(id => $(id).addEventListener("input", renderStudents));
+["sSearch","sHalaqa","sState"].forEach(id => $(id).addEventListener("input", () => { LIM.students = 50; renderStudents(); }));
 function renderStudents(){
   const q = $("sSearch").value.trim(), h = $("sHalaqa").value;
-  const list = sortAr(S.students.filter(s => s.status!=="pending" && (!q || s.name.includes(q)) && (!h || s.halaqaId===h)));
+  const stt = $("sState").value;
+  const list = sortAr(S.students.filter(s => s.status!=="pending" && (!stt || (stt === "inactive") === (s.status === "inactive")) && (!q || s.name.includes(q)) && (!h || s.halaqaId===h)));
   $("studentsCount").textContent = `${list.length} طالب`;
-  $("studentsBody").innerHTML = list.map(s => `
-    <tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
+  $("studentsBody").innerHTML = (list.length ? "" : `<tr><td colspan="6" class="empty-td">${emptyHtml("لا يوجد طلاب بهذه الفلاتر")}</td></tr>`) + list.slice(0, LIM.students).map(s => `
+    <tr class="${s.status==="inactive"?"inactive":""}"><td style="white-space:nowrap">${nameLink(s.id, s.name, true)}${s.status==="inactive" ? ' <span class="pill p-gr">منقطع</span>' : ""}</td><td>${hqTag(s.halaqaId)}</td>
     <td class="muted">${sDir(s)==="asc"?"من البقرة":"من الناس"} · من الجزء ${sStart(s)}</td>
     <td>${(() => { const t = nextText(s); return t === "حافظ للقرآن" ? `<span class="hafiz">حافظ للقرآن</span>` : esc(t); })()}</td>
     <td>${examsOfStudent(s.id).length}</td>
-    <td class="actions"><button class="small primary" data-rec="${s.id}">السجل</button>
-    <button class="small" data-edit="${s.id}">تعديل</button>
-    <button class="small danger" data-del="${s.id}">حذف</button></td></tr>`).join("");
+    <td class="actions"><button class="small primary" data-rec="${s.id}">الملف</button>
+    ${moreMenu(`<button data-edit="${s.id}">تعديل البيانات</button><hr><button class="danger" data-del="${s.id}">حذف</button>`)}</td></tr>`).join("") + moreRow("students", list.length, 6);
 }
 $("studentsBody").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
@@ -1075,7 +1968,7 @@ $("studentsBody").addEventListener("click", ev => {
   if (b.dataset.del){
     const s = S.students.find(x=>x.id===b.dataset.del);
     if (examsOfStudent(s.id).length){ toast("لا يمكن حذف طالب له اختبارات"); return; }
-    confirmDlg(`حذف الطالب ${s.name}؟`, async () => { await deleteDoc(doc(db,"students",s.id)); toast("تم الحذف"); });
+    confirmDlg(`حذف الطالب ${s.name}؟`, async () => { await deleteDoc(doc(db,"students",s.id)); audit("حذف طالب", s.name, halaqaName(s.halaqaId)); toast("تم الحذف"); });
   }
 });
 function editStudent(id, approving){
@@ -1084,7 +1977,7 @@ function editStudent(id, approving){
   openDialog(approving ? "اعتماد طالب جديد" : "تعديل طالب", `
     <div class="grid2">
       <label>الاسم<input id="esName" value="${esc(s.name)}"></label>
-      <label>الحلقة<select id="esHalaqa">${hs}</select></label>
+      ${approving ? `<label>الحلقة<select id="esHalaqa">${hs}</select></label>` : `<label>الحلقة<select id="esHalaqa" disabled>${hs}</select><span class="muted" style="font-size:12px">للتغيير: زر «نقل لحلقة أخرى» في ملف الطالب</span></label>`}
       ${pathFields(sDir(s), sStart(s), "es")}
     </div>`, [
     { text: approving ? "اعتماد" : "حفظ", cls:"primary", onClick: async () => {
@@ -1095,7 +1988,12 @@ function editStudent(id, approving){
         pathDir: $("esDir").value, pathStart: parseInt($("esStart").value) });
       examsOfStudent(id).forEach(e => batch.update(doc(db,"exams",e.id),
         { studentName:name, halaqaId, halaqaName:halaqaName(halaqaId) }));
-      await batch.commit(); toast("تم الحفظ");
+      await batch.commit();
+      const pd = d => d === "asc" ? "من البقرة" : "من الناس";
+      audit(approving ? "اعتماد طالب جديد" : "تعديل بيانات طالب", name, "",
+        `${s.name} · ${halaqaName(s.halaqaId)} · ${pd(sDir(s))} من الجزء ${sStart(s)}`,
+        `${name} · ${halaqaName(halaqaId)} · ${pd($("esDir").value)} من الجزء ${$("esStart").value}`);
+      toast("تم الحفظ");
     }},
     { text:"إلغاء" }
   ]);
@@ -1107,6 +2005,7 @@ $("addStudentBtn").onclick = async () => {
   if (S.students.some(s=>s.name===name && s.halaqaId===halaqaId)){ toast("الطالب موجود بنفس الحلقة"); return; }
   await addDoc(collection(db,"students"), { name, halaqaId, status:"approved", createdBy:"الإدارة", createdAt: serverTimestamp(),
     pathDir: $("newDir").value, pathStart: parseInt($("newStart").value) });
+  audit("إضافة طالب", name, halaqaName(halaqaId));
   $("newStudentName").value = ""; $("newStudentName").focus(); toast("تمت الإضافة");
 };
 $("newStudentName").addEventListener("keydown", e => { if (e.key==="Enter") $("addStudentBtn").click(); });
@@ -1141,7 +2040,7 @@ $("importBtn").onclick = async () => {
   for (let i=0;i<ops.length;i+=400){
     const b = writeBatch(db); ops.slice(i,i+400).forEach(f=>f(b)); await b.commit();
   }
-  $("importFile").value = "";
+  $("importFile").value = ""; audit("استيراد طلاب من Excel", "", `أُضيف ${added} طالب و${newH} حلقة`);
   openDialog("نتيجة الاستيراد", `<p>طلاب أُضيفوا: <b>${added}</b><br>حلقات جديدة: <b>${newH}</b><br>صفوف تم تجاهلها (فارغة أو مكررة): <b>${skipped}</b></p>`, [{text:"تم", cls:"primary"}]);
 };
 
@@ -1149,7 +2048,7 @@ $("importBtn").onclick = async () => {
 function renderHalaqat(){
   $("halaqatBody").innerHTML = sortAr([...S.halaqat]).map(h => `
     <tr><td>${esc(h.name)}</td>
-    <td>${S.students.filter(s=>s.halaqaId===h.id).length}</td>
+    <td>${S.students.filter(s=>s.halaqaId===h.id && isActive(s)).length}</td>
     <td>${S.exams.filter(e=>e.halaqaId===h.id).length}</td>
     <td class="actions"><button class="small" data-edit="${h.id}">تعديل الاسم</button>
     <button class="small danger" data-del="${h.id}">حذف</button></td></tr>`).join("");
@@ -1157,7 +2056,7 @@ function renderHalaqat(){
 $("addHalaqaBtn").onclick = async () => {
   const name = $("newHalaqaName").value.trim(); if (!name) return;
   if (S.halaqat.some(h=>h.name===name)){ toast("الحلقة موجودة"); return; }
-  await addDoc(collection(db,"halaqat"), { name, createdAt: serverTimestamp() });
+  await addDoc(collection(db,"halaqat"), { name, createdAt: serverTimestamp() }); audit("إضافة حلقة", name);
   $("newHalaqaName").value = ""; toast("تمت الإضافة");
 };
 $("newHalaqaName").addEventListener("keydown", e => { if (e.key==="Enter") $("addHalaqaBtn").click(); });
@@ -1171,12 +2070,12 @@ $("halaqatBody").addEventListener("click", ev => {
         const batch = writeBatch(db);
         batch.update(doc(db,"halaqat",h.id), { name });
         S.exams.filter(e=>e.halaqaId===h.id).forEach(e => batch.update(doc(db,"exams",e.id), { halaqaName:name }));
-        await batch.commit(); toast("تم الحفظ");
+        await batch.commit(); audit("تعديل اسم حلقة", name, "", h.name, name); toast("تم الحفظ");
       }}, { text:"إلغاء" }]);
   }
   if (b.dataset.del){
     if (S.students.some(s=>s.halaqaId===h.id)){ toast("لا يمكن حذف حلقة فيها طلاب"); return; }
-    confirmDlg(`حذف حلقة ${h.name}؟`, async () => { await deleteDoc(doc(db,"halaqat",h.id)); toast("تم الحذف"); });
+    confirmDlg(`حذف حلقة ${h.name}؟`, async () => { await deleteDoc(doc(db,"halaqat",h.id)); audit("حذف حلقة", h.name); toast("تم الحذف"); });
   }
 });
 
@@ -1188,27 +2087,292 @@ function renderExaminers(){
 $("addExaminerBtn").onclick = async () => {
   const name = $("newExaminerName").value.trim(); if (!name) return;
   if (S.examiners.some(x=>x.name===name)){ toast("الاسم موجود"); return; }
-  await addDoc(collection(db,"examiners"), { name });
+  await addDoc(collection(db,"examiners"), { name }); audit("إضافة مختبر", name);
   $("newExaminerName").value = ""; toast("تمت الإضافة");
 };
 $("newExaminerName").addEventListener("keydown", e => { if (e.key==="Enter") $("addExaminerBtn").click(); });
 $("examinersBody").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
   const x = S.examiners.find(y=>y.id===b.dataset.del);
-  confirmDlg(`حذف ${x.name} من القائمة؟ (اختباراته السابقة تبقى)`, async () => { await deleteDoc(doc(db,"examiners",x.id)); toast("تم الحذف"); });
+  confirmDlg(`حذف ${x.name} من القائمة؟ (اختباراته السابقة تبقى)`, async () => { await deleteDoc(doc(db,"examiners",x.id)); audit("حذف مختبر", x.name); toast("تم الحذف"); });
 });
 
 // ===== الإعدادات =====
+// ===================== السجل اليومي =====================
+const DAY_NAMES = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+const ST_TEXT = { recited:"سمّع", norecite:"لم يسمّع", absent:"غائب", excused:"غائب بعذر" };
+function sessionDays(){ const v = S.settings && S.settings.sessionDays; return Array.isArray(v) && v.length ? v.map(Number) : [6,0,2,4]; }
+function minNewPages(){ const v = parseFloat(S.settings && S.settings.minNewPages); return v >= 0 ? v : 1; }
+function minReviewPages(){ const v = parseFloat(S.settings && S.settings.minReviewPages); return v >= 0 ? v : 7; }
+const fp = n => (Math.round((n||0)*10)/10).toFixed(1);
+function logsOf(sid){ return S.logs.filter(l => l.studentId === sid); }
+function progressOf(sid){ return S.progress.find(p => p.id === sid) || null; }
+function dailyOf(s){ return dailyStatus(sDir(s), sStart(s), passedKeys(s.id), logsOf(s.id), progressOf(s.id), minNewPages()); }
+function dailyTitle(d){
+  switch (d.mode){
+    case "hafiz": return "حافظ للقرآن الكريم";
+    case "needs_start": return "لم تُحدَّد نقطة البداية";
+    case "review_surah": return `مراجعة ${rangeLabel(d.segFrom, d.segTo)} كاملة (إجباري)`;
+    case "review_exam": return d.juzFrom === d.juzTo ? `مراجعة الجزء ${d.juzFrom} للاختبار` : `مراجعة الأجزاء ${d.juzFrom}–${d.juzTo} للاختبار`;
+    default: return `في الجزء ${d.juz} — التالي من ${posLabel(d.fromG)}`;
+  }
+}
+function isHoliday(date, halaqaId){ return S.holidays.some(h => h.date === date && (h.halaqaId === "all" || h.halaqaId === halaqaId)); }
+function logHoliday(l){ return l.holiday === true || isHoliday(l.date, l.halaqaId); }
+function logWarn(l){
+  if (l.status !== "recited" || logHoliday(l)) return "";
+  if (l.newMem && (l.newPages||0) < minNewPages() - 1e-9) return "أقل من حد الحفظ";
+  if (!l.newMem && ["review_exam","review_surah","hafiz"].includes(l.mode) && (l.reviewPages||0) < minReviewPages() - 1e-9) return "أقل من حد المراجعة";
+  return "";
+}
+function logBrief(l){ if (!l || !l.status) return ""; const t = [ST_TEXT[l.status] || l.status];
+  if (l.newMem) t.push(`حفظ: ${l.newMem.label} (${fp(l.newPages)} ص)`); if ((l.reviews||[]).length) t.push(`مراجعة: ${fp(l.reviewPages)} ص`); return t.join(" · "); }
+function reviewsText(l){ return (l.reviews||[]).map(r => `${esc(r.label)} (${fp(r.pages)})`).join("، "); }
+
+(() => { const d = new Date(); $("dDate").value = dayKey(d); $("hDate").value = dayKey(d);
+  $("dsFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("dsTo").value = dayKey(d); })();
+["dDate","dHalaqa","dsFrom","dsTo","dsHalaqa"].forEach(id => $(id).addEventListener("input", renderDaily));
+$("dsWeek").onclick = () => { const d = new Date(); const back = (d.getDay() + 1) % 7; const s = new Date(d); s.setDate(d.getDate() - back); $("dsFrom").value = dayKey(s); $("dsTo").value = dayKey(d); renderDaily(); };
+$("dsMonth").onclick = () => { const d = new Date(); $("dsFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("dsTo").value = dayKey(d); renderDaily(); };
+
+function renderDaily(){
+  if (!$("dDate").value) return;
+  const date = $("dDate").value, h = $("dHalaqa").value;
+  const wd = new Date(date + "T12:00:00").getDay();
+  $("dInfo").textContent = `${DAY_NAMES[wd]}${sessionDays().includes(wd) ? "" : " — ليس من أيام التحفيظ"}${isHoliday(date, "all") ? " — إجازة للمركز" : ""}`;
+  const studs = sortAr(S.students.filter(s => s.status !== "inactive" && (!h || s.halaqaId === h)));
+  let rec = 0, abs = 0, exc = 0, nor = 0, none = 0, np = 0, rp = 0;
+  const rows = studs.map(s => {
+    const l = S.logs.find(x => x.id === `${s.id}_${date}`);
+    const hol = isHoliday(date, s.halaqaId);
+    if (!l) { if (!hol) none++; } else if (l.status === "recited"){ rec++; np += l.newPages||0; rp += l.reviewPages||0; }
+    else if (hol) { /* يوم إجازة: لا يُحسب غياب */ }
+    else if (l.status === "absent") abs++; else if (l.status === "excused") exc++; else if (l.status === "norecite") nor++;
+    const d = dailyOf(s), w = l ? logWarn(l) : "";
+    return `<tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
+      <td>${l ? (ST_TEXT[l.status]||"") + (logHoliday(l) ? ' <span class="muted">(يوم إجازة)</span>' : "") : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
+      <td>${l && l.newMem ? `${esc(l.newMem.label)} <b>(${fp(l.newPages)})</b>` : ""}</td>
+      <td>${l && (l.reviews||[]).length ? `${reviewsText(l)} <b>= ${fp(l.reviewPages)}</b>` : ""}</td>
+      <td class="muted">${esc(dailyTitle(d))}${d.mode === "review_exam" ? (() => { const r = examReady(s); return " " + (r.ok ? pill("p-ok","جاهز ✓") : pill("p-wa", esc(readyText(r)))); })() : ""}</td><td>${esc(l ? l.sheikhName||"" : "")}</td>
+      <td class="actions"><button class="small" data-rec="${s.id}">ملف الطالب</button></td></tr>`;
+  }).join("");
+  $("dBody").innerHTML = rows || `<tr><td colspan="8" class="muted" style="text-align:center">لا يوجد طلاب</td></tr>`;
+  $("dSummary").innerHTML = `<span>سمّع: <b class="pass">${rec}</b></span><span>لم يسمّع: <b>${nor}</b></span><span>غائب: <b class="fail">${abs}</b></span>
+    <span>بعذر: <b>${exc}</b></span><span>لم يُسجّل: <b>${none}</b></span><span>صفحات الحفظ: <b>${fp(np)}</b></span><span>صفحات المراجعة: <b>${fp(rp)}</b></span>`;
+  renderDailyStats(); renderHolidays();
+}
+$("dBody").addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && b.dataset.rec) studentRecord(b.dataset.rec); });
+
+function rangeLogs(){
+  const f = $("dsFrom").value, t = $("dsTo").value, h = $("dsHalaqa").value;
+  return S.logs.filter(l => (!f || l.date >= f) && (!t || l.date <= t) && (!h || l.halaqaId === h));
+}
+function aggLogs(list){
+  // أيام الإجازة: تُحسب صفحاتها، ولا تدخل في الحضور والغياب
+  const a = { sessions:0, recited:0, norecite:0, absent:0, excused:0, newPages:0, reviewPages:0, low:0, holidaySessions:0 };
+  for (const l of list){
+    if (l.status === "recited"){ a.newPages += l.newPages||0; a.reviewPages += l.reviewPages||0; }
+    if (logHoliday(l)){ a.holidaySessions++; continue; }
+    a.sessions++; a[l.status] = (a[l.status]||0) + 1; if (logWarn(l)) a.low++;
+  }
+  const att = a.recited + a.norecite;
+  a.attendance = a.sessions ? Math.round(att * 1000 / a.sessions) / 10 : 0;
+  return a;
+}
+function aggTable(rows, title){
+  if (!rows.length) return `<p class="muted">لا توجد بيانات</p>`;
+  return `<table><thead><tr><th>${title}</th><th>الجلسات</th><th>سمّع</th><th>لم يسمّع</th><th>غائب</th><th>بعذر</th><th>نسبة الحضور</th>
+    <th>صفحات الحفظ</th><th>صفحات المراجعة</th><th>تحت الحد</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.label)}</td>
+    <td>${r.sessions}</td><td class="pass">${r.recited}</td><td>${r.norecite}</td><td class="fail">${r.absent}</td><td>${r.excused}</td>
+    <td><span class="bar"><span style="width:${r.attendance}%"></span></span>${r.attendance}%</td>
+    <td><b>${fp(r.newPages)}</b></td><td><b>${fp(r.reviewPages)}</b></td><td>${r.low ? `<span class="closed">${r.low}</span>` : 0}</td></tr>`).join("")}</tbody></table>`;
+}
+function groupLogs(list, key){
+  const m = new Map(); for (const l of list){ const k = key(l); if (!m.has(k)) m.set(k, []); m.get(k).push(l); }
+  return [...m.entries()].map(([label, arr]) => ({ label, ...aggLogs(arr) }));
+}
+function frequentAbsence(){
+  const out = [];
+  for (const s of S.students.filter(isActive)){
+    const ls = logsOf(s.id).filter(l => !isHoliday(l.date, s.halaqaId)).sort((a,b)=>a.date.localeCompare(b.date));
+    let n = 0; for (let i = ls.length - 1; i >= 0 && (ls[i].status === "absent"); i--) n++;
+    if (n >= 2) out.push({ s, n, last: ls[ls.length-1].date });
+  }
+  return out.sort((a,b)=>b.n-a.n);
+}
+function renderDailyStats(){
+  const list = rangeLogs();
+  $("dsByHalaqa").innerHTML = aggTable(groupLogs(list, l => halaqaName(l.halaqaId)).sort((a,b)=>b.newPages-a.newPages), "الحلقة");
+  $("dsByStudent").innerHTML = aggTable(groupLogs(list, l => l.studentName||"").sort((a,b)=>b.newPages-a.newPages), "الطالب");
+  const fa = frequentAbsence();
+  $("dsAbsent").innerHTML = fa.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>غياب متتالي</th><th>آخر جلسة</th><th></th></tr></thead><tbody>${
+    fa.map(x => `<tr><td>${esc(x.s.name)}</td><td>${esc(halaqaName(x.s.halaqaId))}</td><td class="fail">${x.n}</td><td>${x.last}</td>
+    <td><button class="small" data-rec="${x.s.id}">ملف الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`;
+}
+$("dsAbsent").addEventListener("click", ev => { const b = ev.target.closest("button"); if (b && b.dataset.rec) studentRecord(b.dataset.rec); });
+$("dsExcel").onclick = () => {
+  const list = rangeLogs().sort((a,b)=>a.date.localeCompare(b.date));
+  if (!list.length){ toast("لا توجد بيانات"); return; }
+  const wb = newBook();
+  const sh = (rows, t) => rows.map(r => ({ [t]: r.label, "الجلسات": r.sessions, "سمّع": r.recited, "لم يسمّع": r.norecite, "غائب": r.absent,
+    "بعذر": r.excused, "نسبة الحضور %": r.attendance, "صفحات الحفظ": +fp(r.newPages), "صفحات المراجعة": +fp(r.reviewPages), "تحت الحد": r.low }));
+  addSheet(wb, sh(groupLogs(list, l => halaqaName(l.halaqaId)), "الحلقة"), "حسب الحلقة");
+  addSheet(wb, sh(groupLogs(list, l => l.studentName||""), "الطالب"), "حسب الطالب");
+  addSheet(wb, list.map(l => ({ "التاريخ": l.date, "الطالب": l.studentName, "الحلقة": halaqaName(l.halaqaId), "الحالة": ST_TEXT[l.status]||"",
+    "الحفظ الجديد": l.newMem ? l.newMem.label : "", "صفحات الحفظ": +fp(l.newPages), "المراجعة": (l.reviews||[]).map(r=>r.label).join("، "),
+    "صفحات المراجعة": +fp(l.reviewPages), "الشيخ": l.sheikhName||"", "جلسة إضافية": l.extraDay ? "نعم" : "", "ملاحظات": l.notes||"" })), "الجلسات");
+  XLSX.writeFile(wb, `السجل-اليومي-${$("dsFrom").value}-${$("dsTo").value}.xlsx`);
+};
+
+// ----- الإجازات
+function renderHolidays(){
+  const list = [...S.holidays].sort((a,b)=>b.date.localeCompare(a.date)).slice(0, 60);
+  $("hBody").innerHTML = list.length ? list.map(h => `<tr><td>${esc(h.date)}</td><td>${h.halaqaId === "all" ? "<b>المركز كله</b>" : esc(halaqaName(h.halaqaId))}</td>
+    <td>${esc(h.reason||"")}</td><td class="muted">${esc(h.by||"")}</td><td class="actions"><button class="small danger" data-delh="${h.id}">حذف</button></td></tr>`).join("")
+    : `<tr><td colspan="5" class="muted" style="text-align:center">لا توجد إجازات</td></tr>`;
+}
+$("addHolidayBtn").onclick = async () => {
+  const date = $("hDate").value, hid = $("hHalaqa").value || "all";
+  if (!date){ toast("اختر التاريخ"); return; }
+  await setDoc(doc(db,"holidays",`${hid}_${date}`), { date, halaqaId: hid, reason: $("hReason").value.trim(), by: "الإدارة" });
+  audit("إضافة إجازة", hid === "all" ? "المركز كله" : halaqaName(hid), `${date}${$("hReason").value.trim() ? " — " + $("hReason").value.trim() : ""}`);
+  $("hReason").value = ""; toast("تمت إضافة الإجازة");
+};
+$("hBody").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b || !b.dataset.delh) return;
+  const hd = S.holidays.find(x => x.id === b.dataset.delh) || {};
+  confirmDlg("حذف هذه الإجازة؟", async () => { await deleteDoc(doc(db,"holidays",b.dataset.delh)); audit("حذف إجازة", hd.halaqaId === "all" ? "المركز كله" : halaqaName(hd.halaqaId), hd.date); toast("تم الحذف"); });
+});
+
+// ----- المشايخ
+function renderSheikhs(){
+  $("shBody").innerHTML = sortAr([...S.sheikhs]).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(halaqaName(x.halaqaId))}</td>
+    <td><code>${esc(x.pin)}</code></td><td class="actions"><button class="small" data-edsh="${x.id}">تعديل</button>
+    <button class="small danger" data-delsh="${x.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="4" class="muted" style="text-align:center">لا يوجد مشايخ</td></tr>`;
+}
+const pinOk = p => /^\d{4,6}$/.test(p);
+$("addShBtn").onclick = async () => {
+  const name = $("newShName").value.trim(), halaqaId = $("newShHalaqa").value, pin = $("newShPin").value.trim();
+  if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة"); return; }
+  if (!pinOk(pin)){ toast("الرمز 4 إلى 6 أرقام"); return; }
+  await addDoc(collection(db,"sheikhs"), { name, halaqaId, pin }); audit("إضافة شيخ", name, halaqaName(halaqaId));
+  $("newShName").value = ""; $("newShPin").value = ""; toast("تمت الإضافة");
+};
+$("shBody").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  const x = S.sheikhs.find(y => y.id === (b.dataset.edsh || b.dataset.delsh));
+  if (b.dataset.delsh) confirmDlg(`حذف حساب ${x.name}؟`, async () => { await deleteDoc(doc(db,"sheikhs",x.id)); audit("حذف شيخ", x.name, halaqaName(x.halaqaId)); toast("تم الحذف"); });
+  if (b.dataset.edsh){
+    const hs = sortAr([...S.halaqat]).map(h=>`<option value="${h.id}" ${h.id===x.halaqaId?'selected':''}>${esc(h.name)}</option>`).join("");
+    openDialog("تعديل حساب شيخ", `<div class="grid2"><label>الاسم<input id="eshName" value="${esc(x.name)}"></label>
+      <label>الحلقة<select id="eshHalaqa">${hs}</select></label><label>رمز الدخول<input id="eshPin" value="${esc(x.pin)}"></label></div>
+      <div class="err" id="eshErr"></div>`, [
+      { text:"حفظ", cls:"primary", onClick: async () => {
+        const pin = $("eshPin").value.trim(); if (!pinOk(pin)){ $("eshErr").textContent = "الرمز 4 إلى 6 أرقام"; return false; }
+        await updateDoc(doc(db,"sheikhs",x.id), { name: $("eshName").value.trim(), halaqaId: $("eshHalaqa").value, pin });
+        audit("تعديل حساب شيخ", $("eshName").value.trim(), "", `${x.name} · ${halaqaName(x.halaqaId)}${x.pin !== pin ? " · رمز قديم" : ""}`, `${$("eshName").value.trim()} · ${halaqaName($("eshHalaqa").value)}${x.pin !== pin ? " · رمز جديد" : ""}`); toast("تم الحفظ");
+      }}, { text:"إلغاء" }]);
+  }
+});
+
+// ----- إعدادات السجل اليومي
+function renderDailySettings(){
+  const days = sessionDays();
+  $("sessDays").innerHTML = '<span class="muted">أيام التحفيظ:</span>' + [6,0,1,2,3,4,5].map(d =>
+    `<label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" value="${d}" ${days.includes(d)?'checked':''}> ${DAY_NAMES[d]}</label>`).join("");
+  $("minNewPages").value = minNewPages(); $("minReviewPages").value = minReviewPages();
+  $("reqLog").checked = examRequiresLog();
+  $("reqLogState").innerHTML = examRequiresLog() ? pill("p-ok","مفعّل") : pill("p-gr","موقوف — تنبيه فقط");
+}
+function examRequiresLog(){ return !!(S.settings && S.settings.examRequiresLog); }
+$("reqLog").onchange = () => {
+  const on = $("reqLog").checked;
+  $("reqLog").checked = !on;
+  confirmDlg(on ? "تفعيل شرط التسميع؟ لن يُختبر أي طالب لم يُسمِّع الجزء كاملاً في السجل اليومي (إلا بتصريح)." : "إيقاف الشرط؟ سيظهر للمختبر تنبيه فقط.", async () => {
+    await setDoc(doc(db,"settings","app"), { examRequiresLog: on }, { merge:true });
+    audit(on ? "تفعيل شرط التسميع قبل الاختبار" : "إيقاف شرط التسميع قبل الاختبار"); toast("تم الحفظ");
+  });
+};
+$("saveDailySettingsBtn").onclick = async () => {
+  const days = [...$("sessDays").querySelectorAll("input:checked")].map(i => +i.value);
+  const mn = parseFloat($("minNewPages").value), mr = parseFloat($("minReviewPages").value);
+  if (!days.length){ toast("اختر يوماً واحداً على الأقل"); return; }
+  if (!(mn >= 0) || !(mr >= 0)){ toast("أدخل أرقاماً صحيحة"); return; }
+  await setDoc(doc(db,"settings","app"), { sessionDays: days, minNewPages: mn, minReviewPages: mr }, { merge:true });
+  audit("إعدادات التسميع", "", "", `الأيام: ${sessionDays().map(d=>DAY_NAMES[d]).join("، ")} · حفظ ${minNewPages()} · مراجعة ${minReviewPages()}`, `الأيام: ${days.map(d=>DAY_NAMES[d]).join("، ")} · حفظ ${mn} · مراجعة ${mr}`);
+  toast("تم الحفظ");
+};
+
+// ----- السجل اليومي داخل سجل الطالب
+function dailyRecordHtml(sid){
+  const st = S.students.find(x => x.id === sid); if (!st) return "";
+  const d = dailyOf(st), pr = progressOf(sid);
+  const ls = logsOf(sid).sort((a,b)=>b.date.localeCompare(a.date));
+  const now = new Date(), wkStart = new Date(now); wkStart.setDate(now.getDate() - ((now.getDay() + 1) % 7));
+  const mStart = dayKey(new Date(now.getFullYear(), now.getMonth(), 1)), wKey = dayKey(wkStart);
+  const wk = aggLogs(ls.filter(l => l.date >= wKey)), mo = aggLogs(ls.filter(l => l.date >= mStart));
+  const start = pr ? (pr.lastG ? `آخر آية محفوظة عند البداية: ${posLabel(pr.lastG)}` : "بدأ الجزء من أوله") : "لم تُحدَّد";
+  return `<h2>السجل اليومي</h2>
+    <table class="detail">
+      <tr><td>الحالة الآن</td><td><b>${esc(dailyTitle(d))}</b></td></tr>
+      <tr><td>نقطة البداية</td><td>${esc(start)} <button class="small" data-setstart="${sid}">تعديل</button></td></tr>
+      <tr><td>هذا الأسبوع</td><td>حفظ ${fp(wk.newPages)} ص · مراجعة ${fp(wk.reviewPages)} ص · حضور ${wk.attendance}% (${wk.sessions} جلسة)</td></tr>
+      <tr><td>هذا الشهر</td><td>حفظ ${fp(mo.newPages)} ص · مراجعة ${fp(mo.reviewPages)} ص · حضور ${mo.attendance}% (${mo.sessions} جلسة)</td></tr>
+    </table>
+    <table><thead><tr><th>التاريخ</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>الشيخ</th><th></th></tr></thead><tbody>
+    ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${logHoliday(l) ? ' <span class="muted">(إجازة)</span>' : (l.extraDay ? ' <span class="muted">(إضافية)</span>' : "")}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
+      <td>${l.newMem ? `${esc(l.newMem.label)} (${fp(l.newPages)})` : ""}</td><td>${reviewsText(l)}${(l.reviews||[]).length ? ` = ${fp(l.reviewPages)}` : ""}</td>
+      <td>${esc(l.sheikhName||"")}</td><td><button class="small danger" data-dellog="${l.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">لا توجد جلسات</td></tr>`}
+    </tbody></table>`;
+}
+$("stuPage").addEventListener("click", async ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  const sid = ev.currentTarget.dataset.sid;
+  if (b.dataset.sedit){ editStudent(b.dataset.sedit, false); return; }
+  if (b.dataset.smove){ transferStudent(b.dataset.smove); return; }
+  if (b.dataset.eperm){ const x = stuById(b.dataset.eperm), stp = studentPath(x).steps[studentPath(x).next];
+    confirmDlg(`السماح لـ ${x.name} بدخول اختبار «${stepLabel(stp)}» بدون شرط تسميع الجزء كاملاً؟ (لمرة واحدة)`, async () => {
+      await addDoc(collection(db,"permits"), { studentId:x.id, studentName:x.name, type:stp.type, startJuz:stp.start, kind:"exam", grantedAtMs: Date.now(), grantedAt: serverTimestamp() });
+      audit("تصريح اختبار بدون شرط التسميع", x.name, stepLabel(stp)); toast("تم التصريح"); }); return; }
+  if (b.dataset.sinact){ inactivateStudent(b.dataset.sinact); return; }
+  if (b.dataset.sact){ const x = stuById(b.dataset.sact); confirmDlg(`إعادة تفعيل ${x.name}؟ سيظهر من جديد في التطبيق.`, async () => {
+    await updateDoc(doc(db,"students",x.id), { status:"approved", inactiveReason:"", inactiveAtMs:null }); audit("إعادة تفعيل طالب", x.name, halaqaName(x.halaqaId)); toast("تم التفعيل"); }); return; }
+  if (b.dataset.sprint){ const st = S.students.find(x=>x.id===sid) || {}; printDoc(`سجل الطالب: ${st.name||""}`, studentRecordHtml(sid, true)); return; }
+  if (b.dataset.dellog){
+    if (!confirm("حذف هذه الجلسة من السجل اليومي؟")) return;
+    const lg = S.logs.find(x => x.id === b.dataset.dellog) || {};
+    await deleteDoc(doc(db,"logs",b.dataset.dellog)); audit("حذف جلسة تسميع", lg.studentName, lg.date, logBrief(lg), null); toast("تم الحذف"); setTimeout(()=>studentRecord(sid), 300);
+  }
+  if (b.dataset.setstart){
+    const st = S.students.find(x => x.id === b.dataset.setstart);
+    const opts = Array.from({length:114},(_,i)=>i+1).map(i=>`<option value="${i}">${i}. ${Q.names[i-1]}</option>`).join("");
+    openDialog("نقطة البداية في السجل اليومي", `
+      <p class="muted">آخر آية حفظها الطالب قبل بدء السجل اليومي. يكمل التطبيق بعدها تلقائياً.</p>
+      <label style="display:block;margin-bottom:8px"><input type="radio" name="spm" value="fresh" checked> بدأ الجزء الحالي من أوله</label>
+      <label style="display:block;margin-bottom:8px"><input type="radio" name="spm" value="ayah"> آخر آية حفظها:</label>
+      <div class="grid2"><label>السورة<select id="spS">${opts}</select></label><label>الآية<input type="number" id="spA" min="1" value="1"></label></div>
+      <div class="err" id="spErr"></div>`, [
+      { text:"حفظ", cls:"primary", onClick: async () => {
+        const mode = document.querySelector('input[name="spm"]:checked').value;
+        let lastG = null;
+        if (mode === "ayah"){ const s = +$("spS").value, a = +$("spA").value; if (!(a >= 1 && a <= Q.counts[s-1])){ $("spErr").textContent = `الآية من 1 إلى ${Q.counts[s-1]}`; return false; } lastG = gidOf(s, a); }
+        await setDoc(doc(db,"progress",st.id), { halaqaId: st.halaqaId, lastG, fresh: lastG === null, setBy: "الإدارة" }, { merge:true });
+        audit("تعديل نقطة البداية", st.name, lastG ? `آخر آية: ${posLabel(lastG)}` : "من أول الجزء");
+        toast("تم الحفظ"); setTimeout(()=>studentRecord(st.id), 300);
+      }}, { text:"إلغاء" }]);
+  }
+});
+
 $("saveStallBtn").onclick = async () => {
   const v = parseInt($("stallDays").value);
   if (!(v > 0)){ toast("أدخل عدد أيام صحيح"); return; }
-  await setDoc(doc(db,"settings","app"), { stallDays: v }, { merge:true });
+  const old = stallDays(); await setDoc(doc(db,"settings","app"), { stallDays: v }, { merge:true }); audit("مدة التوقف", "", "", `${old} يوم`, `${v} يوم`);
   toast("تم الحفظ");
 };
 $("saveAppPassBtn").onclick = async () => {
   const p = $("newAppPass").value.trim();
   if (p.length < 4){ toast("كلمة السر 4 خانات على الأقل"); return; }
-  await setDoc(doc(db,"settings","app"), { password:p, updatedAt: serverTimestamp() }, { merge:true });
+  await setDoc(doc(db,"settings","app"), { password:p, updatedAt: serverTimestamp() }, { merge:true }); audit("تغيير كلمة سر التطبيق");
   $("newAppPass").value = ""; toast("تم حفظ كلمة السر");
 };
 </script>

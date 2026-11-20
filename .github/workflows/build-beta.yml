@@ -1,0 +1,80 @@
+name: Build BETA APK
+
+# نسخة تجريبية منفصلة: تُثبَّت بجانب التطبيق الأصلي ولا تؤثر عليه
+on:
+  push:
+    branches: [daily-log]
+    paths: ['app/**', '.github/workflows/build-beta.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  KS_PASS: ${{ secrets.KS_PASS }}
+  FLUTTER_VERSION: '3.24.5'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+
+      - name: Generate Android project (beta id)
+        run: |
+          flutter create --platforms=android --org com.taqwa --project-name taqwa_exams .
+          rm -rf test
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' android/app/build.gradle
+          sed -i 's/applicationId = "com.taqwa.taqwa_exams"/applicationId = "com.taqwa.taqwa_exams.beta"/' android/app/build.gradle
+          sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' android/settings.gradle
+          sed -i 's/id "com.android.application" version "[^"]*"/id "com.android.application" version "8.1.4"/' android/settings.gradle
+          sed -i 's#gradle-[0-9.]*-all.zip#gradle-8.3-all.zip#' android/gradle/wrapper/gradle-wrapper.properties
+          cp -r branding/res/. android/app/src/main/res/
+          cp branding/upload.jks android/app/upload.jks
+          python3 - <<'PY'
+          p='android/app/build.gradle'; s=open(p).read()
+          block = '''    signingConfigs {
+                  release {
+                      storeFile file("upload.jks")
+                      storePassword System.getenv("KS_PASS")
+                      keyAlias "taqwa"
+                      keyPassword System.getenv("KS_PASS")
+                  }
+              }
+
+              buildTypes {'''
+          s = s.replace('    buildTypes {', block, 1)
+          s = s.replace('signingConfig = signingConfigs.debug', 'signingConfig = signingConfigs.release')
+          open(p,'w').write(s)
+          PY
+          M=android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="[^"]*"/android:label="التقوى - تجريبي"/' $M
+          sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries>\n    <application#' $M
+          grep -n "applicationId" android/app/build.gradle
+
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+      - run: flutter build apk --release --dart-define=BETA=true --build-number=${{ github.run_number }} --target-platform=android-arm,android-arm64
+
+      - name: Publish beta APK (pre-release, never "latest")
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: beta-${{ github.run_number }}
+          target_commitish: daily-log
+          name: نسخة تجريبية ${{ github.run_number }} (السجل اليومي)
+          prerelease: true
+          make_latest: false
+          files: app/build/app/outputs/flutter-apk/app-release.apk
