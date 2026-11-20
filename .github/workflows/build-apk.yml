@@ -73,7 +73,7 @@ jobs:
           open(p,'w').write(s)
           PY
           grep -n "signingConfig" android/app/build.gradle
-          sed -i 's/android:label="[^"]*"/android:label="اختبارات التقوى"/' $M
+          sed -i 's/android:label="[^"]*"/android:label="مركز التقوى"/' $M
           sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries>\n    <application#' $M
 
       - name: Shorebird app setup (first time only)
@@ -94,6 +94,8 @@ jobs:
           BUILD=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: *//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          VNAME=$(echo "$VERSION" | sed 's/+.*//; s/\.0$//')
+          echo "vname=$VNAME" >> $GITHUB_OUTPUT
           echo "mode=$MODE" >> $GITHUB_OUTPUT
           echo "build=$BUILD" >> $GITHUB_OUTPUT
           echo "Mode: $MODE  Build: $BUILD"
@@ -121,6 +123,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ steps.mode.outputs.build }}
-          name: اختبارات التقوى - نسخة ${{ steps.mode.outputs.build }}
+          name: مركز التقوى — الإصدار ${{ steps.mode.outputs.vname }}${{ steps.mode.outputs.vname == '1.0' && ' (الإصدار الأول)' || '' }}
+          body: |
+            تطبيق مركز التقوى لتعليم وتحفيظ القرآن الكريم — الاختبارات والتسميع اليومي.
+            نزّل ملف app-release.apk بالأسفل وثبّته (يُثبَّت فوق النسخة القديمة دون فقدان البيانات).
           make_latest: true
           files: app/build/app/outputs/flutter-apk/app-release.apk
