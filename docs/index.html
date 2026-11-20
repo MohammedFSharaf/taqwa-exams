@@ -1640,6 +1640,108 @@ function examsTableHtml(sid){
 }
 
 
+
+// ===== تعديل / إضافة جلسة تسميع من الإدارة =====
+function surahOpts(sel){ return Q.names.map((n,i) => `<option value="${i+1}" ${i+1 === sel ? "selected" : ""}>${i+1}. ${n}</option>`).join(""); }
+function logEditor(sid, lg){
+  const st = stuById(sid); if (!st) return;
+  const dir = sDir(st), O = memOrder(dir);
+  const isNew = !lg;
+  let date = lg ? lg.date : dayKey(new Date());
+  let reviews = lg ? JSON.parse(JSON.stringify(lg.reviews || [])) : [];
+  const nm = lg && lg.newMem;
+  const sugg = () => { try { return dailyStatus(dir, sStart(st), passedKeys(sid), logsOf(sid).filter(l => l.date < date), progressOf(sid), minNewPages(), st.pathFrom); } catch(_){ return {}; } };
+  const s0 = sugg(), fromG0 = nm && nm.fromG ? nm.fromG : (s0.fromG || null), toG0 = nm && nm.toG ? nm.toG : (s0.suggestToG || null);
+  const g2sa = g => g ? [surahOf(g), ayahNo(g)] : [1, 1];
+  const [fs, fa] = g2sa(fromG0), [ts, ta] = g2sa(toG0);
+  openDialog(isNew ? `إضافة جلسة — ${st.name}` : `تعديل جلسة ${lg.date} — ${st.name}`, `
+    <div class="grid2">
+      <label>التاريخ<input type="date" id="lgDate" value="${date}" ${isNew ? "" : "disabled"}></label>
+      <label>الحالة<select id="lgStatus">${Object.entries(ST_TEXT).map(([k,v]) => `<option value="${k}" ${k === (lg ? lg.status : "recited") ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+    </div>
+    <div id="lgRecited">
+      <h3 style="margin:14px 0 6px">الحفظ الجديد <label style="display:inline-flex;flex-direction:row;gap:6px;font-weight:400;font-size:13px;margin-right:10px"><input type="checkbox" id="lgHasNew" ${nm || (isNew && s0.mode === "memorize") ? "checked" : ""}> سمّع حفظاً جديداً</label></h3>
+      <div id="lgNewBox" class="grid2">
+        <label>من سورة<select id="lgFs">${surahOpts(fs)}</select></label><label>آية<input type="number" min="1" id="lgFa" value="${fa}"></label>
+        <label>إلى سورة<select id="lgTs">${surahOpts(ts)}</select></label><label>آية<input type="number" min="1" id="lgTa" value="${ta}"></label>
+      </div>
+      <div class="muted" id="lgNewInfo" style="margin-top:4px"></div>
+      <h3 style="margin:16px 0 6px">المراجعة</h3>
+      <div id="lgRevList"></div>
+      <div class="row" style="margin-top:8px;align-items:flex-end">
+        <label>النوع<select id="lgRk"><option value="ayat">آيات</option><option value="surah">سورة كاملة</option><option value="juz">جزء كامل</option></select></label>
+        <label id="lgRsL">السورة<select id="lgRs">${surahOpts(1)}</select></label>
+        <label id="lgRaL">من آية<input type="number" min="1" id="lgRa" value="1" style="width:80px"></label>
+        <label id="lgRbL">إلى آية<input type="number" min="1" id="lgRb" value="7" style="width:80px"></label>
+        <label id="lgRjL" class="hidden">الجزء<select id="lgRj">${Array.from({length:30},(_,i)=>`<option value="${i+1}">الجزء ${i+1}</option>`).join("")}</select></label>
+        <button id="lgRadd">+ إضافة مراجعة</button>
+      </div>
+    </div>
+    <label style="display:block;margin-top:14px">ملاحظة<input id="lgNotes" style="width:100%" value="${esc(lg ? lg.notes || "" : "")}"></label>
+    <div id="lgPreview" style="margin-top:14px;padding:10px 12px;border-radius:8px;background:var(--zebra)"></div>`, [
+    { text:"حفظ", cls:"primary", onClick: async () => {
+      const data = buildLog(); if (!data) return false;
+      const id = `${sid}_${date}`, old = S.logs.find(l => l.id === id);
+      if (isNew && old && !confirm(`يوجد تسجيل لهذا الطالب في ${date}. استبداله؟`)) return false;
+      await setDoc(doc(db,"logs",id), data);
+      audit(old ? "تعديل جلسة تسميع (الإدارة)" : "إضافة جلسة تسميع (الإدارة)", st.name, date, old ? logBrief(old) : null, logBrief(data));
+      toast("تم الحفظ");
+    }},
+    { text:"إلغاء" }
+  ], true);
+  const v = id => $(id).value, n = id => parseInt($(id).value) || 0;
+  const clampG = (sv, av) => { const su = Math.min(114, Math.max(1, parseInt(sv) || 1)); const a = Math.min(Q.counts[su-1], Math.max(1, av)); return gidOf(su, a); };
+  function newRange(){
+    if (v("lgStatus") !== "recited" || !$("lgHasNew").checked) return null;
+    const a = clampG(v("lgFs"), n("lgFa")), b = clampG(v("lgTs"), n("lgTa"));
+    if (O.pos[a] > O.pos[b]) return { err: "«من» يجب أن تكون قبل «إلى» في ترتيب الحفظ" };
+    return { fromG: a, toG: b, pages: memRangePages(dir, a, b), label: memRangeLabel(dir, a, b) };
+  }
+  function buildLog(){
+    const nr = newRange(); if (nr && nr.err){ toast(nr.err); return null; }
+    const status = v("lgStatus"), rec = status === "recited";
+    const rv = rec ? reviews : [];
+    const base = lg ? { ...lg } : { studentId: sid, studentName: st.name, halaqaId: st.halaqaId, date, sheikhId: null, sheikhName: "الإدارة",
+      extraDay: !sessionDays().includes(new Date(date + "T12:00:00").getDay()), holiday: isHoliday(date, st.halaqaId), dir };
+    delete base.id;
+    return { ...base, status, newMem: nr ? { fromG: nr.fromG, toG: nr.toG, pages: nr.pages, label: nr.label } : null,
+      reviews: rv, newPages: nr ? nr.pages : 0, reviewPages: rv.reduce((t, r) => t + (r.pages || 0), 0),
+      notes: v("lgNotes").trim(), mode: s0.mode || base.mode || "", editedBy: "الإدارة", editedAtMs: Date.now(), clientAt: Date.now(), updatedAt: serverTimestamp() };
+  }
+  function refresh(){
+    const rec = v("lgStatus") === "recited";
+    $("lgRecited").style.display = rec ? "" : "none";
+    $("lgNewBox").style.display = $("lgHasNew").checked ? "" : "none";
+    const nr = newRange();
+    $("lgNewInfo").textContent = !nr ? "" : nr.err ? nr.err : `${nr.label} — ${fp(nr.pages)} صفحة`;
+    $("lgRevList").innerHTML = reviews.length ? reviews.map((r,i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)"><span>${esc(r.label)} <span class="muted">(${fp(r.pages)} ص)</span></span><button class="small danger" data-rdel="${i}">حذف</button></div>`).join("")
+      + `<div class="muted" style="margin-top:4px">المجموع: ${fp(reviews.reduce((t,r)=>t+(r.pages||0),0))} صفحة</div>` : `<div class="muted">لا توجد مراجعة</div>`;
+    const k = v("lgRk");
+    $("lgRsL").classList.toggle("hidden", k === "juz"); $("lgRaL").classList.toggle("hidden", k !== "ayat"); $("lgRbL").classList.toggle("hidden", k !== "ayat"); $("lgRjL").classList.toggle("hidden", k !== "juz");
+    // معاينة المرحلة بعد الحفظ
+    const data = buildLogQuiet();
+    if (data){
+      const others = logsOf(sid).filter(l => l.date !== date);
+      const after = dailyStatus(dir, sStart(st), passedKeys(sid), others.concat([data]), progressOf(sid), minNewPages(), st.pathFrom);
+      const before = dailyOf(st);
+      $("lgPreview").innerHTML = `<b>مرحلة الطالب بعد الحفظ:</b> ${esc(dailyTitle(after))}${dailyTitle(after) !== dailyTitle(before) ? ` <span class="muted">(الآن: ${esc(dailyTitle(before))})</span>` : ""}`;
+    }
+  }
+  function buildLogQuiet(){ const nr = newRange(); if (nr && nr.err) return null; const rec = v("lgStatus") === "recited";
+    return { date, status: v("lgStatus"), newMem: nr ? { fromG: nr.fromG, toG: nr.toG } : null, reviews: rec ? reviews : [] }; }
+  $("lgRadd").onclick = () => {
+    const k = v("lgRk"); let a, b, label;
+    if (k === "juz"){ const j = n("lgRj"); [a, b] = Q.juz[j-1]; label = `الجزء ${j}`; }
+    else { const su = n("lgRs"); if (k === "surah"){ a = gidOf(su, 1); b = surahEnd(su); } else { a = clampG(su, n("lgRa")); b = clampG(su, n("lgRb")); if (a > b) [a, b] = [b, a]; } label = rangeLabel(a, b); }
+    reviews.push({ kind: k, fromG: a, toG: b, pages: pagesOfRange(a, b), label }); refresh();
+  };
+  $("lgRevList").onclick = e => { const x = e.target.closest("[data-rdel]"); if (x){ reviews.splice(+x.dataset.rdel, 1); refresh(); } };
+  $("lgRs").onchange = () => { $("lgRb").value = Q.counts[n("lgRs") - 1]; $("lgRa").value = 1; };
+  ["lgStatus","lgHasNew","lgFs","lgFa","lgTs","lgTa","lgRk"].forEach(id => $(id).addEventListener("input", refresh));
+  if (isNew) $("lgDate").addEventListener("input", () => { date = v("lgDate") || date; refresh(); });
+  refresh();
+}
+
 // ===== نقل طالب / انقطاع =====
 function cursorG(s){
   const O = memOrder(sDir(s)), pr = progressOf(s.id);
@@ -2326,10 +2428,11 @@ function dailyRecordHtml(sid){
       <tr><td>هذا الأسبوع</td><td>حفظ ${fp(wk.newPages)} ص · مراجعة ${fp(wk.reviewPages)} ص · حضور ${wk.attendance}% (${wk.sessions} جلسة)</td></tr>
       <tr><td>هذا الشهر</td><td>حفظ ${fp(mo.newPages)} ص · مراجعة ${fp(mo.reviewPages)} ص · حضور ${mo.attendance}% (${mo.sessions} جلسة)</td></tr>
     </table>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px"><b>الجلسات</b><button class="small primary" data-addlog="${sid}">+ إضافة جلسة</button></div>
     <table><thead><tr><th>التاريخ</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>الشيخ</th><th></th></tr></thead><tbody>
     ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${logHoliday(l) ? ' <span class="muted">(إجازة)</span>' : (l.extraDay ? ' <span class="muted">(إضافية)</span>' : "")}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
       <td>${l.newMem ? `${esc(l.newMem.label)} (${fp(l.newPages)})` : ""}</td><td>${reviewsText(l)}${(l.reviews||[]).length ? ` = ${fp(l.reviewPages)}` : ""}</td>
-      <td>${esc(l.sheikhName||"")}</td><td><button class="small danger" data-dellog="${l.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">لا توجد جلسات</td></tr>`}
+      <td>${esc(l.sheikhName||"")}${l.editedBy ? ' <span class="muted">(عُدّلت)</span>' : ""}</td><td class="actions" style="white-space:nowrap"><button class="small" data-editlog="${l.id}">تعديل</button> <button class="small danger" data-dellog="${l.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">لا توجد جلسات</td></tr>`}
     </tbody></table>`;
 }
 $("stuPage").addEventListener("click", async ev => {
@@ -2345,6 +2448,8 @@ $("stuPage").addEventListener("click", async ev => {
   if (b.dataset.sact){ const x = stuById(b.dataset.sact); confirmDlg(`إعادة تفعيل ${x.name}؟ سيظهر من جديد في التطبيق.`, async () => {
     await updateDoc(doc(db,"students",x.id), { status:"approved", inactiveReason:"", inactiveAtMs:null }); audit("إعادة تفعيل طالب", x.name, halaqaName(x.halaqaId)); toast("تم التفعيل"); }); return; }
   if (b.dataset.sprint){ const st = S.students.find(x=>x.id===sid) || {}; printDoc(`سجل الطالب: ${st.name||""}`, studentRecordHtml(sid, true)); return; }
+  if (b.dataset.addlog){ logEditor(b.dataset.addlog, null); return; }
+  if (b.dataset.editlog){ const lg = S.logs.find(x => x.id === b.dataset.editlog); if (lg) logEditor(lg.studentId, lg); return; }
   if (b.dataset.dellog){
     if (!confirm("حذف هذه الجلسة من السجل اليومي؟")) return;
     const lg = S.logs.find(x => x.id === b.dataset.dellog) || {};
