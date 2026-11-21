@@ -254,7 +254,15 @@
   dialog{border:0;border-radius:20px;box-shadow:0 20px 60px rgba(10,40,70,.25)}
   .dlg-head{font-size:16px;color:var(--navy);padding:16px 20px}
   .dlg-body{padding:18px 20px} .dlg-foot{padding:14px 20px}
-  .tblwrap{border-radius:14px}
+  .tblwrap{border-radius:14px;max-height:none !important;overflow-y:visible;overflow-x:auto}
+  .pager{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:6px 2px;font-weight:400}
+  .pgs{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+  .pgb{min-width:38px;padding:6px 11px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-weight:700}
+  .pgb.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  body.dark .pgb.on{background:#2B79A8;border-color:#2B79A8}
+  .pgb:disabled{opacity:.4;cursor:default}
+  .pgdots{color:var(--muted);padding:0 2px}
+  tbody tr.pgrow > td{border-bottom:0;padding-top:16px}
   .kpis{gap:14px}
   .kpi{border:0;border-radius:18px;box-shadow:var(--sh);padding:16px 18px;position:relative;overflow:hidden}
   .kpi .l{font-weight:700}
@@ -1252,7 +1260,7 @@ function renderWeekly(){
     <div class="kpi"><div class="l">صفحات الحفظ</div><div class="v">${fp(np)}</div><div class="s">${studs.length} طالب</div></div>
     <div class="kpi"><div class="l">صفحات المراجعة</div><div class="v">${fp(rp)}</div><div class="s">&nbsp;</div></div>
     <div class="kpi"><div class="l">غياب متكرر هالأسبوع</div><div class="v" style="color:${many.length ? "var(--red)" : "inherit"}">${many.length}</div><div class="s">${many.length ? many.slice(0,3).map(x => esc(x.name.split(" ")[0])).join("، ") : "لا أحد"}</div></div>`;
-  const rows = studs.map(s => {
+  const rows = pageSlice("weekly", studs).map(s => {
     const L = logs.filter(l => l.studentId === s.id).sort((x,y) => x.date.localeCompare(y.date));
     const nm = L.filter(l => l.newMem && l.newMem.label).map(l => l.newMem.label);
     const rv = []; L.forEach(l => (l.reviews||[]).forEach(r => { if (r.label && !rv.includes(r.label)) rv.push(r.label); }));
@@ -1261,11 +1269,11 @@ function renderWeekly(){
     return `<tr><td>${nameLink(s.id, s.name, true)}</td>${h ? "" : `<td class="hm">${hqTag(s.halaqaId)}</td>`}<td><span class="dots">${dots || '<span class="muted">لا تسجيل</span>'}</span></td>
       <td class="wkline">${L.length ? `<i>حفظ:</i> ${nm.length ? esc(nm.join("، ")) + ` <b>(${fp(n)} ص)</b>` : "—"}<br><i>راجع:</i> ${rv.length ? esc(rv.join("، ")) + ` <b>(${fp(r)} ص)</b>` : "—"}` : '<span class="muted">—</span>'}</td></tr>`;
   }).join("");
-  $("wkBody").innerHTML = studs.length ? `<div class="tblwrap"><table><thead><tr><th>الطالب</th>${h ? "" : '<th class="hm">الحلقة</th>'}<th>الجلسات</th><th>شو سمّع</th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyHtml("لا يوجد طلاب");
+  $("wkBody").innerHTML = studs.length ? `<div class="tblwrap"><table><thead><tr><th>الطالب</th>${h ? "" : '<th class="hm">الحلقة</th>'}<th>الجلسات</th><th>شو سمّع</th></tr></thead><tbody>${rows}${pager("weekly", studs.length, h ? 3 : 4)}</tbody></table></div>` : emptyHtml("لا يوجد طلاب");
 }
 $("wkPrev").onclick = () => { WK++; renderWeekly(); };
 $("wkNext").onclick = () => { if (WK > 0){ WK--; renderWeekly(); } };
-$("wkHalaqa").onchange = renderWeekly;
+$("wkHalaqa").onchange = () => { PG.weekly = 0; renderWeekly(); };
 
 // ----- المراجعة للاختبار -----
 function reviewRows(){
@@ -1292,10 +1300,10 @@ function renderReadyPage(){
   if (f === "rev") list = list.filter(x => !(x.r && x.r.ok));
   list.sort((a,b) => ((a.dl ? a.dl.left : 999) - (b.dl ? b.dl.left : 999)) || a.st.name.localeCompare(b.st.name, "ar"));
   $("rdBody").innerHTML = list.length ? `<div class="tblwrap"><table><thead><tr><th>الطالب</th><th class="hm">الحلقة</th><th>الاختبار التالي</th><th>الحالة</th><th>المهلة</th></tr></thead><tbody>${
-    list.map(x => `<tr><td>${nameLink(x.st.id, x.st.name, true)}</td><td class="hm">${hqTag(x.st.halaqaId)}</td><td>${esc(stepLabel(x.d.step))}</td>
-      <td>${x.r && x.r.ok ? pill("p-ok","جاهز ✓") : x.perm ? pill("p-wa","بتصريح") : pill("p-gr", esc(readyText(x.r || {})))}</td><td>${deadlinePill(x.st) || '<span class="muted">—</span>'}</td></tr>`).join("")}</tbody></table></div>` : emptyHtml("لا يوجد طلاب في مرحلة المراجعة الآن");
+    pageSlice("ready", list).map(x => `<tr><td>${nameLink(x.st.id, x.st.name, true)}</td><td class="hm">${hqTag(x.st.halaqaId)}</td><td>${esc(stepLabel(x.d.step))}</td>
+      <td>${x.r && x.r.ok ? pill("p-ok","جاهز ✓") : x.perm ? pill("p-wa","بتصريح") : pill("p-gr", esc(readyText(x.r || {})))}</td><td>${deadlinePill(x.st) || '<span class="muted">—</span>'}</td></tr>`).join("")}${pager("ready", list.length, 5)}</tbody></table></div>` : emptyHtml("لا يوجد طلاب في مرحلة المراجعة الآن");
 }
-$("rdHalaqa").onchange = renderReadyPage; $("rdState").onchange = renderReadyPage;
+$("rdHalaqa").onchange = () => { PG.ready = 0; renderReadyPage(); }; $("rdState").onchange = () => { PG.ready = 0; renderReadyPage(); };
 
 // ----- خطة المركز ومسار الطلاب -----
 function renderPathPage(){
@@ -1390,7 +1398,7 @@ function fillSelects(){
 }
 
 // ===== الاختبارات =====
-["fStudent","fHalaqa","fExaminer","fType","fResult","fRetest","fFrom","fTo"].forEach(id => $(id).addEventListener("input", renderExams));
+["fStudent","fHalaqa","fExaminer","fType","fResult","fRetest","fFrom","fTo"].forEach(id => $(id).addEventListener("input", () => { PG.exams = 0; renderExams(); }));
 $("fClear").onclick = () => { ["fStudent","fHalaqa","fExaminer","fType","fResult","fRetest","fFrom","fTo"].forEach(id=>$(id).value=""); renderExams(); };
 
 function filteredExams(){
@@ -1423,7 +1431,7 @@ function renderExams(){
     <span>راسب: <b class="fail">${list.length-pass}</b></span>
     <span>منها أُغلق: <b class="closed">${closed}</b></span>`;
   let lastG = null;
-  const shown = list.slice(0, LIM.exams);
+  const shown = pageSlice("exams", list);
   $("examsBody").innerHTML = list.length ? shown.map(e => {
     const d = examDate(e), g = dayGroupLabel(d);
     const head = g !== lastG ? `<tr class="grp-row"><td colspan="9">${g}</td></tr>` : ""; lastG = g;
@@ -1439,7 +1447,7 @@ function renderExams(){
       <td>${markHtml(e)}</td>
       <td>${resPill(e)}</td>
       <td class="actions">${moreMenu(`<button data-view="${e.id}">عرض التفاصيل</button><button data-edit="${e.id}">تعديل</button><hr><button class="danger" data-del="${e.id}">حذف</button>`)}</td>
-    </tr>`; }).join("") + moreRow("exams", list.length, 9)
+    </tr>`; }).join("") + pager("exams", list.length, 9)
     : `<tr><td colspan="9" class="empty-td">${emptyHtml("لا توجد اختبارات بهذه الفلاتر")}</td></tr>`;
 }
 $("examsBody").addEventListener("click", ev => {
@@ -1760,6 +1768,33 @@ function dayGroupLabel(d){
   return `${dn} ${ds}`;
 }
 const LIM = { exams: 50, students: 50, audit: 50 };
+// ===== تقسيم الجداول لصفحات =====
+const PAGE = 25, PG = { exams: 0, students: 0, audit: 0, weekly: 0, ready: 0, daily: 0 };
+const PG_RENDER = () => ({ exams: renderExams, students: renderStudents, audit: renderAudit, weekly: renderWeekly, ready: renderReadyPage, daily: renderDaily });
+function pageSlice(key, list){
+  const pages = Math.max(1, Math.ceil(list.length / PAGE));
+  if (PG[key] >= pages) PG[key] = pages - 1;
+  if (PG[key] < 0) PG[key] = 0;
+  return list.slice(PG[key] * PAGE, PG[key] * PAGE + PAGE);
+}
+function pager(key, total, cols){
+  if (total <= PAGE) return "";
+  const pages = Math.ceil(total / PAGE), cur = PG[key];
+  const nums = [];
+  for (let i = 0; i < pages; i++){
+    if (i === 0 || i === pages - 1 || Math.abs(i - cur) <= 1) nums.push(i);
+    else if (nums[nums.length - 1] !== "…") nums.push("…");
+  }
+  const b = (i, t, dis, on) => `<button class="pgb${on ? " on" : ""}" data-pg="${key}" data-n="${i}" ${dis ? "disabled" : ""}>${t}</button>`;
+  const html = `<div class="pager"><span class="muted">${cur * PAGE + 1}–${Math.min(total, cur * PAGE + PAGE)} من ${total}</span><div class="pgs">${b(cur - 1, "السابق", cur === 0)}${
+    nums.map(n => n === "…" ? `<span class="pgdots">…</span>` : b(n, n + 1, false, n === cur)).join("")}${b(cur + 1, "التالي", cur >= pages - 1)}</div></div>`;
+  return cols ? `<tr class="grp-row pgrow"><td colspan="${cols}">${html}</td></tr>` : html;
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-pg]"); if (!b || b.disabled) return;
+  const key = b.dataset.pg; PG[key] = +b.dataset.n; PG_RENDER()[key]();
+  const anchor = b.closest(".card") || b.closest("section"); if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 document.addEventListener("click", ev => {
   document.querySelectorAll("details.more[open]").forEach(d => { if (!d.contains(ev.target) || ev.target.closest(".mbox button")) d.open = false; });
   const m = ev.target.closest("[data-more]"); if (m){ LIM[m.dataset.more] += 50; ({ exams: renderExams, students: renderStudents, audit: renderAudit })[m.dataset.more](); }
@@ -2190,7 +2225,7 @@ $("gRes").addEventListener("mousedown", e => { const d = e.target.closest("[data
 $("gSearch").addEventListener("blur", () => setTimeout(() => $("gRes").classList.add("hidden"), 150));
 
 // ===== سجل التعديلات =====
-["auQ","auSrc"].forEach(id => $(id).addEventListener("input", () => { LIM.audit = 50; renderAudit(); }));
+["auQ","auSrc"].forEach(id => $(id).addEventListener("input", () => { PG.audit = 0; renderAudit(); }));
 function renderAudit(){
   const q = norm($("auQ").value), src = $("auSrc").value;
   const list = S.audit.filter(a => (!src || a.source === src) && (!q || norm(`${a.action} ${a.target} ${a.details} ${a.by}`).includes(q)));
@@ -2198,9 +2233,9 @@ function renderAudit(){
   const tm = ms => { if (!ms) return ""; const d = new Date(ms); return `${dayKey(d)} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
   let lastG = null;
   $("auBody").innerHTML = list.length ? `<div class="tblwrap"><table><thead><tr><th>الوقت</th><th>بواسطة</th><th>العملية</th><th>الطالب / البند</th><th>التفاصيل</th><th>قبل</th><th>بعد</th></tr></thead><tbody>${
-    list.slice(0, LIM.audit).map(a => { const g = dayGroupLabel(a.atMs ? new Date(a.atMs) : null); const h = g !== lastG ? `<tr class="grp-row"><td colspan="7">${g}</td></tr>` : ""; lastG = g; return h + `<tr><td style="white-space:nowrap">${tm(a.atMs).slice(11)}</td><td>${a.source === "app" ? pill("p-wa", esc(a.by)) : pill("p-gr", esc(a.by || "الإدارة"))}</td>
+    pageSlice("audit", list).map(a => { const g = dayGroupLabel(a.atMs ? new Date(a.atMs) : null); const h = g !== lastG ? `<tr class="grp-row"><td colspan="7">${g}</td></tr>` : ""; lastG = g; return h + `<tr><td style="white-space:nowrap">${tm(a.atMs).slice(11)}</td><td>${a.source === "app" ? pill("p-wa", esc(a.by)) : pill("p-gr", esc(a.by || "الإدارة"))}</td>
       <td><b>${esc(a.action)}</b></td><td>${a.studentId ? nameLink(a.studentId, a.target) : esc(a.target)}</td><td class="muted">${esc(a.details)}</td>
-      <td class="muted">${esc(a.before || "")}</td><td>${esc(a.after || "")}</td></tr>`; }).join("")}${moreRow("audit", list.length, 7)}</tbody></table></div>`
+      <td class="muted">${esc(a.before || "")}</td><td>${esc(a.after || "")}</td></tr>`; }).join("")}${pager("audit", list.length, 7)}</tbody></table></div>`
     : emptyHtml("لا توجد عمليات مسجلة بعد");
 }
 
@@ -2429,19 +2464,19 @@ function mergeStudent(s){
 }
 
 // ===== الطلاب =====
-["sSearch","sHalaqa","sState"].forEach(id => $(id).addEventListener("input", () => { LIM.students = 50; renderStudents(); }));
+["sSearch","sHalaqa","sState"].forEach(id => $(id).addEventListener("input", () => { PG.students = 0; renderStudents(); }));
 function renderStudents(){
   const q = $("sSearch").value.trim(), h = $("sHalaqa").value;
   const stt = $("sState").value;
   const list = sortAr(S.students.filter(s => s.status!=="pending" && (!stt || (stt === "inactive") === (s.status === "inactive")) && (!q || s.name.includes(q)) && (!h || s.halaqaId===h)));
   $("studentsCount").textContent = `${list.length} طالب`;
-  $("studentsBody").innerHTML = (list.length ? "" : `<tr><td colspan="6" class="empty-td">${emptyHtml("لا يوجد طلاب بهذه الفلاتر")}</td></tr>`) + list.slice(0, LIM.students).map(s => `
+  $("studentsBody").innerHTML = (list.length ? "" : `<tr><td colspan="6" class="empty-td">${emptyHtml("لا يوجد طلاب بهذه الفلاتر")}</td></tr>`) + pageSlice("students", list).map(s => `
     <tr class="${s.status==="inactive"?"inactive":""}"><td style="white-space:nowrap">${nameLink(s.id, s.name, true)}${s.status==="inactive" ? ' <span class="pill p-gr">منقطع</span>' : ""}</td><td>${hqTag(s.halaqaId)}</td>
     <td class="muted">${sDir(s)==="asc"?"من البقرة":"من الناس"} · ${s.pathFrom ? esc(startLabel(s)) : "من الجزء " + sStart(s)}</td>
     <td>${(() => { const t = nextText(s); return t === "حافظ للقرآن" ? `<span class="hafiz">حافظ للقرآن</span>` : esc(t); })()}</td>
     <td>${examsOfStudent(s.id).length}</td>
     <td class="actions"><button class="small primary" data-rec="${s.id}">الملف</button>
-    ${moreMenu(`<button data-edit="${s.id}">تعديل البيانات</button><hr><button class="danger" data-del="${s.id}">حذف</button>`)}</td></tr>`).join("") + moreRow("students", list.length, 6);
+    ${moreMenu(`<button data-edit="${s.id}">تعديل البيانات</button><hr><button class="danger" data-del="${s.id}">حذف</button>`)}</td></tr>`).join("") + pager("students", list.length, 6);
 }
 $("studentsBody").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
@@ -2614,7 +2649,7 @@ function reviewsText(l){ return (l.reviews||[]).map(r => `${esc(r.label)} (${fp(
 
 (() => { const d = new Date(); $("dDate").value = dayKey(d); $("hDate").value = dayKey(d);
   $("dsFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("dsTo").value = dayKey(d); })();
-["dDate","dHalaqa","dsFrom","dsTo","dsHalaqa"].forEach(id => $(id).addEventListener("input", renderDaily));
+["dDate","dHalaqa","dsFrom","dsTo","dsHalaqa"].forEach(id => $(id).addEventListener("input", () => { if (id === "dDate" || id === "dHalaqa") PG.daily = 0; renderDaily(); }));
 $("dsWeek").onclick = () => { const d = new Date(); const back = (d.getDay() + 1) % 7; const s = new Date(d); s.setDate(d.getDate() - back); $("dsFrom").value = dayKey(s); $("dsTo").value = dayKey(d); renderDaily(); };
 $("dsMonth").onclick = () => { const d = new Date(); $("dsFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("dsTo").value = dayKey(d); renderDaily(); };
 
@@ -2625,12 +2660,14 @@ function renderDaily(){
   $("dInfo").textContent = `${DAY_NAMES[wd]}${sessionDays().includes(wd) ? "" : " — ليس من أيام التحفيظ"}${isHoliday(date, "all") ? " — إجازة للمركز" : ""}`;
   const studs = sortAr(S.students.filter(s => s.status !== "inactive" && (!h || s.halaqaId === h)));
   let rec = 0, abs = 0, exc = 0, nor = 0, none = 0, np = 0, rp = 0;
-  const rows = studs.map(s => {
+  studs.forEach(s => {
+    const l = S.logs.find(x => x.id === `${s.id}_${date}`), hol = isHoliday(date, s.halaqaId);
+    if (!l) { if (!hol) none++; } else if (l.status === "recited"){ rec++; np += l.newPages||0; rp += l.reviewPages||0; }
+    else if (hol) {} else if (l.status === "absent") abs++; else if (l.status === "excused") exc++; else if (l.status === "norecite") nor++;
+  });
+  const rows = pageSlice("daily", studs).map(s => {
     const l = S.logs.find(x => x.id === `${s.id}_${date}`);
     const hol = isHoliday(date, s.halaqaId);
-    if (!l) { if (!hol) none++; } else if (l.status === "recited"){ rec++; np += l.newPages||0; rp += l.reviewPages||0; }
-    else if (hol) { /* يوم إجازة: لا يُحسب غياب */ }
-    else if (l.status === "absent") abs++; else if (l.status === "excused") exc++; else if (l.status === "norecite") nor++;
     const d = dailyOf(s), w = l ? logWarn(l) : "";
     return `<tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
       <td>${l ? (ST_TEXT[l.status]||"") + (logHoliday(l) ? ' <span class="muted">(يوم إجازة)</span>' : "") : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
@@ -2639,7 +2676,7 @@ function renderDaily(){
       <td class="muted">${esc(dailyTitle(d))}${d.mode === "review_exam" ? (() => { const r = examReady(s); return " " + (r.ok ? pill("p-ok","جاهز ✓") : pill("p-wa", esc(readyText(r)))); })() : ""}</td><td>${esc(l ? l.sheikhName||"" : "")}</td>
       <td class="actions"><button class="small" data-rec="${s.id}">ملف الطالب</button></td></tr>`;
   }).join("");
-  $("dBody").innerHTML = rows || `<tr><td colspan="8" class="muted" style="text-align:center">لا يوجد طلاب</td></tr>`;
+  $("dBody").innerHTML = rows ? rows + pager("daily", studs.length, 8) : `<tr><td colspan="8" class="muted" style="text-align:center">لا يوجد طلاب</td></tr>`;
   $("dSummary").innerHTML = `<span>سمّع: <b class="pass">${rec}</b></span><span>لم يسمّع: <b>${nor}</b></span><span>غائب: <b class="fail">${abs}</b></span>
     <span>بعذر: <b>${exc}</b></span><span>لم يُسجّل: <b>${none}</b></span><span>صفحات الحفظ: <b>${fp(np)}</b></span><span>صفحات المراجعة: <b>${fp(rp)}</b></span>`;
   renderDailyStats(); renderHolidays();
