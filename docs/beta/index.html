@@ -223,20 +223,165 @@
     .gsearch input::placeholder{color:#cfe0d7}
   }
   @media print{.side,.topbar{display:none}.content{margin:0}}
+
+  /* =================== التصميم الجديد (ألوان الشعار) =================== */
+  :root{
+    --green:#0A6FA6; --green-dark:#0B3F63; --navy:#0B3F63; --blue:#0A86C4; --sky:#E6F2FA; --gold:#C99A10; --goldb:#E3B21B;
+    --ok:#1E8A4C; --line:#E3ECF2; --text:#1E2A33; --muted:#6B7D8A; --bg:#F6FAFD; --card:#fff;
+    --zebra:#F7FBFE; --hover:#EAF4FB; --th:#EEF6FC; --thtext:#0B3F63; --red:#C0392B; --amber:#A86A0C;
+    --sh:0 4px 18px rgba(10,60,100,.06);
+  }
+  body{font-size:15px}
+  .card{border:0;border-radius:18px;box-shadow:var(--sh);padding:18px 20px}
+  h2{font-size:17px;color:var(--navy)}
+  button{border-radius:10px;padding:8px 16px;font-weight:600}
+  button.primary{background:var(--navy);border-color:var(--navy)}
+  button.primary:hover{background:#0A3352}
+  button.gold{background:linear-gradient(180deg,#F2C94C,#DDA915);border:0;color:#3B2C00;font-weight:800}
+  input,select,textarea{border-radius:10px;padding:8px 11px}
+  input:focus,select:focus,textarea:focus{outline:2px solid #9FD3F0;outline-offset:0;border-color:var(--blue)}
+  th{font-size:12.5px;border-bottom:1px solid var(--line)}
+  th:first-child{border-top-right-radius:12px} th:last-child{border-top-left-radius:12px}
+  .pass,.hafiz{color:var(--ok)}
+  .p-ok{background:#E2F3E9;color:var(--ok)} .p-no{background:#FDECEC;color:var(--red)} .p-wa{background:#FFF4DE;color:#8A5A00} .p-gr{background:#EEF2F5;color:var(--muted)}
+  .rpill.pass{background:#E2F3E9;color:#17663f}
+  .mk.hi{color:#17663f}.mk.ok{color:var(--ok)}
+  .chips span.on,.steps span.on{background:var(--ok);border-color:var(--ok)}
+  .steps span.cur{background:var(--goldb)}
+  .chips span.cur{border-color:var(--gold);color:var(--gold)}
+  .progress span,.bar span,.hbar i{background:var(--blue)}
+  .toast{background:var(--navy);border-radius:12px}
+  dialog{border:0;border-radius:20px;box-shadow:0 20px 60px rgba(10,40,70,.25)}
+  .dlg-head{font-size:16px;color:var(--navy);padding:16px 20px}
+  .dlg-body{padding:18px 20px} .dlg-foot{padding:14px 20px}
+  .tblwrap{border-radius:14px}
+  .kpis{gap:14px}
+  .kpi{border:0;border-radius:18px;box-shadow:var(--sh);padding:16px 18px;position:relative;overflow:hidden}
+  .kpi .l{font-weight:700}
+  .kpi .v{font-size:30px;font-weight:800;color:var(--navy)}
+  .kpi:first-child{background:linear-gradient(135deg,#1593D6,#0A6FA6)}
+  .kpi:first-child .l,.kpi:first-child .s{color:#DDEFFA}.kpi:first-child .v{color:#fff}
+  .kpi::after{content:"";position:absolute;left:-18px;bottom:-18px;width:70px;height:70px;border-radius:50%;background:rgba(10,134,196,.07)}
+  .kpi:first-child::after{background:rgba(255,255,255,.12)}
+  .alert{border-radius:12px;padding:10px 8px}
+  .alert:hover{background:var(--hover)}
+  a.name{border-bottom-color:#B9D3E4}
+  a.name:hover,.crumb a,.lnk,.card h2 .lnk{color:var(--blue)}
+  tbody tr.grp-row > td{color:var(--blue)}
+  .gres div:hover,.gres div.on{background:var(--hover)}
+  .ntf div{border-right-color:var(--blue);border-radius:14px}
+  .pagehead h2{color:var(--navy)}
+  /* القائمة الجانبية */
+  .side{width:250px;background:linear-gradient(180deg,#0E4A73 0%,#0B3F63 45%,#082A43 100%);color:#DCEBF5}
+  .content{margin-right:250px}
+  .side .brand{border-bottom:1px solid rgba(255,255,255,.1);padding:20px 14px 14px}
+  .side .brand .lg{width:74px;height:74px;border:3px solid rgba(255,255,255,.85);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .betatag{background:var(--goldb);color:#3B2C00}
+  #tabs{padding:8px 10px 10px}
+  #tabs .grp{color:#8DB4CF;padding:14px 12px 4px;font-size:11.5px;letter-spacing:.3px}
+  #tabs button{border:0;border-radius:12px;padding:8px 12px;margin:1px 0;color:#DCEBF5;gap:10px;justify-content:flex-start}
+  #tabs button .t{flex:1;text-align:right}
+  #tabs button svg{width:19px;height:19px;flex:none;opacity:.85}
+  #tabs button:hover{background:rgba(255,255,255,.07)}
+  #tabs button.active{background:rgba(255,255,255,.13);color:#fff;box-shadow:inset -3px 0 0 var(--goldb)}
+  #tabs button.active svg{opacity:1;color:var(--goldb)}
+  .badge{background:var(--goldb);color:#3B2C00}
+  .badge.red{background:#E05A4F;color:#fff}
+  .side-ded{color:#F2D27A}
+  .side .logout{border-radius:12px;display:flex;gap:8px;justify-content:center;align-items:center}
+  /* الشريط العلوي */
+  .topbar{background:rgba(246,250,253,.9);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;padding:14px 26px 10px}
+  .topbar h1{color:var(--navy);font-weight:800}
+  .gsearch input{border-radius:14px;background:#fff;box-shadow:var(--sh);border-color:transparent;padding:9px 14px}
+  .gico{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);display:flex;pointer-events:none}
+  .gsearch input{padding-right:38px !important}
+  .themeBtn{display:inline-flex;align-items:center;color:var(--navy);border-radius:12px;background:#fff;box-shadow:var(--sh);border:0;padding:6px 11px}
+  main{padding:10px 26px 30px}
+  /* شاشة الدخول */
+  #login{max-width:none;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;border:0;border-radius:0;box-shadow:none;
+    background:linear-gradient(180deg,#CFEAFB 0%,#EAF6FD 45%,#F6FAFD 100%);padding:30px 16px}
+  #login .lbox{width:min(400px,100%);background:#fff;border-radius:26px;box-shadow:0 20px 60px rgba(10,60,100,.12);padding:28px 26px 22px;text-align:center;position:relative}
+  #login .logo{width:110px;height:110px;border-radius:50%;background:#fff;padding:4px;margin-top:-80px;box-shadow:0 10px 30px rgba(10,134,196,.25),0 0 0 8px rgba(255,255,255,.8)}
+  #login h1{color:var(--navy);font-size:19px;line-height:1.6;margin:10px 0 2px}
+  #login .mosque{width:200px;height:100px;display:block;margin:4px auto -6px}
+  #login .tag{display:inline-block;background:var(--sky);color:var(--blue);border-radius:20px;padding:2px 14px;font-size:13px;font-weight:700;margin:6px 0 4px}
+  #login input{border-radius:14px;padding:12px;font-size:16px;margin:14px 0 8px}
+  #login button.gold{width:100%;padding:13px;font-size:17px;border-radius:14px;box-shadow:0 8px 20px rgba(201,154,16,.3)}
+  #login .dedline{color:var(--gold)}
+  #login .credit{color:#8A9AA6;font-size:12px;margin-top:14px}
+  /* صفحات جديدة */
+  .wkhead{display:flex;flex-wrap:wrap;gap:10px;align-items:end;justify-content:space-between}
+  .wknav{display:flex;align-items:center;gap:6px;background:#fff;border-radius:14px;box-shadow:var(--sh);padding:4px}
+  .wknav b{min-width:220px;text-align:center;color:var(--navy)}
+  .wknav button{border:0;background:var(--sky);color:var(--blue);font-weight:800;padding:6px 12px}
+  .wknav button:disabled{opacity:.35}
+  .dots{display:inline-flex;gap:3px;vertical-align:middle}
+  .dots i{width:20px;height:20px;border-radius:50%;color:#fff;font-style:normal;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+  .d-recited{background:var(--ok)}.d-absent{background:#C0392B}.d-excused{background:#C88A12}.d-norecite{background:#E57373}
+  .wkline{font-size:13.5px;line-height:1.75}.wkline i{font-style:normal;color:var(--muted);font-weight:700}
+  .pathcols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .tl{display:flex;flex-direction:column;gap:6px}
+  .tl .st{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:7px 12px;border:1px solid var(--line)}
+  .tl .st .n{width:26px;height:26px;border-radius:50%;background:var(--sky);color:var(--blue);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none}
+  .tl .st.c{background:#FFF7E6;border-color:#F3E2B8}.tl .st.c .n{background:var(--goldb);color:#3B2C00}
+  .tl .st.c10{background:var(--navy);border-color:var(--navy);color:#fff}.tl .st.c10 .n{background:#F2C94C;color:#3B2C00}.tl .st.c10 .muted{color:#CFE3F1}
+  .tl .st .x{flex:1;line-height:1.45}.tl .st .x b{display:block;font-size:13.5px}
+  .tl .cnt{min-width:34px;text-align:center;border-radius:10px;background:var(--sky);color:var(--blue);font-weight:800;font-size:13px;padding:1px 6px}
+  .tl .st.c10 .cnt{background:rgba(255,255,255,.15);color:#fff}
+  #rdBody .pill{white-space:normal;line-height:1.5;padding:2px 9px}
+  #rdBody td:first-child{min-width:170px}#rdBody td:nth-child(3){min-width:200px}
+  .tl .lv{font-weight:800;color:var(--blue);margin:10px 2px 2px;font-size:14px}
+  /* الوضع الليلي */
+  body.dark{--bg:#0D161E;--card:#16222D;--line:#263644;--text:#DCE6EE;--muted:#8FA3B3;--zebra:#18252F;--hover:#1C2E3D;--th:#14283A;--thtext:#DCEBF5;--sky:#1B2D3C;--navy:#E8F1F7;--sh:none}
+  body.dark .side{background:linear-gradient(180deg,#0F2A40,#0A1F30)}
+  body.dark .topbar{background:rgba(13,22,30,.9)}
+  body.dark .kpi:first-child{background:linear-gradient(135deg,#1B6FA0,#124C70)}
+  body.dark .gsearch input,body.dark .themeBtn,body.dark .wknav{background:var(--card)}
+  body.dark button.primary{background:#2B79A8;border-color:#2B79A8}
+  body.dark #login{background:linear-gradient(180deg,#123047,#0D161E)} body.dark #login .lbox{background:var(--card)}
+  body.dark .tl .st.c{background:#3A3115;border-color:#4A3E1A}
+  @media (max-width:900px){
+    .content{margin-right:0}
+    .topbar{background:var(--navy)}
+    body.dark .topbar{background:#0A1F30}
+    .pathcols{grid-template-columns:1fr}
+    .topbar h1,body.dark .topbar h1{color:#fff}
+    .gsearch input{background:rgba(255,255,255,.15);color:#fff;box-shadow:none}
+    .themeBtn{background:rgba(255,255,255,.15);box-shadow:none;color:#fff}
+    .gico{color:#CFE3F1}
+    .wknav b{min-width:0;font-size:13px}
+    .topbar{gap:8px}
+    .topbar h1{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
+    .topbar .sub{font-size:11.5px}
+    .gsearch{max-width:40vw}
+    .card{padding:14px;border-radius:16px}
+    main{padding:10px 10px 24px}
+    .tblwrap,.card,.dlg-body{-webkit-overflow-scrolling:touch}
+    .tblwrap table,.card > table,.card > div > table,.dlg-body table{min-width:600px}
+    .kpi .v{font-size:24px}
+    .kpi{padding:12px 14px}
+    .row label{flex:1 1 140px}
+    .row input,.row select{width:100%}
+    .pagehead{flex-direction:column}
+    dialog{width:96vw}
+  }
 </style>
 </head>
 <body>
 
 <!-- شاشة الدخول -->
 <div id="login" class="card hidden">
-  <img class="logo" src="logo.png" alt="" title="تصميم وتطوير: Eng. Mohammed F Sharaf">
-  <h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1>
-  <img class="slogan" src="slogan_dark.png" alt="نحو مدرسة قرآنية">
-  <div class="muted">لوحة إدارة الاختبارات</div>
-  <input id="loginPass" type="password" placeholder="كلمة السر" autocomplete="current-password">
-  <div class="err" id="loginErr"></div>
-  <button class="primary" id="loginBtn">دخول</button>
-  <a class="dedline" data-ded="1" style="margin-top:16px">صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله</a>
+  <div class="lbox">
+    <img class="logo" src="logo.png" alt="" title="تصميم وتطوير: Eng. Mohammed F Sharaf">
+    <h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1>
+    <img class="slogan" src="slogan_dark.png" alt="نحو مدرسة قرآنية">
+    <svg class="mosque" viewBox="0 0 300 150" fill="none" stroke="#E3B21B" stroke-opacity=".6" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M40 150V95H260V150M95 95Q95 40 150 30Q205 40 205 95M150 30V16M18 150V55M28 150V55M12 47H34L23 58ZM272 150V55M282 150V55M266 47H288L277 58ZM120 150V119A15 15 0 0 1 150 119V150M150 150V119A15 15 0 0 1 180 119V150M60 150V120A10 10 0 0 1 80 120V150M220 150V120A10 10 0 0 1 240 120V150"/><circle cx="150" cy="12" r="3" fill="#E3B21B" fill-opacity=".6" stroke="none"/></svg>
+    <div class="tag">لوحة الإدارة</div>
+    <input id="loginPass" type="password" placeholder="كلمة السر" autocomplete="current-password">
+    <div class="err" id="loginErr"></div>
+    <button class="gold" id="loginBtn">دخول</button>
+    <a class="dedline" data-ded="1" style="margin-top:16px">صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله</a>
+  </div>
 </div>
 
 <div id="loading" style="text-align:center;margin-top:120px" class="muted">جارٍ التحميل...</div>
@@ -251,41 +396,44 @@
       <img class="slogan" src="slogan_gold.png" alt="نحو مدرسة قرآنية">
       <span class="betatag">نسخة تجريبية</span>
     </div>
+    <!-- أيقونات Lucide (ISC License) -->
     <nav id="tabs">
-      <button data-tab="home" class="active">لوحة اليوم</button>
-      <div class="grp">الاختبارات</div>
-      <button data-tab="exams">سجل الاختبارات</button>
-      <button data-tab="retests">بانتظار الإعادة <span class="badge red hidden" id="retestBadge"></span></button>
-      <button data-tab="permits">تصاريح الإعادة <span class="badge hidden" id="permitBadge"></span></button>
-      <div class="grp">التسميع اليومي</div>
-      <button data-tab="daily">سجل اليوم</button>
-      <button data-tab="dstats">إحصائيات التسميع</button>
-      <button data-tab="absence">الغياب المتكرر <span class="badge hidden" id="absentBadge"></span></button>
-      <button data-tab="holidays">الإجازات</button>
+      <button data-tab="home" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg><span class="t">لوحة اليوم</span></button>
       <div class="grp">الطلاب والحلقات</div>
-      <button data-tab="students">الطلاب</button>
-      <button data-tab="pending">طلاب جدد <span class="badge hidden" id="pendingBadge"></span></button>
-      <button data-tab="halaqat">الحلقات</button>
-      <div class="grp">الكادر</div>
-      <button data-tab="examiners">المختبرين</button>
-      <button data-tab="sheikhs">المشايخ</button>
+      <button data-tab="students"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" /></svg><span class="t">الطلاب</span></button>
+      <button data-tab="pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="22" x2="16" y1="11" y2="11" /></svg><span class="t">طلاب جدد</span> <span class="badge hidden" id="pendingBadge"></span></button>
+      <button data-tab="halaqat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 21v-3a2 2 0 0 0-4 0v3" /><path d="M18 4.933V21" /><path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /><path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /><path d="M6 4.933V21" /><circle cx="12" cy="9" r="2" /></svg><span class="t">الحلقات</span></button>
+      <div class="grp">التسميع اليومي</div>
+      <button data-tab="daily"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3" /><path d="M16 2v3" /><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="m9 15 2 2 4-4" /></svg><span class="t">سجل اليوم</span></button>
+      <button data-tab="weekly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M16 2v3" /><path d="M3 9h18" /><path d="M8 2v3" /><path d="M17 13h-6" /><path d="M13 17H7" /><path d="M7 13h.01" /><path d="M17 17h.01" /></svg><span class="t">سجل الأسبوع</span></button>
+      <button data-tab="dstats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg><span class="t">إحصائيات التسميع</span></button>
+      <button data-tab="absence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="17" x2="22" y1="8" y2="13" /><line x1="22" x2="17" y1="8" y2="13" /></svg><span class="t">الغياب المتكرر</span> <span class="badge hidden" id="absentBadge"></span></button>
+      <button data-tab="holidays"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 2v3" /><path d="m2 2 20 20" /><path d="M21 9h-5.5" /><path d="M3 9h6" /><path d="M3.586 3.586A2 2 0 003 5v14a2 2 0 002 2h14a2 2 0 001.414-.586" /><path d="M8.656 3H19a2 2 0 012 2v10.344" /></svg><span class="t">الإجازات</span></button>
+      <div class="grp">الاختبارات</div>
+      <button data-tab="exams"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="M12 11h4" /><path d="M12 16h4" /><path d="M8 11h.01" /><path d="M8 16h.01" /></svg><span class="t">سجل الاختبارات</span></button>
+      <button data-tab="ready"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m16 9-5.5 5.5L8 12" /></svg><span class="t">المراجعة للاختبار</span> <span class="badge hidden" id="readyBadge"></span></button>
+      <button data-tab="retests"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg><span class="t">بانتظار الإعادة</span> <span class="badge red hidden" id="retestBadge"></span></button>
+      <button data-tab="permits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" /><circle cx="16.5" cy="7.5" r=".5" fill="currentColor" /></svg><span class="t">تصاريح الإعادة</span> <span class="badge hidden" id="permitBadge"></span></button>
       <div class="grp">التقارير</div>
-      <button data-tab="report">التقرير الشهري</button>
-      <button data-tab="ranking">الترتيب والتكريم</button>
-      <button data-tab="stats">إحصائيات الاختبارات</button>
-      <div class="grp"></div>
-      <button data-tab="audit">سجل التعديلات</button>
-      <button data-tab="settings">الإعدادات</button>
+      <button data-tab="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg><span class="t">التقرير الشهري</span></button>
+      <button data-tab="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2" /><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2" /><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3" /><path d="M4 22h16" /><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z" /><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3" /></svg><span class="t">الترتيب والتكريم</span></button>
+      <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z" /><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /></svg><span class="t">إحصائيات الاختبارات</span></button>
+      <button data-tab="path"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h8.5a1 1 0 010 7h-11a1 1 0 000 7H15" /><circle cx="18" cy="19" r="3" /><circle cx="6" cy="5" r="3" /></svg><span class="t">خطة المركز ومسار الطلاب</span></button>
+      <div class="grp">الكادر والإعدادات</div>
+      <button data-tab="sheikhs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v16" /><path d="m16 12 2 2 4-4" /><path d="M22 6V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2h4.001A2 2 0 0022 17v-1.344" /></svg><span class="t">المشايخ</span></button>
+      <button data-tab="examiners"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /><path d="M2 6h4" /><path d="M2 10h4" /><path d="M2 14h4" /><path d="M2 18h4" /><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /></svg><span class="t">المختبرين</span></button>
+      <button data-tab="audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></svg><span class="t">سجل التعديلات</span></button>
+      <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></svg><span class="t">الإعدادات</span></button>
     </nav>
     <a class="dedline side-ded" data-ded="1">صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله</a>
-    <button id="logoutBtn" class="logout">خروج</button>
+    <button id="logoutBtn" class="logout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg>خروج</button>
   </aside>
   <div class="content">
   <div class="topbar">
     <button class="menu" id="menuBtn" aria-label="القائمة">☰</button>
     <div><h1 id="pageTitle">لوحة اليوم</h1><div class="sub" id="pageSub"></div></div>
-    <button class="themeBtn" id="themeBtn" title="الوضع الليلي">🌙</button>
-    <div class="gsearch"><input id="gSearch" placeholder="🔍 ابحث عن طالب…" autocomplete="off"><div class="gres hidden" id="gRes"></div></div>
+    <button class="themeBtn" id="themeBtn" title="الوضع الليلي"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg></button>
+    <div class="gsearch"><span class="gico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg></span><input id="gSearch" placeholder="ابحث عن طالب…" autocomplete="off"><div class="gres hidden" id="gRes"></div></div>
   </div>
   <main>
     <!-- لوحة اليوم -->
@@ -332,6 +480,38 @@
         <p class="muted">الاختبار الناجح لا يُعاد إلا بتصريح من الإدارة. يُعطى التصريح من ملف الطالب، ويسمح بإعادة واحدة وينتهي تلقائياً بعدها.</p>
         <div id="permitsList"></div>
       </div>
+    </section>
+
+    <!-- سجل الأسبوع -->
+    <section id="tab-weekly" class="hidden">
+      <div class="card">
+        <div class="wkhead">
+          <div class="row"><label>الحلقة<select id="wkHalaqa"></select></label></div>
+          <div class="wknav"><button id="wkPrev">→</button><b id="wkTitle"></b><button id="wkNext">←</button></div>
+        </div>
+      </div>
+      <div class="kpis" id="wkKpis"></div>
+      <div class="card"><h2>شو سمّع كل طالب هالأسبوع</h2><div id="wkBody"></div></div>
+    </section>
+
+    <!-- المراجعة للاختبار -->
+    <section id="tab-ready" class="hidden">
+      <div class="kpis" id="rdKpis"></div>
+      <div class="card">
+        <h2>الطلاب في مرحلة المراجعة للاختبار</h2>
+        <p class="muted">بعد إتمام حفظ الجزء أو الوصول لاختبار مجمّع، يراجع الطالب ولا يحفظ جديداً. المهلة حسب خطة المركز: أسبوع للجزء، شهر للمجمّع، شهران للمستوى (10 أجزاء).</p>
+        <div class="row" style="margin-bottom:10px"><label>الحلقة<select id="rdHalaqa"></select></label><label>الحالة<select id="rdState"><option value="">الكل</option><option value="ready">جاهز للاختبار</option><option value="over">تجاوز المهلة</option><option value="rev">يراجع</option></select></label></div>
+        <div id="rdBody"></div>
+      </div>
+    </section>
+
+    <!-- خطة المركز ومسار الطلاب -->
+    <section id="tab-path" class="hidden">
+      <div class="card">
+        <h2>خطة المركز ومسار الطلاب</h2>
+        <p class="muted">الرقم بجانب كل اختبار = عدد الطلاب الذين اختبارهم التالي هو هذا. الأجزاء محسوبة بالسور الكاملة حسب خطة المركز.</p>
+      </div>
+      <div class="pathcols"><div class="card"><h2>من الناس</h2><div class="tl" id="pathDesc"></div></div><div class="card"><h2>من البقرة</h2><div class="tl" id="pathAsc"></div></div></div>
     </section>
 
     <!-- ملف الطالب -->
@@ -986,7 +1166,7 @@ function startListeners(){
 let curTab = "home", curStudent = null;
 const TAB_TITLE = {};
 document.querySelectorAll("#tabs button").forEach(b => {
-  TAB_TITLE[b.dataset.tab] = b.childNodes[0].textContent.trim();
+  TAB_TITLE[b.dataset.tab] = (b.querySelector('.t') || b).textContent.trim();
   b.onclick = () => go(b.dataset.tab);
 });
 TAB_TITLE.student = "ملف الطالب";
@@ -1005,6 +1185,9 @@ function go(tab, push = true){
   if (tab === "student") renderStudentPage();
   if (tab === "audit") renderAudit();
   if (tab === "ranking") renderRanking();
+  if (tab === "weekly") renderWeekly();
+  if (tab === "ready") renderReadyPage();
+  if (tab === "path") renderPathPage();
   window.scrollTo(0, 0);
 }
 function route(){
@@ -1013,7 +1196,8 @@ function route(){
   else go(h || "home", false);
 }
 window.addEventListener("popstate", route);
-function setTheme(dark){ document.body.classList.toggle("dark", dark); $("themeBtn").textContent = dark ? "☀️" : "🌙"; try { localStorage.setItem("taqwaTheme", dark ? "dark" : "light"); } catch(_){} }
+const ICON_SUN = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>`, ICON_MOON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg>`;
+function setTheme(dark){ document.body.classList.toggle("dark", dark); $("themeBtn").innerHTML = dark ? ICON_SUN : ICON_MOON; try { localStorage.setItem("taqwaTheme", dark ? "dark" : "light"); } catch(_){} }
 try { if (localStorage.getItem("taqwaTheme") === "dark") setTheme(true); } catch(_){}
 $("themeBtn").onclick = () => setTheme(!document.body.classList.contains("dark"));
 $("menuBtn").onclick = () => document.body.classList.toggle("nav-open");
@@ -1023,6 +1207,91 @@ document.addEventListener("click", ev => {
   const r = ev.target.closest("a[data-rec],tr[data-rec]"); if (r){ ev.preventDefault(); studentRecord(r.dataset.rec); }
 });
 (() => { const d = new Date(); $("pageSub").textContent = `${DAY_NAMES_[d.getDay()]} ${d.getDate()} / ${d.getMonth()+1} / ${d.getFullYear()}`; })();
+
+
+// =================== صفحات جديدة ===================
+// ----- سجل الأسبوع -----
+let WK = 0;
+function wkStart(off){ const d = new Date(); d.setHours(12,0,0,0); const back = (d.getDay() + 1) % 7; d.setDate(d.getDate() - back - 7*off); return d; }
+function wkRange(off){ const a = wkStart(off), b = new Date(a); b.setDate(a.getDate() + 6); return [dayKey(a), dayKey(b), a]; }
+const ST_DOT = { recited:"✓", absent:"غ", excused:"ع", norecite:"ل" };
+function renderWeekly(){
+  const [from, to, a] = wkRange(WK), e = new Date(a); e.setDate(a.getDate() + 5);
+  $("wkTitle").textContent = `السبت ${a.getDate()}/${a.getMonth()+1} – الخميس ${e.getDate()}/${e.getMonth()+1}${WK === 0 ? " (هذا الأسبوع)" : ""}`;
+  $("wkNext").disabled = WK === 0;
+  const h = $("wkHalaqa").value;
+  const studs = sortAr(approvedStudents().filter(s => !h || s.halaqaId === h));
+  const logs = S.logs.filter(l => l.date >= from && l.date <= to && (!h || l.halaqaId === h));
+  const pres = logs.filter(l => l.status === "recited" || l.status === "norecite").length;
+  const counted = logs.filter(l => ["recited","norecite","absent","excused"].includes(l.status) && !(l.holiday && l.status !== "recited")).length;
+  const np = logs.reduce((t,l) => t + (l.newPages||0), 0), rp = logs.reduce((t,l) => t + (l.reviewPages||0), 0);
+  const many = studs.filter(s => logs.filter(l => l.studentId === s.id && l.status === "absent").length >= 2);
+  $("wkKpis").innerHTML = `
+    <div class="kpi"><div class="l">الحضور</div><div class="v">${counted ? Math.round(pres*100/counted) + "%" : "—"}</div><div class="s">${pres} حضور من ${counted} جلسة</div></div>
+    <div class="kpi"><div class="l">صفحات الحفظ</div><div class="v">${fp(np)}</div><div class="s">${studs.length} طالب</div></div>
+    <div class="kpi"><div class="l">صفحات المراجعة</div><div class="v">${fp(rp)}</div><div class="s">&nbsp;</div></div>
+    <div class="kpi"><div class="l">غياب متكرر هالأسبوع</div><div class="v" style="color:${many.length ? "var(--red)" : "inherit"}">${many.length}</div><div class="s">${many.length ? many.slice(0,3).map(x => esc(x.name.split(" ")[0])).join("، ") : "لا أحد"}</div></div>`;
+  const rows = studs.map(s => {
+    const L = logs.filter(l => l.studentId === s.id).sort((x,y) => x.date.localeCompare(y.date));
+    const nm = L.filter(l => l.newMem && l.newMem.label).map(l => l.newMem.label);
+    const rv = []; L.forEach(l => (l.reviews||[]).forEach(r => { if (r.label && !rv.includes(r.label)) rv.push(r.label); }));
+    const n = L.reduce((t,l) => t + (l.newPages||0), 0), r = L.reduce((t,l) => t + (l.reviewPages||0), 0);
+    const dots = L.map(l => `<i class="d-${l.status}" title="${esc(l.date)} — ${ST_TEXT[l.status]||""}">${ST_DOT[l.status]||"·"}</i>`).join("");
+    return `<tr><td>${nameLink(s.id, s.name, true)}</td>${h ? "" : `<td class="hm">${hqTag(s.halaqaId)}</td>`}<td><span class="dots">${dots || '<span class="muted">لا تسجيل</span>'}</span></td>
+      <td class="wkline">${L.length ? `<i>حفظ:</i> ${nm.length ? esc(nm.join("، ")) + ` <b>(${fp(n)} ص)</b>` : "—"}<br><i>راجع:</i> ${rv.length ? esc(rv.join("، ")) + ` <b>(${fp(r)} ص)</b>` : "—"}` : '<span class="muted">—</span>'}</td></tr>`;
+  }).join("");
+  $("wkBody").innerHTML = studs.length ? `<div class="tblwrap"><table><thead><tr><th>الطالب</th>${h ? "" : '<th class="hm">الحلقة</th>'}<th>الجلسات</th><th>شو سمّع</th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyHtml("لا يوجد طلاب");
+}
+$("wkPrev").onclick = () => { WK++; renderWeekly(); };
+$("wkNext").onclick = () => { if (WK > 0){ WK--; renderWeekly(); } };
+$("wkHalaqa").onchange = renderWeekly;
+
+// ----- المراجعة للاختبار -----
+function reviewRows(){
+  const out = [];
+  for (const st of approvedStudents()){
+    let d = null; try { d = dailyOf(st); } catch(_){ continue; }
+    if (!d || d.mode !== "review_exam") continue;
+    let r = null; try { r = examReady(st); } catch(_){}
+    out.push({ st, d, r, dl: reviewLeft(st), perm: d.step ? examPermitted(st, d.step) : false });
+  }
+  return out;
+}
+function renderReadyPage(){
+  const all = reviewRows(), h = $("rdHalaqa").value, f = $("rdState").value;
+  const ready = all.filter(x => x.r && x.r.ok), over = all.filter(x => x.dl && x.dl.left < 0);
+  $("rdKpis").innerHTML = `
+    <div class="kpi"><div class="l">في مرحلة المراجعة</div><div class="v">${all.length}</div><div class="s">لا يحفظون جديداً الآن</div></div>
+    <div class="kpi"><div class="l">جاهزون للاختبار</div><div class="v" style="color:var(--ok)">${ready.length}</div><div class="s">سمّعوا المطلوب كاملاً</div></div>
+    <div class="kpi"><div class="l">تجاوزوا المهلة</div><div class="v" style="color:var(--red)">${over.length}</div><div class="s">تحتاج متابعة</div></div>
+    <div class="kpi"><div class="l">بتصريح</div><div class="v">${all.filter(x => x.perm).length}</div><div class="s">مسموح بدون الشرط</div></div>`;
+  let list = all.filter(x => !h || x.st.halaqaId === h);
+  if (f === "ready") list = list.filter(x => x.r && x.r.ok);
+  if (f === "over") list = list.filter(x => x.dl && x.dl.left < 0);
+  if (f === "rev") list = list.filter(x => !(x.r && x.r.ok));
+  list.sort((a,b) => ((a.dl ? a.dl.left : 999) - (b.dl ? b.dl.left : 999)) || a.st.name.localeCompare(b.st.name, "ar"));
+  $("rdBody").innerHTML = list.length ? `<div class="tblwrap"><table><thead><tr><th>الطالب</th><th class="hm">الحلقة</th><th>الاختبار التالي</th><th>الحالة</th><th>المهلة</th></tr></thead><tbody>${
+    list.map(x => `<tr><td>${nameLink(x.st.id, x.st.name, true)}</td><td class="hm">${hqTag(x.st.halaqaId)}</td><td>${esc(stepLabel(x.d.step))}</td>
+      <td>${x.r && x.r.ok ? pill("p-ok","جاهز ✓") : x.perm ? pill("p-wa","بتصريح") : pill("p-gr", esc(readyText(x.r || {})))}</td><td>${deadlinePill(x.st) || '<span class="muted">—</span>'}</td></tr>`).join("")}</tbody></table></div>` : emptyHtml("لا يوجد طلاب في مرحلة المراجعة الآن");
+}
+$("rdHalaqa").onchange = renderReadyPage; $("rdState").onchange = renderReadyPage;
+
+// ----- خطة المركز ومسار الطلاب -----
+function renderPathPage(){
+  for (const [dir, el] of [["desc","pathDesc"],["asc","pathAsc"]]){
+    const cnt = {}; let hafiz = 0;
+    approvedStudents().filter(s => sDir(s) === dir).forEach(s => { const p = studentPath(s); if (p.hafiz) hafiz++; else { const k = p.steps[p.next].key; cnt[k] = (cnt[k]||0) + 1; } });
+    let lv = 0;
+    $(el).innerHTML = buildPath(dir).map((x, i) => {
+      const head = x.level !== lv ? `<div class="lv">${LEVELS[(lv = x.level)]}</div>` : "";
+      const cls = x.type >= 10 ? "c10" : x.type > 1 ? "c" : "";
+      const t = x.type === 1 ? `الجزء ${unitNum(dir, x.start)}` : x.type === 30 ? "الختام: المصحف كاملاً" : `مجمّع ${x.type} أجزاء (${x.start}–${x.end})`;
+      const sub = x.type === 1 ? unitDesc(dir, x.start) : x.type === 30 ? "بعده يصبح الطالب حافظاً" : rangeSurahs(x.a, x.b);
+      const per = x.type === 30 ? "" : x.reviewDays === 7 ? "أسبوع" : x.reviewDays === 30 ? "شهر" : "شهرين";
+      return `${head}<div class="st ${cls}"><span class="n">${i+1}</span><div class="x"><b>${esc(t)}</b><span class="muted">${esc(sub)}${per ? " · مهلة " + per : ""}</span></div><span class="cnt" title="عدد الطلاب">${cnt[x.key] || 0}</span></div>`;
+    }).join("") + `<div class="lv">حفّاظ أتمّوا المسار: ${hafiz}</div>`;
+  }
+}
 
 // ===== صدقة جارية =====
 const DED_INTRO = "أُنجز هذا العمل صدقةً جاريةً عن أرواح من وضعوا اللبنات الأولى لمركز التقوى لتعليم وتحفيظ القرآن الكريم، ليبقى أجره موصولاً لهم ما دام في المركز حافظٌ يحفظ، ومُسمِّعٌ يُسمِّع، ومختبِرٌ يختبر:";
@@ -1070,6 +1339,9 @@ function renderAll(){
   renderPermits(); renderBadges();
   if (curTab === "home") renderHome();
   if (curTab === "student") renderStudentPage();
+  if (curTab === "weekly") renderWeekly();
+  if (curTab === "ready") renderReadyPage();
+  if (curTab === "path") renderPathPage();
   if (curTab === "ranking") renderRanking();
 }
 
@@ -1085,6 +1357,8 @@ function fillSelects(){
   fillSelect($("sHalaqa"), hs, "الكل");
   fillSelect($("rHalaqa"), hs, "الكل");
   fillSelect($("dHalaqa"), hs, "الكل");
+  if ($("wkHalaqa")){ const cur = $("wkHalaqa").value; fillSelect($("wkHalaqa"), hs, "كل الحلقات"); $("wkHalaqa").value = cur; }
+  if ($("rdHalaqa")){ const cur = $("rdHalaqa").value; fillSelect($("rdHalaqa"), hs, "الكل"); $("rdHalaqa").value = cur; }
   fillSelect($("dsHalaqa"), hs, "الكل");
   fillSelect($("newShHalaqa"), hs, null);
   fillSelect($("hHalaqa"), [{value:"all", text:"المركز كله"}, ...hs], null);
@@ -1522,7 +1796,7 @@ function readyText(r){
   if (r.ok) return "جاهز للاختبار ✓";
   if (r.reason === "needs_start") return "لم تُحدَّد نقطة البداية في السجل اليومي";
   if (r.reason === "memorizing") return `ما زال يحفظ الجزء ${unitNum(r.step.dir, r.step.start)}`;
-  return r.step.type === 1 ? `لم يُسمِّع الجزء ${unitNum(r.step.dir, r.step.start)} كاملاً في جلسة واحدة` : `بقي تسميع: ${r.missing.map(j => "الجزء " + unitNum(r.step.dir, j)).join("، ")}`;
+  return r.step.type === 1 ? `لم يُسمِّع الجزء ${unitNum(r.step.dir, r.step.start)} كاملاً في جلسة واحدة` : (r.missing.length > 3 ? `بقي تسميع ${r.missing.length} أجزاء كاملة` : `بقي تسميع: ${r.missing.map(j => "الجزء " + unitNum(r.step.dir, j)).join("، ")}`);
 }
 // ===== مهلة المراجعة قبل الاختبار: أسبوع للجزء، شهر للمجمّع، شهران للمستوى =====
 function reviewLeft(st){
@@ -1555,6 +1829,8 @@ function renderBadges(){
   $("absentBadge").textContent = n; $("absentBadge").classList.toggle("hidden", !n);
   const k = activePermits().length;
   $("permitBadge").textContent = k; $("permitBadge").classList.toggle("hidden", !k);
+  let od = 0; try { od = approvedStudents().filter(st => { const r = reviewLeft(st); return r && r.left < 0; }).length; } catch(_){}
+  $("readyBadge").textContent = od; $("readyBadge").classList.toggle("hidden", !od); $("readyBadge").classList.toggle("red", !!od);
 }
 function renderHome(){
   const now = new Date(), tk = dayKey(now), mk = tk.slice(0,7);
@@ -1622,7 +1898,8 @@ function renderHome(){
 }
 $("homeAlerts").addEventListener("click", ev => {
   const a = ev.target.closest("[data-al]"); if (!a) return;
-  if (a.dataset.al !== "ready"){ go(a.dataset.al); return; }
+  if (a.dataset.al === "ready"){ go("ready"); return; }
+  if (a.dataset.al !== "ready__"){ go(a.dataset.al); return; }
   const rd = readyForExam(), ids = new Set(rd.map(x => x.id));
   const list = sortAr([...rd, ...approvedStudents().filter(st => !ids.has(st.id) && (reviewLeft(st) || {}).left < 0)]);
   openDialog("المراجعة للاختبار", `<p class="muted">الجاهزون للاختبار حسب السجل اليومي، ومن تجاوز مهلة المراجعة (أسبوع للجزء، شهر للمجمّع، شهران للمستوى).</p>
