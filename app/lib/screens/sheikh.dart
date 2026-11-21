@@ -10,6 +10,7 @@ import '../repo.dart';
 import '../update_check.dart';
 import 'gate.dart';
 import 'ui.dart';
+import 'weekly.dart';
 import 'widgets.dart';
 
 // ===================== دخول الشيخ (نموذج داخل شاشة الدخول) =====================
@@ -354,6 +355,17 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
             const SizedBox(width: 10),
             Expanded(child: MiniBar(total == 0 ? 0 : done / total, color: context.accent, height: 7)),
           ]),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: InkWell(
+              onTap: _openWeek,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+                child: Text('سجل الأسبوع ←', style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: 13.5)),
+              ),
+            ),
+          ),
           if (absent > 0 || pending > 0)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -532,6 +544,12 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     if (mounted) showSavedTick(context, title: 'تم تحديد البداية', sub: s.name);
   }
 
+  void _openWeek() {
+    haptic();
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => WeeklyScreen(halaqaId: _halaqaId, halaqaName: _halaqaName, students: [..._students])));
+  }
+
   void _logout() {
     Repo.I.setSheikhId(null);
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const GateScreen()), (r) => false);
@@ -557,6 +575,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       appBar: AppBar(
         title: const BrandTitle('السجل اليومي'),
         actions: [
+          IconButton(tooltip: 'سجل الأسبوع', icon: const Icon(Icons.date_range_rounded), onPressed: _openWeek),
           const SettingsButton(),
           TextButton(onPressed: _logout, child: Text('خروج', style: TextStyle(color: context.sub))),
         ],
