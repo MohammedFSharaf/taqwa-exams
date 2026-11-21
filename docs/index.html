@@ -512,7 +512,8 @@
     <section id="tab-weekly" class="hidden">
       <div class="card">
         <div class="wkhead">
-          <div class="row"><label>الحلقة<select id="wkHalaqa"></select></label></div>
+          <div class="row"><label>الحلقة<select id="wkHalaqa"></select></label>
+            <button class="primary" id="wkPrint">طباعة التقرير الأسبوعي</button><button id="wkExcel">تصدير Excel</button></div>
           <div class="wknav"><button id="wkPrev">→</button><b id="wkTitle"></b><button id="wkNext">←</button></div>
         </div>
       </div>
@@ -1266,7 +1267,7 @@ function renderWeekly(){
     const rv = []; L.forEach(l => (l.reviews||[]).forEach(r => { if (r.label && !rv.includes(r.label)) rv.push(r.label); }));
     const n = L.reduce((t,l) => t + (l.newPages||0), 0), r = L.reduce((t,l) => t + (l.reviewPages||0), 0);
     const dots = L.map(l => `<i class="d-${l.status}" title="${esc(l.date)} — ${ST_TEXT[l.status]||""}">${ST_DOT[l.status]||"·"}</i>`).join("");
-    return `<tr><td>${nameLink(s.id, s.name, true)}</td>${h ? "" : `<td class="hm">${hqTag(s.halaqaId)}</td>`}<td><span class="dots">${dots || '<span class="muted">لا تسجيل</span>'}</span></td>
+    return `<tr><td>${nameLink(s.id, s.name, true)} <button class="small" data-wkrep="${s.id}" title="تقرير الطالب الأسبوعي">تقرير</button></td>${h ? "" : `<td class="hm">${hqTag(s.halaqaId)}</td>`}<td><span class="dots">${dots || '<span class="muted">لا تسجيل</span>'}</span></td>
       <td class="wkline">${L.length ? `<i>حفظ:</i> ${nm.length ? esc(nm.join("، ")) + ` <b>(${fp(n)} ص)</b>` : "—"}<br><i>راجع:</i> ${rv.length ? esc(rv.join("، ")) + ` <b>(${fp(r)} ص)</b>` : "—"}` : '<span class="muted">—</span>'}</td></tr>`;
   }).join("");
   $("wkBody").innerHTML = studs.length ? `<div class="tblwrap"><table><thead><tr><th>الطالب</th>${h ? "" : '<th class="hm">الحلقة</th>'}<th>الجلسات</th><th>شو سمّع</th></tr></thead><tbody>${rows}${pager("weekly", studs.length, h ? 3 : 4)}</tbody></table></div>` : emptyHtml("لا يوجد طلاب");
@@ -1274,6 +1275,70 @@ function renderWeekly(){
 $("wkPrev").onclick = () => { WK++; renderWeekly(); };
 $("wkNext").onclick = () => { if (WK > 0){ WK--; renderWeekly(); } };
 $("wkHalaqa").onchange = () => { PG.weekly = 0; renderWeekly(); };
+
+
+// ----- التقرير الأسبوعي (حلقة / طالب) -----
+function wkLabel(off){ const [, , a] = wkRange(off), e = new Date(a); e.setDate(a.getDate() + 5); return `من السبت ${dayKey(a)} إلى الخميس ${dayKey(e)}`; }
+function wkStudent(s, from, to){
+  const L = S.logs.filter(l => l.studentId === s.id && l.date >= from && l.date <= to).sort((x,y) => x.date.localeCompare(y.date));
+  const pres = L.filter(l => l.status === "recited" || l.status === "norecite").length, abs = L.filter(l => l.status === "absent").length, exc = L.filter(l => l.status === "excused").length;
+  const nm = L.filter(l => l.newMem && l.newMem.label).map(l => l.newMem.label);
+  const rv = []; L.forEach(l => (l.reviews||[]).forEach(r => { if (r.label && !rv.includes(r.label)) rv.push(r.label); }));
+  const np = L.reduce((t,l) => t + (l.newPages||0), 0), rp = L.reduce((t,l) => t + (l.reviewPages||0), 0);
+  const ex = S.exams.filter(e => e.studentId === s.id && (() => { const d = examDate(e); return d && dayKey(d) >= from && dayKey(d) <= to; })());
+  return { L, pres, abs, exc, nm, rv, np, rp, ex };
+}
+function wkHalaqaHtml(hid, off){
+  const [from, to] = wkRange(off);
+  const studs = sortAr(approvedStudents().filter(s => s.halaqaId === hid));
+  const W = studs.map(s => ({ s, w: wkStudent(s, from, to) }));
+  const sess = W.reduce((t,x) => t + x.w.L.length, 0), pres = W.reduce((t,x) => t + x.w.pres, 0);
+  const np = W.reduce((t,x) => t + x.w.np, 0), rp = W.reduce((t,x) => t + x.w.rp, 0);
+  const many = W.filter(x => x.w.abs >= 2).map(x => x.s.name);
+  const exs = W.reduce((t,x) => t.concat(x.w.ex), []);
+  const sh = S.sheikhs.filter(x => x.halaqaId === hid).map(x => x.name).join("، ");
+  return `<h2>${esc(halaqaName(hid))}${sh ? ` <span class="muted" style="font-weight:normal">— المشايخ: ${esc(sh)}</span>` : ""}</h2>
+  <table class="sum"><tr><th>عدد الطلاب</th><td>${studs.length}</td><th>نسبة الحضور</th><td>${sess ? Math.round(pres*100/sess) + "%" : "—"}</td></tr>
+  <tr><th>صفحات الحفظ</th><td>${fp(np)}</td><th>صفحات المراجعة</th><td>${fp(rp)}</td></tr>
+  <tr><th>الاختبارات</th><td>${exs.length} (ناجح ${exs.filter(e => e.passed).length})</td><th>غياب متكرر</th><td>${many.length ? esc(many.join("، ")) : "لا يوجد"}</td></tr></table>
+  <table><thead><tr><th>#</th><th>الطالب</th><th>الحضور</th><th>الحفظ</th><th>المراجعة</th><th>المرحلة الآن</th></tr></thead><tbody>${
+    W.map((x, i) => { let d = null; try { d = dailyOf(x.s); } catch(_){}
+      return `<tr><td>${i+1}</td><td>${esc(x.s.name)}</td><td>${x.w.L.length ? `${x.w.pres} من ${x.w.L.length}${x.w.abs ? ` · غ ${x.w.abs}` : ""}${x.w.exc ? ` · ع ${x.w.exc}` : ""}` : "لا تسجيل"}</td>
+      <td>${x.w.nm.length ? esc(x.w.nm.join("، ")) + ` (${fp(x.w.np)} ص)` : "—"}</td><td>${x.w.rv.length ? esc(x.w.rv.join("، ")) + ` (${fp(x.w.rp)} ص)` : "—"}</td>
+      <td>${d ? esc(dailyTitle(d)) : ""}</td></tr>`; }).join("")}</tbody></table>`;
+}
+function printWeekHalaqa(){
+  const h = $("wkHalaqa").value;
+  const hs = h ? [h] : sortAr([...S.halaqat]).map(x => x.id);
+  printDoc(`التقرير الأسبوعي للحلقات — ${wkLabel(WK)}`, hs.map((id, i) => `<div style="${i ? "page-break-before:always" : ""}">${wkHalaqaHtml(id, WK)}</div>`).join(""));
+}
+function printWeekStudent(sid, off){
+  const s = stuById(sid); if (!s) return;
+  const [from, to] = wkRange(off), w = wkStudent(s, from, to);
+  let d = null; try { d = dailyOf(s); } catch(_){}
+  const p = studentPath(s), dl = reviewLeft(s);
+  printDoc(`التقرير الأسبوعي للطالب — ${wkLabel(off)}`, `
+  <table class="sum"><tr><th>الطالب</th><td>${esc(s.name)}</td><th>الحلقة</th><td>${esc(halaqaName(s.halaqaId))}</td></tr>
+  <tr><th>المرحلة الآن</th><td>${d ? esc(dailyTitle(d)) : "—"}</td><th>الاختبار التالي</th><td>${p.hafiz ? "حافظ للقرآن الكريم" : esc(stepLabel(p.steps[p.next]))}</td></tr>
+  <tr><th>الحضور</th><td>${w.L.length ? `${w.pres} من ${w.L.length} جلسات` : "لا تسجيل"}${w.abs ? ` (غائب ${w.abs})` : ""}${w.exc ? ` (بعذر ${w.exc})` : ""}</td><th>الصفحات</th><td>حفظ ${fp(w.np)} · مراجعة ${fp(w.rp)}</td></tr>
+  ${dl ? `<tr><th>مهلة المراجعة</th><td colspan="3">${dl.left < 0 ? `تجاوز المهلة بـ ${-dl.left} يوم` : `باقي ${dl.left} يوم`}</td></tr>` : ""}</table>
+  <h2>الجلسات</h2>
+  ${w.L.length ? `<table><thead><tr><th>اليوم</th><th>الحضور</th><th>الحفظ الجديد</th><th>المراجعة</th><th>ملاحظة</th><th>الشيخ</th></tr></thead><tbody>${
+    w.L.map(l => { const dd = new Date(l.date + "T12:00:00"); return `<tr><td>${DAY_NAMES[dd.getDay()]} ${l.date}</td><td>${ST_TEXT[l.status]||""}</td>
+    <td>${l.newMem ? esc(l.newMem.label||"") + ` (${fp(l.newPages)} ص)` : "—"}</td><td>${(l.reviews||[]).length ? esc((l.reviews||[]).map(r => r.label).join("، ")) + ` (${fp(l.reviewPages)} ص)` : "—"}</td>
+    <td>${esc(l.notes||"")}</td><td>${esc(l.editedBy || l.sheikhName || "")}</td></tr>`; }).join("")}</tbody></table>` : '<p class="muted">لا يوجد تسجيل في هذا الأسبوع</p>'}
+  ${w.ex.length ? `<h2>الاختبارات</h2><table><thead><tr><th>الاختبار</th><th>العلامة</th><th>النتيجة</th><th>المختبر</th></tr></thead><tbody>${
+    w.ex.map(e => `<tr><td>${esc(TYPES[e.type]||"")} — ${esc(juzLabel(e))}</td><td>${e.closed ? "—" : fmtNum(e.total)}</td><td>${resultText(e)}</td><td>${esc(e.examinerName||"")}</td></tr>`).join("")}</tbody></table>` : ""}`);
+}
+$("wkPrint").onclick = printWeekHalaqa;
+$("wkExcel").onclick = () => {
+  const [from, to] = wkRange(WK), h = $("wkHalaqa").value;
+  const rows = sortAr(approvedStudents().filter(s => !h || s.halaqaId === h)).map(s => { const w = wkStudent(s, from, to);
+    return { "الطالب": s.name, "الحلقة": halaqaName(s.halaqaId), "الجلسات": w.L.length, "حضر": w.pres, "غائب": w.abs, "بعذر": w.exc,
+      "الحفظ": w.nm.join("، "), "صفحات الحفظ": +fp(w.np), "المراجعة": w.rv.join("، "), "صفحات المراجعة": +fp(w.rp) }; });
+  const wb = XLSX.utils.book_new(); addSheet(wb, rows, "الأسبوع"); XLSX.writeFile(wb, `التقرير-الأسبوعي-${from}.xlsx`);
+};
+document.addEventListener("click", ev => { const b = ev.target.closest("[data-wkrep]"); if (!b) return; ev.preventDefault(); ev.stopPropagation(); printWeekStudent(b.dataset.wkrep, curTab === "weekly" ? WK : 0); });
 
 // ----- المراجعة للاختبار -----
 function reviewRows(){
@@ -1582,7 +1647,9 @@ function printDoc(title, inner){
   w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title>
   <style>
     body{font-family:Tahoma,Arial,sans-serif;color:#111;margin:24px;font-size:13px}
-    .hdr{display:flex;align-items:center;gap:14px;border-bottom:2px solid #1f5f46;padding-bottom:10px;margin-bottom:14px}
+    .hdr{display:flex;align-items:center;gap:14px;border-bottom:2px solid #0B3F63;padding-bottom:10px;margin-bottom:14px}
+    .sum td{font-weight:bold}.sum th{width:22%}
+    .pass{color:#1E8A4C}
     .hdr img{width:72px;height:72px;object-fit:contain}
     .hdr h1{font-size:18px;margin:0 0 4px}
     h2{font-size:15px;margin:18px 0 6px}
@@ -2024,7 +2091,7 @@ function renderStudentPage(){
       <div><div class="crumb"><a data-go="students">→ العودة لقائمة الطلاب</a></div><h2>${esc(name)}</h2>${st && st.status === "pending" ? pill("p-wa","بانتظار الاعتماد") : ""}${st && st.status === "inactive" ? pill("p-no", `منقطع منذ ${st.inactiveAtMs ? dayKey(new Date(st.inactiveAtMs)) : "—"}${st.inactiveReason ? " — " + esc(st.inactiveReason) : ""}`) : ""}
         ${st && (st.transfers||[]).length ? `<div class="muted" style="margin-top:4px">${st.transfers.map(t => `نُقل من ${esc(halaqaName(t.from) || "حلقة محذوفة")} إلى ${esc(halaqaName(t.to))} بتاريخ ${dayKey(new Date(t.atMs))}`).join(" · ")}</div>` : ""}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">${st && st.status !== "pending" ? `<button data-sedit="${sid}">تعديل البيانات</button><button data-smove="${sid}">نقل لحلقة أخرى</button>
-        ${st.status === "inactive" ? `<button data-sact="${sid}">إعادة تفعيل</button>` : `<button class="danger" data-sinact="${sid}">منقطع</button>`}` : ""}<button class="primary" data-sprint="1">طباعة الملف</button></div>
+        ${st.status === "inactive" ? `<button data-sact="${sid}">إعادة تفعيل</button>` : `<button class="danger" data-sinact="${sid}">منقطع</button>`}` : ""}<button data-wkrep="${sid}">التقرير الأسبوعي</button><button class="primary" data-sprint="1">طباعة الملف</button></div>
     </div>
     ${pathCard}
     <div class="kpis">
