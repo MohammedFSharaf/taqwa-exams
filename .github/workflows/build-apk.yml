@@ -70,9 +70,11 @@ jobs:
               buildTypes {'''
           s = s.replace('    buildTypes {', block, 1)
           s = s.replace('signingConfig = signingConfigs.debug', 'signingConfig = signingConfigs.release')
+          # Compressed native libs: much smaller APK to download
+          s = s.replace('android {', 'android {\n    packagingOptions {\n        jniLibs {\n            useLegacyPackaging = true\n        }\n    }\n', 1)
           open(p,'w').write(s)
           PY
-          grep -n "signingConfig" android/app/build.gradle
+          grep -n "signingConfig\|useLegacyPackaging" android/app/build.gradle
           sed -i 's/android:label="[^"]*"/android:label="مركز التقوى"/' $M
           sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <queries><intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent></queries>\n    <application#' $M
 
