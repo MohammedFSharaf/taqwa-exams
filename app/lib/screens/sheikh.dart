@@ -956,8 +956,6 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     ];
   }
 
-);
-
   /// نافذة «إضافة مراجعة»
   Future<void> _addReviewSheet() async {
     var kind = 'surah';
