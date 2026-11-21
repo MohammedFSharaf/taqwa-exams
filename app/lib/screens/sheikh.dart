@@ -193,6 +193,18 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   }
 
   List<Map<String, dynamic>> _logsOf(String sid) => _logs.where((l) => l['studentId'] == sid).toList();
+
+  /// تاريخ آخر اختبار نجح فيه الطالب
+  String _lastPassDate(String sid) {
+    var m = 0;
+    for (final e in _exams) {
+      if (e['studentId'] != sid || e['passed'] != true) continue;
+      final t = e['createdAt'];
+      final ms = t is Timestamp ? t.millisecondsSinceEpoch : 0;
+      if (ms > m) m = ms;
+    }
+    return m == 0 ? '' : dayKey(DateTime.fromMillisecondsSinceEpoch(m));
+  }
   Map<String, dynamic>? _todayLog(String sid) {
     final x = _logs.where((l) => l['id'] == '${sid}_$_today');
     return x.isEmpty ? null : x.first;
@@ -428,8 +440,9 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     final dir = s.pathDir;
     final surahs = surahsOfJuz(dir, j);
     List<int> ayahsIn(int x) {
-      final lo = qJuz[j - 1][0] > surahFirst(x) ? qJuz[j - 1][0] : surahFirst(x);
-      final hi = qJuz[j - 1][1] < surahEnd(x) ? qJuz[j - 1][1] : surahEnd(x);
+      final r = unitRange(dir, j);
+      final lo = r[0] > surahFirst(x) ? r[0] : surahFirst(x);
+      final hi = r[1] < surahEnd(x) ? r[1] : surahEnd(x);
       return [for (var g = lo; g <= hi; g++) ayahNo(g)];
     }
 
@@ -473,7 +486,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            opt('بيبلش الجزء $j من أوله', fresh, () => fresh = true),
+            opt('بيبلش الجزء ${unitNum(dir, j)} من أوله', fresh, () => fresh = true),
             opt('حافظ لحد آية معيّنة', !fresh, () => fresh = false),
             if (!fresh) ...[
               Row(children: [
@@ -671,6 +684,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       }
     }
     final prog = l == null ? juzProgress(s.pathDir, st) : null;
+    final deadline = st.mode == 'review_exam' ? reviewDaysLeft(s.pathDir, st, _logsOf(s.id), _lastPassDate(s.id)) : null;
     final holiday = _holidayAll || _holidayHalaqa;
     Widget action;
     if (l == null && holiday && st.mode == 'needs_start') {
@@ -731,6 +745,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                   style: TextStyle(color: subColor, fontSize: 12.5, height: 1.5),
                 ),
                 if (warn != null) Text(warn, style: TextStyle(color: context.goldFg, fontSize: 12)),
+                if (deadline != null && st.step != null) DeadlineTag(deadline, st.step!.reviewDays),
                 if (l != null && l['_pending'] == true)
                   Text('بانتظار الرفع', style: TextStyle(color: context.goldFg, fontSize: 11.5)),
                 if (prog != null)
@@ -761,7 +776,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     final st = dailyStatus(s.pathDir, s.pathStart, passed, before, pr.isEmpty ? null : pr.first, _minNew,
         fromKey: s.pathFrom);
     return DayCtx(st, _todayLog(s.id), _base(s, st), before.take(5).toList(),
-        ready: st.mode == 'review_exam' ? _readiness(s, before) : null);
+        ready: st.mode == 'review_exam' ? _readiness(s, before) : null,
+        deadline: st.mode == 'review_exam' ? reviewDaysLeft(s.pathDir, st, before, _lastPassDate(s.id)) : null);
   }
 
   void _open(Student s, DailyStatus st, Map<String, dynamic>? l) {
@@ -788,7 +804,8 @@ class DayCtx {
   final Map<String, dynamic> base;
   final List<Map<String, dynamic>> recent; // آخر الجلسات قبل اليوم (الأحدث أولاً)
   final ExamReady? ready; // شرط الاختبار (قبل تسجيل اليوم)
-  DayCtx(this.st, this.todayLog, this.base, this.recent, {this.ready});
+  final int? deadline; // الأيام المتبقية من مهلة المراجعة
+  DayCtx(this.st, this.todayLog, this.base, this.recent, {this.ready, this.deadline});
 }
 
 // ===================== تسجيل طالب لليوم =====================
@@ -856,7 +873,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     }
   }
 
-  int get _juz => _from != null ? juzOfG(_from!) : _st.juz;
+  int get _juz => _from != null ? juzOfG(_dir, _from!) : _st.juz;
 
   bool get _surahReviewDone {
     if (_st.mode != 'review_surah') return true;
@@ -897,8 +914,9 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   double get _reviewPages => _reviews.fold(0.0, (a, r) => a + ((r['pages'] ?? 0) as num).toDouble());
 
   List<int> _ayahsIn(int s, int j) {
-    final lo = qJuz[j - 1][0] > surahFirst(s) ? qJuz[j - 1][0] : surahFirst(s);
-    final hi = qJuz[j - 1][1] < surahEnd(s) ? qJuz[j - 1][1] : surahEnd(s);
+    final r = unitRange(_dir, j);
+    final lo = r[0] > surahFirst(s) ? r[0] : surahFirst(s);
+    final hi = r[1] < surahEnd(s) ? r[1] : surahEnd(s);
     return [for (var g = lo; g <= hi; g++) g];
   }
 
@@ -921,8 +939,13 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
 
   Map<String, dynamic>? get _suggestedReview {
     if (_st.mode == 'review_exam') {
-      final a = qJuz[_st.juzFrom - 1][0], b = qJuz[_st.juzTo - 1][1];
-      return _rev('juz', a, b, _st.juzFrom == _st.juzTo ? 'الجزء ${_st.juzFrom}' : 'الأجزاء ${_st.juzFrom}–${_st.juzTo}');
+      final step = _st.step;
+      if (step == null) return null;
+      if (step.type == 1) {
+        final r = unitRange(_dir, step.start);
+        return _rev('juz', r[0], r[1], 'الجزء ${unitNum(_dir, step.start)}');
+      }
+      return _rev('juz', step.a, step.b, 'الأجزاء ${step.start}–${step.end}');
     }
     if (_st.mode == 'review_surah') return _rev('surah', _st.segFrom!, _st.segTo!);
     return null;
@@ -952,7 +975,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     List<Map<String, dynamic>> toRevs(List<int> gs) => [for (final c in _chunks(gs)) _rev('ayat', c[0], c[1])];
     return [
       MapEntry('آخر ما حفظه (${fmtPages(t)} ص)', toRevs(last)),
-      MapEntry('الجزء $j من أوله', toRevs(whole)),
+      MapEntry('الجزء ${unitNum(_dir, j)} من أوله', toRevs(whole)),
     ];
   }
 
@@ -1067,9 +1090,9 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
                 String label;
                 if (kind == 'juz') {
                   final lo = j1 < j2 ? j1 : j2, hi = j1 < j2 ? j2 : j1;
-                  fromG = qJuz[lo - 1][0];
-                  toG = qJuz[hi - 1][1];
-                  label = lo == hi ? 'الجزء $lo' : 'الأجزاء $lo–$hi';
+                  fromG = unitRange(_dir, lo)[0];
+                  toG = unitRange(_dir, hi)[1];
+                  label = unitOf(_dir, lo) == unitOf(_dir, hi) ? 'الجزء ${unitNum(_dir, lo)}' : 'الأجزاء $lo–$hi';
                 } else if (kind == 'surah') {
                   fromG = surahFirst(s);
                   toG = surahEnd(s);
@@ -1140,17 +1163,17 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       text = 'جاهز للاختبار ✓ — سمّع المطلوب كاملاً';
     } else if (step != null && r.reason == 'review') {
       final nowDone = _att == 'recited' &&
-          r.missing.any((j) => reviewsCoverRange(_reviews, qJuz[j - 1][0], qJuz[j - 1][1]));
+          r.missing.any((j) => reviewsCoverRange(_reviews, unitRange(_dir, j)[0], unitRange(_dir, j)[1]));
       final left = r.missing
-          .where((j) => !(_att == 'recited' && reviewsCoverRange(_reviews, qJuz[j - 1][0], qJuz[j - 1][1])))
+          .where((j) => !(_att == 'recited' && reviewsCoverRange(_reviews, unitRange(_dir, j)[0], unitRange(_dir, j)[1])))
           .toList();
       if (left.isEmpty) {
         ok = true;
         text = 'بهذا التسجيل يصبح جاهزاً للاختبار ✓';
       } else {
         text = step.type == 1
-            ? 'المطلوب قبل الاختبار: تسميع الجزء ${step.start} كاملاً في جلسة واحدة (زر «الجزء من أوله» في المراجعة)'
-            : 'المطلوب قبل الاختبار: تسميع كل جزء كاملاً في جلسة — بقي: ${left.map((j) => 'الجزء $j').join('، ')}';
+            ? 'المطلوب قبل الاختبار: تسميع الجزء ${unitNum(_dir, step.start)} كاملاً في جلسة واحدة (زر «الجزء من أوله» في المراجعة)'
+            : 'المطلوب قبل الاختبار: تسميع كل جزء كاملاً في جلسة — بقي: ${left.map((j) => 'الجزء ${unitNum(_dir, j)}').join('، ')}';
         if (nowDone) text += '\nهذا التسجيل يُكمل جزءاً منها ✓';
       }
     } else {
@@ -1189,6 +1212,74 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
         decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
         child: Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.w700, height: 1.6, fontSize: 13.5)),
       );
+
+  // ---------- آخر الجلسات بالتفصيل ----------
+  void _recentSheet() {
+    haptic();
+    final rec = _c.recent;
+    showAppSheet<void>(
+      context,
+      title: 'آخر الجلسات',
+      subtitle: widget.student.name,
+      builder: (ctx, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final l in rec)
+            () {
+              final d = DateTime.tryParse((l['date'] ?? '').toString());
+              final when = d == null ? '' : '${dayName(d)} ${d.day}/${d.month}';
+              final st = (l['status'] ?? '').toString();
+              final (Color fg, Color bg) = switch (st) {
+                'recited' => (ctx.okFg, ctx.okBg),
+                'excused' => (ctx.goldFg, ctx.goldBg),
+                _ => (ctx.badFg, ctx.badBg),
+              };
+              final nm = l['newMem'];
+              final revs = ((l['reviews'] as List?) ?? []).whereType<Map>().toList();
+              final np = ((l['newPages'] ?? 0) as num).toDouble();
+              final rp = ((l['reviewPages'] ?? 0) as num).toDouble();
+              final notes = (l['notes'] ?? '').toString();
+              final by = (l['editedBy'] ?? l['sheikhName'] ?? '').toString();
+              Widget line(String a, String b) => Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      SizedBox(width: 56, child: Text(a, style: TextStyle(color: ctx.sub, fontSize: 13))),
+                      Expanded(
+                          child: Text(b,
+                              style: TextStyle(color: ctx.ink, fontSize: 14, fontWeight: FontWeight.w700, height: 1.5))),
+                    ]),
+                  );
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: ctx.field,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Row(children: [
+                    Expanded(
+                        child: Text(when, style: TextStyle(color: ctx.ink, fontWeight: FontWeight.w800, fontSize: 15))),
+                    Tag(SheikhHomeScreenStateText.of(st), fg: fg, bg: bg),
+                  ]),
+                  if (l['holiday'] == true) line('', 'جلسة بيوم إجازة'),
+                  if (nm is Map) line('الحفظ', '${nm['label'] ?? ''}  (${fmtPages(np)} ص)'),
+                  if (revs.isNotEmpty)
+                    line('المراجعة', '${revs.map((r) => r['label'] ?? '').join('، ')}  (${fmtPages(rp)} ص)'),
+                  if (st == 'recited' && nm is! Map && revs.isEmpty) line('', 'سمّع بدون تفاصيل'),
+                  if (notes.isNotEmpty) line('ملاحظة', notes),
+                  if (by.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text('سجّلها: $by', style: TextStyle(color: ctx.sub, fontSize: 12)),
+                    ),
+                ]),
+              );
+            }(),
+        ],
+      ),
+    );
+  }
 
   // ---------- السطر العلوي ----------
   Widget _topLine() {
@@ -1246,18 +1337,24 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
             padding: const EdgeInsets.fromLTRB(40, 8, 40, 0),
             child: MiniBar(pct, height: 7),
           ),
+        if (_c.deadline != null && _st.step != null) DeadlineTag(_c.deadline!, _st.step!.reviewDays),
         if (_c.ready != null) Padding(padding: const EdgeInsets.only(top: 10), child: _readyBox()),
         if (rec.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Flexible(
-                child: Text(lastLine ?? '',
-                    overflow: TextOverflow.ellipsis, style: TextStyle(color: context.sub, fontSize: 12)),
-              ),
-              const SizedBox(width: 4),
-              for (final l in rec.reversed) dot(l['status'] as String?),
-            ]),
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: _recentSheet,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Flexible(
+                  child: Text(lastLine ?? '',
+                      overflow: TextOverflow.ellipsis, style: TextStyle(color: context.sub, fontSize: 12)),
+                ),
+                const SizedBox(width: 4),
+                for (final l in rec.reversed) dot(l['status'] as String?),
+                Icon(Icons.chevron_left_rounded, size: 18, color: context.accent),
+              ]),
+            ),
           ),
       ]),
     );
@@ -1273,11 +1370,11 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _box('أول مرة للطالب في السجل اليومي.\nحدّد آخر آية حفظها في الجزء $j (${juzNames[j]})، وبعدها يكمل التطبيق تلقائياً.',
+        _box('أول مرة للطالب في السجل اليومي.\nحدّد آخر آية حفظها في الجزء ${unitNum(_dir, j)} (${unitDesc(_dir, j)})، وبعدها يكمل التطبيق تلقائياً.',
             context.goldBg, context.goldFg),
         const SizedBox(height: 8),
         NavyButton(
-          text: 'بيبلش الجزء $j من أوله',
+          text: 'بيبلش الجزء ${unitNum(_dir, j)} من أوله',
           onPressed: () {
             Repo.I.setProgress(widget.student.id, widget.halaqaId, null, widget.sheikhName);
             Navigator.of(context).pop();
@@ -1676,7 +1773,8 @@ double? juzProgress(String dir, DailyStatus st) {
   for (var i = js; i <= cp; i++) {
     done += ayahFrac(o.order[i]);
   }
-  final total = pagesOfRange(qJuz[j - 1][0], qJuz[j - 1][1]);
+  final ur = unitRange(dir, j);
+  final total = pagesOfRange(ur[0], ur[1]);
   return total == 0 ? 0 : (done / total).clamp(0.0, 1.0);
 }
 

@@ -119,8 +119,9 @@ class _NewExamScreenState extends State<NewExamScreen> {
       final same = _sExams!.where((e) => e['type'] == ti && e['startJuz'] == si).toList();
       if (!same.any((e) => e['passed'] == true)) continue;
       final last = same.fold<int>(0, (m, e) => max(m, _ms(e['createdAt'])));
-      if (((p['grantedAtMs'] ?? 0) as num) > last && !out.any((x) => x.type == ti && x.start == si)) {
-        out.add(PathStep(ti, si));
+      final step = buildPath(_student!.pathDir).where((x) => x.type == ti && x.start == si).firstOrNull;
+      if (step != null && ((p['grantedAtMs'] ?? 0) as num) > last && !out.any((x) => x.type == ti && x.start == si)) {
+        out.add(step);
       }
     }
     return out;
@@ -197,7 +198,11 @@ class _NewExamScreenState extends State<NewExamScreen> {
     super.dispose();
   }
 
-  int? get _endJuz => (_type == null || _startJuz == null) ? null : _startJuz! + _type! - 1;
+  PathStep? get _selStep => (_type == null || _startJuz == null || _student == null)
+      ? null
+      : (_options.where((o) => o.type == _type && o.start == _startJuz).firstOrNull ??
+          buildPath(_student!.pathDir).where((o) => o.type == _type && o.start == _startJuz).firstOrNull);
+  int? get _endJuz => _selStep?.end;
   bool get _ready =>
       _halaqa != null && _student != null && _type != null && _startJuz != null && _selectedAllowed && !_blocked && _logOk;
 
@@ -224,6 +229,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
       type: _type!,
       startJuz: _startJuz!,
       endJuz: _endJuz!,
+      dir: _student!.pathDir,
       isRetest: _isRetest,
       createdAt: DateTime.now(),
     );
@@ -307,7 +313,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
     }
     final st = _student!;
     final now = DateTime.now();
-    final sel = (_type == null || _startJuz == null) ? null : PathStep(_type!, _startJuz!);
+    final sel = _selStep;
     final reason = _ready
         ? null
         : _blocked
@@ -347,7 +353,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
             child: Column(children: [
               _info('الاختبار', !_pathKnown ? '…' : (sel == null ? '—' : (examTypes[sel.type] ?? ''))),
               Divider(height: 1, color: context.line),
-              _info('الأجزاء', sel == null ? '—' : juzLabel(sel.start, sel.end)),
+              _info('الأجزاء', sel == null ? '—' : (sel.type == 1 ? juzLabel(sel.start, sel.end, type: 1, dir: sel.dir) : sel.rangeText)),
               Divider(height: 1, color: context.line),
               _info('المختبر', Repo.I.examinerName ?? ''),
               Divider(height: 1, color: context.line),

@@ -1,19 +1,13 @@
 import 'dart:math';
 
+import 'quran_data.dart';
+
 const centerName = 'مركز التقوى لتعليم وتحفيظ القرآن الكريم';
 const ayahText = 'وَلَقَدْ يَسَّرْنَا الْقُرْآنَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ';
 const ayahRef = '[القمر: 17]';
 
-/// اسم كل جزء: من أي سورة لأي سورة (السورة المقسومة تُحسب للجزء الذي تنتهي فيه، وأرقام الآيات في السور الطويلة)
-const juzNames = <String>[
-  '', 'الفاتحة ← البقرة 141', 'البقرة 142–252', 'البقرة 253 ← آل عمران 92', 'آل عمران 93 ← النساء 23', 'النساء 24–147', 'النساء 148 ← المائدة 81', 'المائدة 82 ← الأنعام 110', 'الأنعام 111 ← الأعراف 87', 'الأعراف 88 ← الأنفال 40', 'الأنفال 41 ← التوبة 92', 'التوبة 93 ← هود 5', 'هود 6 ← يوسف 52', 'يوسف 53 ← إبراهيم', 'الحجر ← النحل', 'الإسراء ← الكهف 74', 'الكهف 75 ← طه', 'الأنبياء ← الحج', 'المؤمنون ← النور', 'الفرقان ← الشعراء', 'النمل ← القصص', 'العنكبوت ← السجدة', 'الأحزاب ← فاطر', 'يس ← ص', 'الزمر ← غافر', 'فصلت ← الجاثية', 'الأحقاف ← ق', 'الذاريات ← الحديد', 'المجادلة ← التحريم', 'الملك ← المرسلات', 'النبأ ← الناس',
-];
-const juzFrom = <String>[
-  '', 'الفاتحة', 'البقرة 142', 'البقرة 253', 'آل عمران 93', 'النساء 24', 'النساء 148', 'المائدة 82', 'الأنعام 111', 'الأعراف 88', 'الأنفال 41', 'التوبة 93', 'هود 6', 'يوسف 53', 'الحجر', 'الإسراء', 'الكهف 75', 'الأنبياء', 'المؤمنون', 'الفرقان', 'النمل', 'العنكبوت', 'الأحزاب', 'يس', 'الزمر', 'فصلت', 'الأحقاف', 'الذاريات', 'المجادلة', 'الملك', 'النبأ',
-];
-const juzTo = <String>[
-  '', 'البقرة 141', 'البقرة 252', 'آل عمران 92', 'النساء 23', 'النساء 147', 'المائدة 81', 'الأنعام 110', 'الأعراف 87', 'الأنفال 40', 'التوبة 92', 'هود 5', 'يوسف 52', 'إبراهيم', 'النحل', 'الكهف 74', 'طه', 'الحج', 'النور', 'الشعراء', 'القصص', 'السجدة', 'فاطر', 'ص', 'غافر', 'الجاثية', 'ق', 'الحديد', 'التحريم', 'المرسلات', 'الناس',
-];
+/// اسم كل جزء حسب خطة المركز (من الناس): من أي سورة لأي سورة
+final List<String> juzNames = [for (var n = 0; n <= 30; n++) n == 0 ? '' : unitDesc('desc', n)];
 
 /// عدد الأجزاء => اسم نوع الاختبار
 const examTypes = <int, String>{
@@ -33,10 +27,6 @@ const double closeAt = 9; // خصم 9 علامات في سؤال واحد يغل
 const double errVal = 1;
 const double alertVal = 0.5;
 
-String juzLabel(int start, int end) {
-  if (start == end) return 'الجزء $start: ${juzNames[start]}';
-  return 'من الجزء $start إلى الجزء $end';
-}
 
 class QuestionMark {
   int errors = 0;
@@ -52,7 +42,9 @@ class ExamSetup {
   final int type, startJuz, endJuz;
   final bool isRetest;
   final DateTime createdAt;
+  final String dir;
   ExamSetup({
+    this.dir = 'desc',
     required this.halaqaId,
     required this.halaqaName,
     required this.studentId,
@@ -95,55 +87,215 @@ String fmtDuration(int seconds) {
   return '${two(m)}:${two(sec)}';
 }
 
-// ===== مسار الحفظ =====
+// ===== مسار الحفظ (خطة المركز) =====
 const pathDirs = <String, String>{'desc': 'من الناس (30 ← 1)', 'asc': 'من البقرة (1 ← 30)'};
 
-class PathStep {
-  final int type, start;
-  const PathStep(this.type, this.start);
-  int get end => start + type - 1;
-  String get key => '$type|$start';
-  String get label {
-    if (type == 1) return 'الجزء $start: ${juzNames[start]}';
-    if (type == 30) return 'المصحف كاملاً (30 جزءاً)';
-    return '${examTypes[type]}: من الجزء $start إلى الجزء $end';
+// ----- وحدات الحفظ: كل "جزء" في خطة المركز سور كاملة -----
+final List<int> _sStart = () {
+  final s = <int>[0];
+  var g = 1;
+  for (final c in qCounts) {
+    s.add(g);
+    g += c;
   }
+  return s;
+}();
+int _sFirst(int s) => _sStart[s];
+int _sLast(int s) => _sStart[s] + qCounts[s - 1] - 1;
+int _surahAt(int g) {
+  var lo = 1, hi = 114;
+  while (lo < hi) {
+    final m = (lo + hi + 1) >> 1;
+    if (_sStart[m] <= g) {
+      lo = m;
+    } else {
+      hi = m - 1;
+    }
+  }
+  return lo;
 }
 
-List<PathStep> buildPath(String dir) {
-  final s = <PathStep>[];
-  if (dir == 'asc') {
-    for (final b in [1, 11, 21]) {
-      s.addAll([PathStep(1, b), PathStep(1, b + 1), PathStep(1, b + 2), PathStep(3, b),
-        PathStep(1, b + 3), PathStep(1, b + 4), PathStep(5, b)]);
-      for (var j = b + 5; j <= b + 9; j++) {
-        s.add(PathStep(1, j));
-      }
-      s.add(PathStep(10, b));
-    }
-  } else {
-    for (final t in [30, 20, 10]) {
-      s.addAll([PathStep(1, t), PathStep(1, t - 1), PathStep(1, t - 2), PathStep(3, t - 2),
-        PathStep(1, t - 3), PathStep(1, t - 4), PathStep(5, t - 4)]);
-      for (var j = t - 5; j >= t - 9; j--) {
-        s.add(PathStep(1, j));
-      }
-      s.add(PathStep(10, t - 9));
-    }
+/// وحدة حفظ: أرقامها (n1..n2، الوحدة المزدوجة رقمان) ومداها [a..b] بالترقيم العام للآيات
+class QUnit {
+  final int n1, n2, a, b;
+  const QUnit(this.n1, this.n2, this.a, this.b);
+  bool has(int n) => n >= n1 && n <= n2;
+}
+
+List<QUnit> _buildUnits(String dir) {
+  QUnit su(int n1, int n2, int s1, int s2) => QUnit(n1, n2, _sFirst(s1), _sLast(s2));
+  final baq141 = _sFirst(2) + 140; // البقرة 141
+  final u = <QUnit>[
+    su(30, 30, 78, 114), su(29, 29, 67, 77), su(28, 28, 58, 66), su(27, 27, 51, 57), su(26, 26, 46, 50),
+    su(25, 25, 42, 45), su(24, 24, 39, 41), su(23, 23, 36, 38), su(22, 22, 33, 35), su(21, 21, 29, 32),
+    su(20, 20, 27, 28), su(19, 19, 25, 26), su(18, 18, 23, 24), su(17, 17, 21, 22), su(16, 16, 19, 20),
+    su(15, 15, 17, 18), su(14, 14, 15, 16), su(13, 13, 12, 14), su(11, 12, 10, 11), su(9, 10, 8, 9),
+    su(8, 8, 7, 7), su(7, 7, 6, 6), su(6, 6, 5, 5), su(5, 5, 4, 4), su(4, 4, 3, 3),
+    // البقرة على قسمين (الفاتحة مع القسم الأول)
+    if (dir == 'asc') QUnit(1, 1, 1, baq141) else QUnit(3, 3, 1, baq141),
+    if (dir == 'asc') QUnit(2, 3, baq141 + 1, _sLast(2)) else QUnit(1, 2, baq141 + 1, _sLast(2)),
+  ];
+  u.sort((x, y) => x.n1.compareTo(y.n1));
+  return u;
+}
+
+final Map<String, List<QUnit>> _units = {};
+List<QUnit> unitsOf(String dir) => _units[dir == 'asc' ? 'asc' : 'desc'] ??= _buildUnits(dir == 'asc' ? 'asc' : 'desc');
+
+/// الوحدة التي تحمل الرقم n
+QUnit unitOf(String dir, int n) => unitsOf(dir).firstWhere((u) => u.has(n), orElse: () => unitsOf(dir).last);
+
+/// الوحدة التي فيها الآية g
+QUnit unitAt(String dir, int g) => unitsOf(dir).firstWhere((u) => g >= u.a && g <= u.b, orElse: () => unitsOf(dir).last);
+
+/// رقم الوحدة كما يُكتب: 27 أو 12+11
+String unitNum(String dir, int n) {
+  final u = unitOf(dir, n);
+  if (u.n1 == u.n2) return '${u.n1}';
+  return dir == 'asc' ? '${u.n1}+${u.n2}' : '${u.n2}+${u.n1}';
+}
+
+String _nm(int s) => qNames[s - 1];
+String _pt(int g) {
+  final s = _surahAt(g);
+  if (g == _sFirst(s) && s != 2) return _nm(s);
+  return '${_nm(s)} ${g - _sFirst(s) + 1}';
+}
+
+/// وصف الوحدة بترتيب الحفظ: «الناس ← النبأ»، «سورة الأعراف»، «البقرة 1–141»
+String unitDesc(String dir, int n) {
+  final u = unitOf(dir, n);
+  final sa = _surahAt(u.a), sb = _surahAt(u.b);
+  if (u.b <= _sLast(2)) {
+    // قسما البقرة
+    final from = u.a == 1 ? 1 : u.a - _sFirst(2) + 1;
+    return 'البقرة $from–${u.b - _sFirst(2) + 1}';
   }
-  s.add(const PathStep(30, 1));
+  if (sa == sb) return 'سورة ${_nm(sa)}';
+  return dir == 'asc' ? '${_nm(sa)} ← ${_nm(sb)}' : '${_nm(sb)} ← ${_nm(sa)}';
+}
+
+/// وصف مدى بالسور بترتيب المصحف: «المجادلة – الناس»
+String rangeSurahs(int a, int b) {
+  var sa = _surahAt(a);
+  if (sa == 1) sa = 2;
+  final sb = _surahAt(b);
+  final left = (a > _sFirst(sa) && sa == 2) ? _pt(a) : _nm(sa);
+  final right = (b < _sLast(sb)) ? _pt(b) : _nm(sb);
+  return sa == sb && left == right ? left : '$left – $right';
+}
+
+String juzLabel(int start, int end, {int type = 0, String dir = 'desc'}) {
+  if (type == 30) return 'المصحف كاملاً';
+  final u = unitOf(dir, start);
+  if (start == end || (type == 1) || (u.n1 == start && u.n2 == end)) {
+    return 'الجزء ${unitNum(dir, start)}: ${unitDesc(dir, start)}';
+  }
+  final st = buildPath(dir).where((x) => x.type == type && x.start == start).firstOrNull;
+  if (st != null) return st.rangeText;
+  return 'من الجزء $start إلى الجزء $end';
+}
+
+class PathStep {
+  final int type, start, end, level;
+  final String dir;
+  /// أرقام الوحدات (أول رقم في كل وحدة) التي يشملها الاختبار
+  final List<int> units;
+  const PathStep(this.type, this.start, this.end, this.units, this.dir, this.level);
+  String get key => '$type|$start';
+  int get a => units.map((n) => unitOf(dir, n).a).reduce(min);
+  int get b => units.map((n) => unitOf(dir, n).b).reduce(max);
+  bool get isUnit => type == 1;
+  String get rangeText => type == 30 ? 'المصحف كاملاً' : '($start–$end) ${rangeSurahs(a, b)}';
+  String get label {
+    if (type == 1) return 'الجزء ${unitNum(dir, start)}: ${unitDesc(dir, start)}';
+    if (type == 30) return 'المصحف كاملاً (الختام)';
+    return '${examTypes[type]} ($start–$end): ${rangeSurahs(a, b)}';
+  }
+
+  /// مهلة المراجعة بالأيام قبل الاختبار
+  int get reviewDays => type == 1 ? 7 : (type >= 10 ? 60 : 30);
+}
+
+const levelNames = ['', 'المستوى الأول', 'المستوى الثاني', 'المستوى الثالث', 'الختام'];
+
+final Map<String, List<PathStep>> _paths = {};
+
+List<PathStep> buildPath(String dir) {
+  final d = dir == 'asc' ? 'asc' : 'desc';
+  return _paths[d] ??= _makePath(d);
+}
+
+List<PathStep> _makePath(String d) {
+  final s = <PathStep>[];
+  var level = 1;
+  // وحدة مفردة
+  void u(int n) {
+    final x = unitOf(d, n);
+    s.add(PathStep(1, x.n1, x.n2, [x.n1], d, level));
+  }
+
+  // اختبار مجمّع: كل الوحدات داخل [from..to] (أو قائمة محددة)
+  void c(int type, int from, int to, [List<int>? only]) {
+    final ns = only ?? [for (final x in unitsOf(d)) if (x.n1 >= from && x.n2 <= to) x.n1];
+    s.add(PathStep(type, from, to, ns, d, level));
+  }
+
+  if (d == 'desc') {
+    level = 1;
+    u(30); u(29); u(28); c(3, 28, 30);
+    u(27); u(26); c(5, 26, 30);
+    u(25); u(24); u(23); c(3, 23, 25);
+    u(22); u(21); c(5, 21, 25);
+    c(10, 21, 30);
+    level = 2;
+    u(20); u(19); u(18); c(3, 18, 20);
+    u(17); u(16); c(5, 16, 20);
+    u(15); u(14); u(13); c(3, 13, 15);
+    u(11); c(5, 11, 15);
+    c(10, 11, 20);
+    level = 3;
+    u(9); u(8); c(3, 8, 10);
+    u(7); u(6); c(5, 6, 10);
+    u(5); u(4); c(3, 3, 5, [4, 5]); // آل عمران – النساء
+    u(3); u(1); c(5, 1, 5);
+    c(10, 1, 10);
+  } else {
+    level = 1;
+    u(1); u(2); c(3, 1, 3);
+    u(4); u(5); c(5, 1, 5);
+    u(6); u(7); u(8); c(3, 6, 8);
+    u(9); c(5, 6, 10);
+    c(10, 1, 10);
+    level = 2;
+    u(11); u(13); c(3, 11, 13);
+    u(14); u(15); c(5, 11, 15);
+    u(16); u(17); u(18); c(3, 16, 18);
+    u(19); u(20); c(5, 16, 20);
+    c(10, 11, 20);
+    level = 3;
+    u(21); u(22); u(23); c(3, 21, 23);
+    u(24); u(25); c(5, 21, 25);
+    u(26); u(27); u(28); c(3, 26, 28);
+    u(29); u(30); c(5, 26, 30);
+    c(10, 21, 30);
+  }
+  level = 4;
+  s.add(PathStep(30, 1, 30, [for (final x in unitsOf(d)) x.n1], d, level));
   return s;
 }
 
 /// الاختبار التالي للطالب، أو null إذا أتمّ المسار (حافظ)
-/// [fromKey] مرحلة البداية (مثل "10|21") إن حدّدتها الإدارة، وإلا يبدأ من جزء البداية
+/// [fromKey] مرحلة البداية (مثل "10|21") إن حدّدتها الإدارة، وإلا يبدأ من الوحدة التي فيها جزء البداية.
+/// ما قبل آخر اختبار نجح فيه الطالب يُعدّ منتهياً (لا يرجع الطلاب القدامى لمجمّعات أُضيفت للخطة).
 PathStep? nextPathStep(String dir, int start, Set<String> passedKeys, [String? fromKey]) {
   final steps = buildPath(dir);
-  var first = fromKey == null ? -1 : steps.indexWhere((x) => x.key == fromKey);
-  if (first < 0) first = steps.indexWhere((x) => x.type == 1 && x.start == start);
+  var first = fromKey == null || fromKey.isEmpty ? -1 : steps.indexWhere((x) => x.key == fromKey);
+  if (first < 0) first = steps.indexWhere((x) => x.type == 1 && start >= x.start && start <= x.end);
   if (first < 0) first = 0;
+  var last = first - 1;
   for (var i = first; i < steps.length; i++) {
-    if (!passedKeys.contains(steps[i].key)) return steps[i];
+    if (passedKeys.contains(steps[i].key)) last = i;
   }
-  return null;
+  return last + 1 < steps.length ? steps[last + 1] : null;
 }

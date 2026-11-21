@@ -16,7 +16,9 @@ class ReadyEntry {
   final Halaqa? halaqa;
   final PathStep step;
   final bool byPermit;
-  ReadyEntry(this.student, this.halaqa, this.step, this.byPermit);
+  /// الأيام المتبقية من مهلة المراجعة (سالب = متجاوز)
+  final int? daysLeft;
+  ReadyEntry(this.student, this.halaqa, this.step, this.byPermit, [this.daysLeft]);
 }
 
 /// يتابع الطلاب الجاهزين للاختبار (سمّعوا المطلوب كاملاً في السجل اليومي)
@@ -126,7 +128,17 @@ class ReadyWatcher extends ChangeNotifier {
       final hasDaily = logs.isNotEmpty || progBy.containsKey(s.id);
       if (!hasDaily && !permit) continue;
       final r = examReadiness(s.pathDir, s.pathStart, passed, logs, progBy[s.id], lastDate, fromKey: s.pathFrom);
-      if (r.ok || permit) out.add(ReadyEntry(s, hById[s.halaqaId], step, !r.ok && permit));
+      if (r.ok || permit) {
+        var lastPass = 0;
+        for (final e in ex) {
+          if (e['passed'] != true) continue;
+          final m = _ms(e['createdAt']);
+          if (m > lastPass) lastPass = m;
+        }
+        final lp = lastPass == 0 ? '' : dayKey(DateTime.fromMillisecondsSinceEpoch(lastPass));
+        final st = dailyStatus(s.pathDir, s.pathStart, passed, logs, progBy[s.id], 1, fromKey: s.pathFrom);
+        out.add(ReadyEntry(s, hById[s.halaqaId], step, !r.ok && permit, reviewDaysLeft(s.pathDir, st, logs, lp)));
+      }
     }
     out.sort((a, b) {
       final c = (a.halaqa?.name ?? '').compareTo(b.halaqa?.name ?? '');
@@ -192,6 +204,7 @@ class ReadyScreen extends StatelessWidget {
                     Text(e.student.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: context.ink)),
                     Text(e.step.label + (e.byPermit ? ' · بتصريح من الإدارة' : ''),
                         style: TextStyle(color: e.byPermit ? context.goldFg : context.sub, fontSize: 12.5)),
+                    if (e.daysLeft != null) DeadlineTag(e.daysLeft!, e.step.reviewDays),
                   ]),
                 ),
                 const SizedBox(width: 8),

@@ -643,17 +643,17 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "admin@taqwa.com";
 
 // ===== ثوابت الاختبار =====
-const JUZ = ["", "الفاتحة ← البقرة 141", "البقرة 142–252", "البقرة 253 ← آل عمران 92", "آل عمران 93 ← النساء 23", "النساء 24–147", "النساء 148 ← المائدة 81", "المائدة 82 ← الأنعام 110", "الأنعام 111 ← الأعراف 87", "الأعراف 88 ← الأنفال 40", "الأنفال 41 ← التوبة 92", "التوبة 93 ← هود 5", "هود 6 ← يوسف 52", "يوسف 53 ← إبراهيم", "الحجر ← النحل", "الإسراء ← الكهف 74", "الكهف 75 ← طه", "الأنبياء ← الحج", "المؤمنون ← النور", "الفرقان ← الشعراء", "النمل ← القصص", "العنكبوت ← السجدة", "الأحزاب ← فاطر", "يس ← ص", "الزمر ← غافر", "فصلت ← الجاثية", "الأحقاف ← ق", "الذاريات ← الحديد", "المجادلة ← التحريم", "الملك ← المرسلات", "النبأ ← الناس"];
-const JUZ_FROM = ["", "الفاتحة", "البقرة 142", "البقرة 253", "آل عمران 93", "النساء 24", "النساء 148", "المائدة 82", "الأنعام 111", "الأعراف 88", "الأنفال 41", "التوبة 93", "هود 6", "يوسف 53", "الحجر", "الإسراء", "الكهف 75", "الأنبياء", "المؤمنون", "الفرقان", "النمل", "العنكبوت", "الأحزاب", "يس", "الزمر", "فصلت", "الأحقاف", "الذاريات", "المجادلة", "الملك", "النبأ"];
-const JUZ_TO = ["", "البقرة 141", "البقرة 252", "آل عمران 92", "النساء 23", "النساء 147", "المائدة 81", "الأنعام 110", "الأعراف 87", "الأنفال 40", "التوبة 92", "هود 5", "يوسف 52", "إبراهيم", "النحل", "الكهف 74", "طه", "الحج", "النور", "الشعراء", "القصص", "السجدة", "فاطر", "ص", "غافر", "الجاثية", "ق", "الحديد", "التحريم", "المرسلات", "الناس"];
 const TYPES = {1:"اختبار جزء", 3:"اختبار 3 أجزاء", 5:"اختبار 5 أجزاء", 10:"اختبار 10 أجزاء", 30:"اختبار 30 جزءاً"};
 const Q_COUNT = 5, Q_MAX = 15, TAJWEED_MAX = 20, PERF_MAX = 5, PASS_MARK = 85, CLOSE_AT = 9;
 const ERR_VAL = 1, ALERT_VAL = 0.5;
 
 function juzLabel(e){
   if (!e.startJuz) return "";
-  if (e.startJuz === e.endJuz) return `الجزء ${e.startJuz}: ${JUZ[e.startJuz]}`;
-  return `من الجزء ${e.startJuz} إلى الجزء ${e.endJuz}`;
+  const dir = e.pathDir === "asc" ? "asc" : "desc";
+  if (e.type === 30) return "المصحف كاملاً";
+  if (e.type === 1 || e.startJuz === e.endJuz) return `الجزء ${unitNum(dir, e.startJuz)}: ${unitDesc(dir, e.startJuz)}`;
+  const st = buildPath(dir).find(x => x.type === e.type && x.start === e.startJuz);
+  return st ? `(${st.start}–${st.end}) ${rangeSurahs(st.a, st.b)}` : `من الجزء ${e.startJuz} إلى الجزء ${e.endJuz}`;
 }
 function resultOf(e){ return e.closed ? "closed" : (e.passed ? "pass" : "fail"); }
 function resultText(e){
@@ -662,36 +662,78 @@ function resultText(e){
 // ===== مسار الحفظ =====
 const DIRS = { desc: "من الناس (30 ← 1)", asc: "من البقرة (1 ← 30)" };
 const DEFAULT_STALL_DAYS = 60;
-function buildPath(dir){
-  const s = [], P = (type, start) => ({ type, start, end: start + type - 1, key: type + "|" + start });
-  if (dir === "asc"){
-    for (const b of [1, 11, 21]){
-      s.push(P(1,b), P(1,b+1), P(1,b+2), P(3,b), P(1,b+3), P(1,b+4), P(5,b));
-      for (let j=b+5;j<=b+9;j++) s.push(P(1,j));
-      s.push(P(10,b));
-    }
-  } else {
-    for (const t of [30, 20, 10]){
-      s.push(P(1,t), P(1,t-1), P(1,t-2), P(3,t-2), P(1,t-3), P(1,t-4), P(5,t-4));
-      for (let j=t-5;j>=t-9;j--) s.push(P(1,j));
-      s.push(P(10,t-9));
-    }
-  }
-  s.push(P(30,1));
-  return s;
+// ----- وحدات الحفظ حسب خطة المركز: كل "جزء" سور كاملة -----
+function sFirst(sn){ return SURAH_START[sn]; }
+function sLast(sn){ return SURAH_START[sn] + Q.counts[sn-1] - 1; }
+const _UNITS = {};
+function unitsOf(dir){
+  const d = dir === "asc" ? "asc" : "desc";
+  if (_UNITS[d]) return _UNITS[d];
+  const su = (n1, n2, s1, s2) => ({ n1, n2, a: sFirst(s1), b: sLast(s2) });
+  const baq141 = sFirst(2) + 140;
+  const u = [su(30,30,78,114), su(29,29,67,77), su(28,28,58,66), su(27,27,51,57), su(26,26,46,50),
+    su(25,25,42,45), su(24,24,39,41), su(23,23,36,38), su(22,22,33,35), su(21,21,29,32),
+    su(20,20,27,28), su(19,19,25,26), su(18,18,23,24), su(17,17,21,22), su(16,16,19,20),
+    su(15,15,17,18), su(14,14,15,16), su(13,13,12,14), su(11,12,10,11), su(9,10,8,9),
+    su(8,8,7,7), su(7,7,6,6), su(6,6,5,5), su(5,5,4,4), su(4,4,3,3),
+    d === "asc" ? { n1:1, n2:1, a:1, b:baq141 } : { n1:3, n2:3, a:1, b:baq141 },
+    d === "asc" ? { n1:2, n2:3, a:baq141+1, b:sLast(2) } : { n1:1, n2:2, a:baq141+1, b:sLast(2) }];
+  u.sort((x, y) => x.n1 - y.n1);
+  return (_UNITS[d] = u);
 }
+function unitOf(dir, n){ const us = unitsOf(dir); return us.find(u => n >= u.n1 && n <= u.n2) || us[us.length-1]; }
+function unitAt(dir, g){ const us = unitsOf(dir); return us.find(u => g >= u.a && g <= u.b) || us[us.length-1]; }
+function unitNum(dir, n){ const u = unitOf(dir, n); return u.n1 === u.n2 ? String(u.n1) : (dir === "asc" ? `${u.n1}+${u.n2}` : `${u.n2}+${u.n1}`); }
+function unitDesc(dir, n){
+  const u = unitOf(dir, n), sa = surahOf(u.a), sb = surahOf(u.b);
+  if (u.b <= sLast(2)) return `البقرة ${u.a === 1 ? 1 : u.a - sFirst(2) + 1}–${u.b - sFirst(2) + 1}`;
+  if (sa === sb) return `سورة ${Q.names[sa-1]}`;
+  return dir === "asc" ? `${Q.names[sa-1]} ← ${Q.names[sb-1]}` : `${Q.names[sb-1]} ← ${Q.names[sa-1]}`;
+}
+function rangeSurahs(a, b){
+  let sa = surahOf(a); if (sa === 1) sa = 2; const sb = surahOf(b);
+  const left = (a > sFirst(sa) && sa === 2) ? posLabel(a) : Q.names[sa-1];
+  const right = b < sLast(sb) ? posLabel(b) : Q.names[sb-1];
+  return sa === sb && left === right ? left : `${left} – ${right}`;
+}
+function unitRange(dir, n){ const u = unitOf(dir, n); return [u.a, u.b]; }
+const LEVELS = ["", "المستوى الأول", "المستوى الثاني", "المستوى الثالث", "الختام"];
+const _PATHS = {};
+function buildPath(dir){
+  const d = dir === "asc" ? "asc" : "desc";
+  if (_PATHS[d]) return _PATHS[d];
+  const s = []; let level = 1;
+  const mk = (type, start, end, units) => { const a = Math.min(...units.map(n => unitOf(d, n).a)), b = Math.max(...units.map(n => unitOf(d, n).b));
+    return { type, start, end, units, a, b, level, dir: d, key: type + "|" + start, reviewDays: type === 1 ? 7 : (type >= 10 ? 60 : 30) }; };
+  const U = n => { const x = unitOf(d, n); s.push(mk(1, x.n1, x.n2, [x.n1])); };
+  const C = (type, from, to, only) => s.push(mk(type, from, to, only || unitsOf(d).filter(x => x.n1 >= from && x.n2 <= to).map(x => x.n1)));
+  if (d === "desc"){
+    level = 1; U(30); U(29); U(28); C(3,28,30); U(27); U(26); C(5,26,30); U(25); U(24); U(23); C(3,23,25); U(22); U(21); C(5,21,25); C(10,21,30);
+    level = 2; U(20); U(19); U(18); C(3,18,20); U(17); U(16); C(5,16,20); U(15); U(14); U(13); C(3,13,15); U(11); C(5,11,15); C(10,11,20);
+    level = 3; U(9); U(8); C(3,8,10); U(7); U(6); C(5,6,10); U(5); U(4); C(3,3,5,[4,5]); U(3); U(1); C(5,1,5); C(10,1,10);
+  } else {
+    level = 1; U(1); U(2); C(3,1,3); U(4); U(5); C(5,1,5); U(6); U(7); U(8); C(3,6,8); U(9); C(5,6,10); C(10,1,10);
+    level = 2; U(11); U(13); C(3,11,13); U(14); U(15); C(5,11,15); U(16); U(17); U(18); C(3,16,18); U(19); U(20); C(5,16,20); C(10,11,20);
+    level = 3; U(21); U(22); U(23); C(3,21,23); U(24); U(25); C(5,21,25); U(26); U(27); U(28); C(3,26,28); U(29); U(30); C(5,26,30); C(10,21,30);
+  }
+  level = 4; s.push(mk(30, 1, 30, unitsOf(d).map(x => x.n1)));
+  return (_PATHS[d] = s);
+}
+// ما قبل آخر اختبار نجح فيه الطالب يُعدّ منتهياً (لا يرجع الطلاب القدامى لمجمّعات أُضيفت للخطة)
 function pathStatus(dir, start, passed, fromKey){
   const steps = buildPath(dir);
   let first = fromKey ? steps.findIndex(x => x.key === fromKey) : -1;
-  if (first < 0) first = steps.findIndex(x => x.type === 1 && x.start === start);
+  if (first < 0) first = steps.findIndex(x => x.type === 1 && start >= x.start && start <= x.end);
   if (first < 0) first = 0;
-  for (let i=first;i<steps.length;i++) if (!passed.has(steps[i].key)) return { steps, first, next: i, hafiz: false };
+  let last = first - 1;
+  for (let i = first; i < steps.length; i++) if (passed.has(steps[i].key)) last = i;
+  if (last + 1 < steps.length) return { steps, first, next: last + 1, hafiz: false };
   return { steps, first, next: null, hafiz: true };
 }
 function stepLabel(st){
-  if (st.type === 1) return `الجزء ${st.start}: ${JUZ[st.start]}`;
-  if (st.type === 30) return "المصحف كاملاً (30 جزءاً)";
-  return `${TYPES[st.type]}: من الجزء ${st.start} إلى الجزء ${st.end}`;
+  if (st.type === 1) return `الجزء ${unitNum(st.dir, st.start)}: ${unitDesc(st.dir, st.start)}`;
+  if (st.type === 30) return "المصحف كاملاً (الختام)";
+  return `${TYPES[st.type]} (${st.start}–${st.end}): ${rangeSurahs(st.a, st.b)}`;
 }
 const Q = {"names":["الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه","الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم","لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر","فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق","الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة","الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس","التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد","الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات","القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر","المسد","الإخلاص","الفلق","الناس"],"counts":[7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6],"pageStart":[1,8,13,24,32,37,45,56,65,69,77,84,91,96,101,109,113,120,127,134,142,149,153,161,171,177,184,189,194,198,204,210,218,223,227,232,238,241,245,253,256,260,264,267,272,277,282,289,290,294,303,309,316,323,331,339,346,355,364,371,377,385,394,402,409,415,426,434,442,447,451,459,467,474,480,488,494,500,505,508,513,517,520,527,531,538,545,553,559,568,573,580,585,588,595,599,607,615,621,628,634,641,648,656,664,669,672,675,679,683,687,693,701,706,711,715,720,727,734,740,746,752,759,765,773,778,783,790,798,808,817,825,834,842,849,858,863,871,880,884,891,900,908,914,921,927,932,936,941,947,955,966,977,985,992,998,1006,1012,1022,1028,1036,1042,1050,1059,1075,1085,1092,1098,1104,1110,1114,1118,1125,1133,1142,1150,1161,1169,1177,1186,1194,1201,1206,1213,1222,1230,1236,1242,1249,1256,1262,1267,1272,1276,1283,1290,1297,1304,1308,1315,1322,1329,1335,1342,1347,1353,1358,1365,1371,1379,1385,1390,1398,1407,1418,1426,1435,1443,1453,1462,1471,1479,1486,1493,1502,1511,1519,1527,1536,1545,1555,1562,1571,1582,1591,1601,1611,1619,1627,1634,1640,1649,1660,1666,1675,1683,1692,1700,1708,1713,1721,1726,1736,1742,1750,1756,1761,1769,1775,1784,1793,1803,1818,1834,1854,1873,1893,1908,1916,1928,1936,1944,1956,1966,1974,1981,1989,1995,2004,2012,2020,2030,2037,2047,2057,2068,2079,2088,2096,2105,2116,2126,2134,2145,2156,2161,2168,2175,2186,2194,2202,2215,2224,2238,2251,2262,2276,2289,2302,2315,2327,2346,2361,2386,2400,2413,2425,2436,2447,2462,2474,2484,2494,2508,2519,2528,2541,2556,2565,2574,2585,2596,2601,2611,2619,2626,2634,2642,2651,2660,2668,2674,2691,2701,2716,2733,2748,2763,2778,2792,2802,2812,2819,2823,2828,2835,2845,2850,2853,2858,2867,2876,2888,2899,2911,2923,2933,2952,2972,2993,3016,3044,3069,3092,3116,3139,3160,3173,3182,3195,3204,3215,3223,3236,3248,3258,3266,3274,3281,3288,3296,3303,3312,3323,3330,3337,3347,3355,3364,3371,3379,3386,3393,3404,3415,3425,3434,3442,3451,3460,3470,3481,3489,3498,3504,3515,3524,3534,3540,3549,3556,3564,3569,3577,3584,3588,3596,3607,3614,3621,3629,3638,3646,3655,3664,3672,3679,3691,3699,3705,3718,3733,3746,3760,3776,3789,3813,3840,3865,3891,3915,3942,3971,3987,3997,4013,4032,4054,4064,4069,4080,4090,4099,4106,4115,4126,4133,4141,4150,4159,4167,4174,4183,4192,4200,4211,4219,4230,4239,4248,4257,4265,4273,4283,4288,4295,4304,4317,4324,4336,4348,4359,4373,4386,4399,4415,4433,4454,4474,4487,4496,4506,4516,4525,4531,4539,4546,4557,4565,4575,4584,4593,4599,4607,4612,4617,4624,4631,4646,4666,4682,4706,4727,4750,4767,4785,4811,4829,4853,4874,4896,4918,4942,4969,4996,5030,5056,5079,5087,5094,5100,5105,5111,5116,5126,5130,5136,5143,5151,5156,5162,5169,5178,5186,5193,5200,5209,5218,5223,5230,5237,5242,5254,5268,5287,5314,5332,5358,5386,5415,5430,5448,5461,5476,5495,5513,5543,5571,5597,5617,5642,5673,5703,5728,5759,5801,5830,5855,5883,5910,5932,5964,5994,6017,6044,6073,6099,6126,6138,6156,6177,6194,6208,6222,6237],"juz":[[1,148],[149,259],[260,385],[386,516],[517,640],[641,750],[751,899],[900,1041],[1042,1200],[1201,1327],[1328,1478],[1479,1648],[1649,1802],[1803,2029],[2030,2214],[2215,2483],[2484,2673],[2674,2855],[2856,3159],[3160,3340],[3341,3533],[3534,3705],[3706,4058],[4059,4218],[4219,4510],[4511,4675],[4676,5104],[5105,5241],[5242,5672],[5673,6236]]};
 
@@ -705,8 +747,8 @@ function surahEnd(s){ return SURAH_START[s] + Q.counts[s-1] - 1; }
 function pageOf(g){ let lo = 1, hi = 604; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (Q.pageStart[m-1] <= g) lo = m; else hi = m - 1; } return lo; }
 function ayahFrac(g){ const p = pageOf(g); return 1 / (Q.pageStart[p] - Q.pageStart[p-1]); }
 function pagesOfRange(a, b){ let t = 0; for (let g = a; g <= b; g++) t += ayahFrac(g); return t; }
-function juzOfG(g){ for (let j = 1; j <= 30; j++) if (g >= Q.juz[j-1][0] && g <= Q.juz[j-1][1]) return j; return 30; }
-function segmentOf(g){ const j = juzOfG(g), s = surahOf(g), [a, b] = Q.juz[j-1]; return [Math.max(a, SURAH_START[s]), Math.min(b, surahEnd(s))]; }
+function juzOfG(dir, g){ return unitAt(dir, g).n1; }
+function segmentOf(dir, g){ const u = unitAt(dir, g), s = surahOf(g); return [Math.max(u.a, SURAH_START[s]), Math.min(u.b, surahEnd(s))]; }
 function posLabel(g){ return `${Q.names[surahOf(g)-1]} ${ayahNo(g)}`; }
 function rangeLabel(a, b){
   const sa = surahOf(a), sb = surahOf(b);
@@ -718,19 +760,20 @@ function rangeLabel(a, b){
 }
 const _ORDER = {};
 function memOrder(dir){
-  if (_ORDER[dir]) return _ORDER[dir];
-  const order = [];
-  if (dir === "asc"){ for (let g = 1; g <= N_AYAH; g++) order.push(g); }
+  const d = dir === "asc" ? "asc" : "desc";
+  if (_ORDER[d]) return _ORDER[d];
+  const order = [], units = unitsOf(d);
+  if (d === "asc"){ for (let g = 1; g <= N_AYAH; g++) order.push(g); }
   else {
-    for (let j = 30; j >= 1; j--){
-      const [a, b] = Q.juz[j-1], sa = surahOf(a), sb = surahOf(b);
-      for (let s = sb; s >= sa; s--){ const lo = Math.max(a, SURAH_START[s]), hi = Math.min(b, surahEnd(s)); for (let g = lo; g <= hi; g++) order.push(g); }
+    for (const u of [...units].reverse()){
+      const sa = surahOf(u.a), sb = surahOf(u.b);
+      for (let s = sb; s >= sa; s--){ const lo = Math.max(u.a, SURAH_START[s]), hi = Math.min(u.b, surahEnd(s)); for (let g = lo; g <= hi; g++) order.push(g); }
     }
   }
   const pos = new Int32Array(N_AYAH + 1); order.forEach((g, i) => pos[g] = i);
   const jStart = [], jEnd = [];
-  for (let j = 1; j <= 30; j++){ const [a, b] = Q.juz[j-1]; let mn = 1e9, mx = -1; for (let g = a; g <= b; g++){ mn = Math.min(mn, pos[g]); mx = Math.max(mx, pos[g]); } jStart[j] = mn; jEnd[j] = mx; }
-  return (_ORDER[dir] = { order, pos, jStart, jEnd });
+  for (const u of units){ let mn = 1e9, mx = -1; for (let g = u.a; g <= u.b; g++){ mn = Math.min(mn, pos[g]); mx = Math.max(mx, pos[g]); } for (let n = u.n1; n <= u.n2; n++){ jStart[n] = mn; jEnd[n] = mx; } }
+  return (_ORDER[d] = { order, pos, jStart, jEnd });
 }
 // حالة الطالب في السجل اليومي
 function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
@@ -747,7 +790,7 @@ function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
   if (cursor !== null && cursor >= O.jEnd[J]) return { mode: "review_exam", step, juzFrom: J, juzTo: J, ready: true };
   if (cursor === null || cursor < O.jStart[J] - 1) cursor = O.jStart[J] - 1;
   if (cursor >= O.jStart[J]){
-    const [sa, sb] = segmentOf(O.order[cursor]);
+    const [sa, sb] = segmentOf(dir, O.order[cursor]);
     if (cursor === O.pos[sb]){
       const ps = O.pos[sa], pe = O.pos[sb];
       const touching = logs.filter(l => l.newMem && O.pos[l.newMem.fromG] <= pe && O.pos[l.newMem.toG] >= ps);
@@ -788,8 +831,9 @@ function readStart(key){ const [t, j] = String(key).split("|").map(Number); retu
 function nextText(s){ const p = studentPath(s); return p.hafiz ? "حافظ للقرآن" : stepLabel(p.steps[p.next]); }
 function blockName(p){
   if (p.hafiz) return "حافظ للقرآن";
-  if (p.next === 39) return "اختبار المصحف كاملاً";
-  return ["العشرة الأولى","العشرة الثانية","العشرة الثالثة"][Math.floor(p.next/13)];
+  const lv = p.steps[p.next].level;
+  if (lv === 4) return "اختبار المصحف كاملاً";
+  return LEVELS[lv];
 }
 function stallDays(){ const v = parseInt(S.settings && S.settings.stallDays); return v > 0 ? v : DEFAULT_STALL_DAYS; }
 function pathFields(dir, sel, idp){
@@ -1151,7 +1195,7 @@ function editExam(id){
     <p class="muted">الطالب: <b>${esc(e.studentName)}</b></p>
     <div class="grid2" style="margin-bottom:10px">
       <label>نوع الاختبار<select id="eType">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${+k===e.type?'selected':''}>${v}</option>`).join("")}</select></label>
-      <label>من الجزء<select id="eStart">${Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}" ${j===e.startJuz?'selected':''}>${j}: ${JUZ[j]}</option>`).join("")}</select></label>
+      <label>من الجزء<select id="eStart">${Array.from({length:30},(_,i)=>i+1).map(j=>`<option value="${j}" ${j===e.startJuz?'selected':''}>${j}: ${unitDesc(e.pathDir === "asc" ? "asc" : "desc", j)}</option>`).join("")}</select></label>
     </div>
     <table class="qtable"><thead><tr><th></th><th>الأخطاء</th><th>التنبيهات</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="muted">إذا وصل خصم سؤال إلى ${CLOSE_AT} علامات يُغلق الاختبار، واترك الأسئلة التي بعده فارغة.</p>
@@ -1174,7 +1218,10 @@ function editExam(id){
       const num = v => v === "" ? null : parseFloat(v);
       const r = computeExam(questions, num($("eTaj").value), num($("ePerf").value));
       if (r.error){ $("eErr").textContent = r.error; return false; }
-      const upd = { ...r, type, startJuz, endJuz: startJuz + type - 1, isRetest: $("eRetest").checked,
+      const stE = S.students.find(x => x.id === e.studentId), dE = e.pathDir || sDir(stE);
+      const stp = buildPath(dE).find(x => x.type === type && x.start === startJuz) || (type === 1 ? buildPath(dE).find(x => x.type === 1 && startJuz >= x.start && startJuz <= x.end) : null);
+      if (stp) startJuz = stp.start;
+      const upd = { ...r, type, startJuz, endJuz: stp ? stp.end : startJuz + type - 1, isRetest: $("eRetest").checked,
         notes: $("eNotes").value.trim(), editedAt: serverTimestamp() };
       await updateDoc(doc(db,"exams",id), upd);
       audit("تعديل اختبار", e.studentName, dateText(e), examBrief(e), examBrief({ ...e, ...upd }));
@@ -1360,7 +1407,7 @@ function studentRecordHtml(sid, forPrint){
         <div class="muted" style="margin-top:4px">أخضر: ناجح · إطار بني: الحالي · باهت: معفى (قبل نقطة البداية) · م3/م5/م10: مجمّع</div></td></tr>`}`;
   }
   const juzChips = Array.from({length:30},(_,i)=>i+1).map(j => forPrint
-      ? (done.has(j) ? `${j}` : null) : `<span class="${done.has(j)?'on':''}" title="${JUZ[j]}">${j}</span>`).filter(Boolean);
+      ? (done.has(j) ? `${j}` : null) : `<span class="${done.has(j)?'on':''}" title="${unitDesc(st && st.pathDir === "asc" ? "asc" : "desc", j)}">${j}</span>`).filter(Boolean);
   return `
     <table class="detail">
       <tr><td>الطالب</td><td><b>${esc(name)}</b></td></tr>
@@ -1460,8 +1507,8 @@ function examReady(s){
     if (doneDate > since) since = doneDate;
   }
   const missing = [];
-  for (let j = step.start; j <= step.end; j++){
-    const [a, b] = Q.juz[j-1];
+  for (const j of step.units){
+    const [a, b] = unitRange(sDir(s), j);
     if (!logs.some(l => (l.date||"") >= since && l.status === "recited" && reviewsCover(l.reviews, a, b))) missing.push(j);
   }
   return { ok: !missing.length, reason: missing.length ? "review" : "ok", step, missing };
@@ -1474,8 +1521,33 @@ function readyText(r){
   if (r.hafiz) return "";
   if (r.ok) return "جاهز للاختبار ✓";
   if (r.reason === "needs_start") return "لم تُحدَّد نقطة البداية في السجل اليومي";
-  if (r.reason === "memorizing") return `ما زال يحفظ الجزء ${r.step.start}`;
-  return r.step.type === 1 ? `لم يُسمِّع الجزء ${r.step.start} كاملاً في جلسة واحدة` : `بقي تسميع: ${r.missing.map(j => "الجزء " + j).join("، ")}`;
+  if (r.reason === "memorizing") return `ما زال يحفظ الجزء ${unitNum(r.step.dir, r.step.start)}`;
+  return r.step.type === 1 ? `لم يُسمِّع الجزء ${unitNum(r.step.dir, r.step.start)} كاملاً في جلسة واحدة` : `بقي تسميع: ${r.missing.map(j => "الجزء " + unitNum(r.step.dir, j)).join("، ")}`;
+}
+// ===== مهلة المراجعة قبل الاختبار: أسبوع للجزء، شهر للمجمّع، شهران للمستوى =====
+function reviewLeft(st){
+  let d = null; try { d = dailyOf(st); } catch(_){ return null; }
+  if (!d || d.mode !== "review_exam" || !d.step) return null;
+  const step = d.step, dir = sDir(st);
+  const lastPass = S.exams.filter(e => e.studentId === st.id && e.passed).map(examMs).filter(Boolean);
+  const lp = lastPass.length ? dayKey(new Date(Math.max(...lastPass))) : "";
+  let since = "";
+  if (step.type === 1){
+    const O = memOrder(dir), end = O.jEnd[step.start];
+    const logs = [...logsOf(st.id)].sort((a,b) => (a.date||"").localeCompare(b.date||""));
+    const hit = logs.find(l => l.newMem && l.newMem.toG && O.pos[l.newMem.toG] >= end);
+    since = hit ? hit.date : lp;
+  } else since = lp;
+  if (!since) return null;
+  const days = Math.round((new Date(dayKey(new Date()) + "T12:00:00") - new Date(since + "T12:00:00")) / 86400000);
+  return { left: step.reviewDays - days, total: step.reviewDays };
+}
+function deadlinePill(st){
+  const r = reviewLeft(st); if (!r) return "";
+  const per = r.total === 7 ? "أسبوع" : r.total === 30 ? "شهر" : "شهرين";
+  if (r.left < 0) return pill("p-no", `تجاوز مهلة المراجعة بـ ${-r.left} يوم`);
+  if (r.left === 0) return pill("p-wa", "مهلة المراجعة: اليوم آخر يوم");
+  return pill(r.left <= 2 ? "p-wa" : "p-ok", `مهلة المراجعة: باقي ${r.left} يوم من ${per}`);
 }
 function activePermits(){ return S.permits.filter(p => { const a = activePermit(p.studentId, p.type, p.startJuz); return a && a.id === p.id; }); }
 function renderBadges(){
@@ -1532,6 +1604,8 @@ function renderHome(){
   const al = [];
   if (pr.length) al.push(["#c0504d", `${pr.length} بانتظار الإعادة`, `أقدمهم: ${esc(pr[0].last.studentName)} — منذ ${daysSince(pr[0].last)} يوم`, "retests"]);
   if (stl.length) al.push(["var(--amber)", `${stl.length} متوقفون أكثر من ${stallDays()} يوماً`, "بدون اختبار جديد في المسار", "stats"]);
+  const overdue = approvedStudents().map(st => ({ st, r: reviewLeft(st) })).filter(x => x.r && x.r.left < 0).sort((x, y) => x.r.left - y.r.left);
+  if (overdue.length) al.push(["#c0504d", `${overdue.length} تجاوزوا مهلة المراجعة`, `أكثرهم: ${esc(overdue[0].st.name)} — متجاوز ${-overdue[0].r.left} يوم`, "ready"]);
   if (fa.length) al.push(["var(--amber)", `${fa.length} غياب متكرر`, "غابوا آخر جلستين أو أكثر", "absence"]);
   if (pend.length) al.push(["var(--gold)", `${pend.length} طلاب جدد بانتظار الموافقة`, "أضافهم المختبرون من التطبيق", "pending"]);
   if (rdy.length) al.push(["var(--green)", `${rdy.length} جاهزون للاختبار`, "أنهوا حفظ الجزء ويراجعونه", "ready"]);
@@ -1549,10 +1623,11 @@ function renderHome(){
 $("homeAlerts").addEventListener("click", ev => {
   const a = ev.target.closest("[data-al]"); if (!a) return;
   if (a.dataset.al !== "ready"){ go(a.dataset.al); return; }
-  const list = sortAr(readyForExam());
-  openDialog("طلاب جاهزون للاختبار", `<p class="muted">أنهوا حفظ الجزء حسب السجل اليومي، ويراجعونه الآن قبل الاختبار.</p>
-    <table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار التالي</th></tr></thead><tbody>${
-    list.map(s => `<tr><td>${nameLink(s.id, s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td><td>${esc(nextText(s))}</td></tr>`).join("")}</tbody></table>`, [{ text:"إغلاق" }], true);
+  const rd = readyForExam(), ids = new Set(rd.map(x => x.id));
+  const list = sortAr([...rd, ...approvedStudents().filter(st => !ids.has(st.id) && (reviewLeft(st) || {}).left < 0)]);
+  openDialog("المراجعة للاختبار", `<p class="muted">الجاهزون للاختبار حسب السجل اليومي، ومن تجاوز مهلة المراجعة (أسبوع للجزء، شهر للمجمّع، شهران للمستوى).</p>
+    <table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار التالي</th><th>المهلة</th></tr></thead><tbody>${
+    list.map(s => `<tr><td>${nameLink(s.id, s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td><td>${esc(nextText(s))}${ids.has(s.id) ? " " + pill("p-ok","جاهز") : ""}</td><td>${deadlinePill(s)}</td></tr>`).join("")}</tbody></table>`, [{ text:"إغلاق" }], true);
 });
 $("homeHalaqat").addEventListener("click", ev => {
   const r = ev.target.closest("tr[data-hq]"); if (!r) return;
@@ -1562,7 +1637,8 @@ $("homeHalaqat").addEventListener("click", ev => {
 // ===== تصاريح الإعادة =====
 function renderPermits(){
   const list = activePermits().sort((a,b)=>(b.grantedAtMs||0)-(a.grantedAtMs||0));
-  const lab = p => p.type === 30 ? "القرآن كاملاً" : juzLabel({ startJuz:p.startJuz, endJuz:p.startJuz + p.type - 1 });
+  const lab = p => { const st = S.students.find(x=>x.id===p.studentId) || {}; const stp = buildPath(sDir(st)).find(x => x.type === p.type && x.start === p.startJuz);
+    return p.type === 30 ? "القرآن كاملاً" : juzLabel({ type:p.type, startJuz:p.startJuz, endJuz: stp ? stp.end : p.startJuz + p.type - 1, pathDir: sDir(st) }); };
   $("permitsList").innerHTML = list.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>تاريخ التصريح</th><th></th></tr></thead><tbody>${
     list.map(p => { const st = S.students.find(x=>x.id===p.studentId) || {};
       return `<tr><td>${nameLink(p.studentId, st.name || p.studentName)}</td><td>${hqTag(st.halaqaId)}</td>
@@ -1602,7 +1678,7 @@ function renderStudentPage(){
         <div><div class="muted">المرحلة الآن (التسميع)</div><b>${d ? esc(dailyTitle(d)) : "—"}</b></div>
         <div><div class="muted">الاختبار التالي</div><b>${p.hafiz ? '<span class="hafiz">حافظ للقرآن الكريم</span>' : esc(stepLabel(p.steps[p.next]))}</b>
           ${(() => { if (p.hafiz) return ""; const r = examReady(st), perm = examPermitted(st, p.steps[p.next]);
-            return `<div style="margin-top:4px">${r.ok ? pill("p-ok", readyText(r)) : perm ? pill("p-wa", "مسموح بتصريح من الإدارة") : pill("p-no", esc(readyText(r)))}</div>
+            return `<div style="margin-top:4px">${r.ok ? pill("p-ok", readyText(r)) : perm ? pill("p-wa", "مسموح بتصريح من الإدارة") : pill("p-no", esc(readyText(r)))}</div><div style="margin-top:4px">${deadlinePill(st)}</div>
             ${!r.ok && !perm && st.status !== "inactive" ? `<button class="small" style="margin-top:6px" data-eperm="${sid}">تصريح اختبار بدون الشرط</button>` : ""}`; })()}</div>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:14px"><b>التقدم في مسار الحفظ</b><span class="muted">${doneN} من ${total} مرحلة · ${passedJuz(sid).size} جزءاً مجتازاً</span></div>
@@ -1731,7 +1807,7 @@ function logEditor(sid, lg){
     return { date, status: v("lgStatus"), newMem: nr ? { fromG: nr.fromG, toG: nr.toG } : null, reviews: rec ? reviews : [] }; }
   $("lgRadd").onclick = () => {
     const k = v("lgRk"); let a, b, label;
-    if (k === "juz"){ const j = n("lgRj"); [a, b] = Q.juz[j-1]; label = `الجزء ${j}`; }
+    if (k === "juz"){ const j = n("lgRj"); [a, b] = unitRange(dir, j); label = `الجزء ${unitNum(dir, j)}`; }
     else { const su = n("lgRs"); if (k === "surah"){ a = gidOf(su, 1); b = surahEnd(su); } else { a = clampG(su, n("lgRa")); b = clampG(su, n("lgRb")); if (a > b) [a, b] = [b, a]; } label = rangeLabel(a, b); }
     reviews.push({ kind: k, fromG: a, toG: b, pages: pagesOfRange(a, b), label }); refresh();
   };
@@ -1915,7 +1991,7 @@ function statRowsForExcel(rows, labelTitle){
 const byCount = (a,b) => b.count - a.count;
 function renderPathStats(){
   const studs = S.students.filter(isActive);
-  const blocks = new Map([["العشرة الأولى",0],["العشرة الثانية",0],["العشرة الثالثة",0],["اختبار المصحف كاملاً",0],["حافظ للقرآن",0]]);
+  const blocks = new Map([["المستوى الأول",0],["المستوى الثاني",0],["المستوى الثالث",0],["اختبار المصحف كاملاً",0],["حافظ للقرآن",0]]);
   const hafiz = [], stalled = [];
   const N = stallDays(), now = Date.now();
   const durs = [[],[],[]];
@@ -1925,8 +2001,8 @@ function renderPathStats(){
     const ex = S.exams.filter(e=>e.studentId===s.id);
     // مدة إنهاء كل عشرة
     for (let b=0;b<3;b++){
-      const bSteps = p.steps.slice(b*13, b*13+13), bKeys = new Set(bSteps.map(x=>x.key));
-      const endExam = ex.filter(e=>e.passed && e.type+"|"+e.startJuz === bSteps[12].key).map(examDate).filter(Boolean).sort((a,b)=>a-b)[0];
+      const bSteps = p.steps.filter(x => x.level === b + 1), bKeys = new Set(bSteps.map(x=>x.key));
+      const endExam = ex.filter(e=>e.passed && e.type+"|"+e.startJuz === bSteps[bSteps.length-1].key).map(examDate).filter(Boolean).sort((a,b)=>a-b)[0];
       const startD = ex.filter(e=>bKeys.has(e.type+"|"+e.startJuz)).map(examDate).filter(Boolean).sort((a,b)=>a-b)[0];
       if (endExam && startD) durs[b].push((endExam - startD)/86400000);
     }
@@ -1937,7 +2013,7 @@ function renderPathStats(){
     if (since){ const d = Math.floor((now - since)/86400000); if (d > N) stalled.push({ s, d, step: p.steps[p.next] }); }
   }
   stalled.sort((a,b)=>b.d-a.d);
-  const durTxt = ["الأولى","الثانية","الثالثة"].map((n,i) => `<span>متوسط مدة إنهاء العشرة ${n}: <b>${durs[i].length ? Math.round(avg(durs[i])) + " يوم" : "—"}</b> ${durs[i].length ? `<span class="muted">(${durs[i].length} طالب)</span>` : ""}</span>`).join("");
+  const durTxt = ["الأول","الثاني","الثالث"].map((n,i) => `<span>متوسط مدة إنهاء المستوى ${n}: <b>${durs[i].length ? Math.round(avg(durs[i])) + " يوم" : "—"}</b> ${durs[i].length ? `<span class="muted">(${durs[i].length} طالب)</span>` : ""}</span>`).join("");
   $("stPath").innerHTML = `
     <table><thead><tr><th>المرحلة</th><th>عدد الطلاب</th></tr></thead><tbody>
     ${[...blocks.entries()].map(([k,v]) => `<tr><td>${k === "حافظ للقرآن" ? `<span class="hafiz">${k}</span>` : k}</td><td>${v}</td></tr>`).join("")}
@@ -2222,8 +2298,8 @@ function dailyTitle(d){
     case "hafiz": return "حافظ للقرآن الكريم";
     case "needs_start": return "لم تُحدَّد نقطة البداية";
     case "review_surah": return `مراجعة ${rangeLabel(d.segFrom, d.segTo)} كاملة (إجباري)`;
-    case "review_exam": return d.juzFrom === d.juzTo ? `مراجعة الجزء ${d.juzFrom} للاختبار` : `مراجعة الأجزاء ${d.juzFrom}–${d.juzTo} للاختبار`;
-    default: return `في الجزء ${d.juz} — التالي من ${posLabel(d.fromG)}`;
+    case "review_exam": return d.step && d.step.type === 30 ? "مراجعة المصحف كاملاً للاختبار" : (d.step && d.step.type > 1 ? `مراجعة ${TYPES[d.step.type]} (${d.step.start}–${d.step.end}) للاختبار` : `مراجعة الجزء ${unitNum(d.step ? d.step.dir : "desc", d.juzFrom)} للاختبار`);
+    default: return `في الجزء ${unitNum(d.step ? d.step.dir : "desc", d.juz)} — التالي من ${posLabel(d.fromG)}`;
   }
 }
 function isHoliday(date, halaqaId){ return S.holidays.some(h => h.date === date && (h.halaqaId === "all" || h.halaqaId === halaqaId)); }

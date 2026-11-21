@@ -60,18 +60,13 @@ double pagesOfRange(int a, int b) {
   return t;
 }
 
-int juzOfG(int g) {
-  for (var j = 1; j <= 30; j++) {
-    if (g >= qJuz[j - 1][0] && g <= qJuz[j - 1][1]) return j;
-  }
-  return 30;
-}
+/// رقم وحدة الحفظ (الجزء حسب خطة المركز) التي فيها الآية
+int juzOfG(String dir, int g) => unitAt(dir, g).n1;
 
-/// جزء السورة داخل الجزء الواحد [من، إلى]
-List<int> segmentOf(int g) {
-  final j = juzOfG(g), s = surahOf(g);
-  final a = qJuz[j - 1][0], b = qJuz[j - 1][1];
-  return [a > surahFirst(s) ? a : surahFirst(s), b < surahEnd(s) ? b : surahEnd(s)];
+/// جزء السورة داخل وحدة الحفظ [من، إلى]
+List<int> segmentOf(String dir, int g) {
+  final u = unitAt(dir, g), s = surahOf(g);
+  return [u.a > surahFirst(s) ? u.a : surahFirst(s), u.b < surahEnd(s) ? u.b : surahEnd(s)];
 }
 
 String posLabel(int g) => '${surahName(surahOf(g))} ${ayahNo(g)}';
@@ -96,22 +91,23 @@ class MemOrder {
 
 final Map<String, MemOrder> _orders = {};
 
-/// ترتيب الحفظ: من البقرة = ترتيب المصحف، من الناس = السور تنازلياً وكل سورة من أولها
+/// ترتيب الحفظ: من البقرة = ترتيب المصحف، من الناس = الوحدات تنازلياً، وداخل كل وحدة السور تنازلياً وكل سورة من أولها
 MemOrder memOrder(String dir) {
-  final cached = _orders[dir];
+  final d = dir == 'asc' ? 'asc' : 'desc';
+  final cached = _orders[d];
   if (cached != null) return cached;
   final order = <int>[];
-  if (dir == 'asc') {
+  final units = unitsOf(d);
+  if (d == 'asc') {
     for (var g = 1; g <= nAyah; g++) {
       order.add(g);
     }
   } else {
-    for (var j = 30; j >= 1; j--) {
-      final a = qJuz[j - 1][0], b = qJuz[j - 1][1];
-      final sa = surahOf(a), sb = surahOf(b);
+    for (final u in units.reversed) {
+      final sa = surahOf(u.a), sb = surahOf(u.b);
       for (var s = sb; s >= sa; s--) {
-        final lo = a > surahFirst(s) ? a : surahFirst(s);
-        final hi = b < surahEnd(s) ? b : surahEnd(s);
+        final lo = u.a > surahFirst(s) ? u.a : surahFirst(s);
+        final hi = u.b < surahEnd(s) ? u.b : surahEnd(s);
         for (var g = lo; g <= hi; g++) {
           order.add(g);
         }
@@ -123,17 +119,19 @@ MemOrder memOrder(String dir) {
     pos[order[i]] = i;
   }
   final jStart = List<int>.filled(31, 0), jEnd = List<int>.filled(31, 0);
-  for (var j = 1; j <= 30; j++) {
+  for (final u in units) {
     var mn = 1 << 30, mx = -1;
-    for (var g = qJuz[j - 1][0]; g <= qJuz[j - 1][1]; g++) {
+    for (var g = u.a; g <= u.b; g++) {
       if (pos[g] < mn) mn = pos[g];
       if (pos[g] > mx) mx = pos[g];
     }
-    jStart[j] = mn;
-    jEnd[j] = mx;
+    for (var n = u.n1; n <= u.n2; n++) {
+      jStart[n] = mn;
+      jEnd[n] = mx;
+    }
   }
   final o = MemOrder(order, pos, jStart, jEnd);
-  _orders[dir] = o;
+  _orders[d] = o;
   return o;
 }
 
@@ -164,11 +162,17 @@ String memRangeLabel(String dir, int fromG, int toG) {
   return parts.join('، ');
 }
 
-/// السور الموجودة في الجزء بترتيب الحفظ
+/// السور الموجودة في وحدة الحفظ بترتيب الحفظ
 List<int> surahsOfJuz(String dir, int j) {
-  final a = qJuz[j - 1][0], b = qJuz[j - 1][1];
-  final list = <int>[for (var s = surahOf(a); s <= surahOf(b); s++) s];
+  final u = unitOf(dir, j);
+  final list = <int>[for (var s = surahOf(u.a); s <= surahOf(u.b); s++) s];
   return dir == 'asc' ? list : list.reversed.toList();
+}
+
+/// مدى الوحدة [a, b]
+List<int> unitRange(String dir, int j) {
+  final u = unitOf(dir, j);
+  return [u.a, u.b];
 }
 
 class DailyStatus {
@@ -199,9 +203,12 @@ class DailyStatus {
       case 'review_surah':
         return 'مراجعة سورة ${rangeLabel(segFrom!, segTo!).replaceFirst('سورة ', '')} كاملة (إجباري)';
       case 'review_exam':
-        return juzFrom == juzTo ? 'مراجعة الجزء $juzFrom للاختبار' : 'مراجعة الأجزاء $juzFrom–$juzTo للاختبار';
+        if (step?.type == 30) return 'مراجعة المصحف كاملاً للاختبار';
+        return (step?.type ?? 1) == 1
+            ? 'مراجعة الجزء ${unitNum(step?.dir ?? 'desc', juzFrom)} للاختبار'
+            : 'مراجعة ${examTypes[step!.type]} (${step!.start}–${step!.end}) للاختبار';
       default:
-        return 'في الجزء $juz';
+        return 'في الجزء ${unitNum(step?.dir ?? 'desc', juz)}';
     }
   }
 
@@ -238,7 +245,7 @@ DailyStatus dailyStatus(String dir, int start, Set<String> passedKeys, List<Map<
   }
   if (cursor == null || cursor < o.jStart[j] - 1) cursor = o.jStart[j] - 1;
   if (cursor >= o.jStart[j]) {
-    final seg = segmentOf(o.order[cursor]);
+    final seg = segmentOf(dir, o.order[cursor]);
     final sa = seg[0], sb = seg[1];
     if (cursor == o.pos[sb]) {
       final ps = o.pos[sa], pe = o.pos[sb];
@@ -295,10 +302,10 @@ class ExamReady {
       case 'needs_start':
         return 'لم تُحدَّد نقطة بدايته في السجل اليومي — يحددها الشيخ ثم يُسمّعه الجزء كاملاً';
       case 'memorizing':
-        return 'ما زال يحفظ الجزء ${step.start} — لم يُتمّ حفظه في السجل اليومي';
+        return 'ما زال يحفظ الجزء ${unitNum(step.dir, step.start)} — لم يُتمّ حفظه في السجل اليومي';
       default:
-        if (step.type == 1) return 'لم يُسمِّع الجزء ${step.start} كاملاً في جلسة واحدة بعد إتمام حفظه';
-        return 'لم يُسمِّع كاملاً بعد: ${missing.map((j) => 'الجزء $j').join('، ')}';
+        if (step.type == 1) return 'لم يُسمِّع الجزء ${unitNum(step.dir, step.start)} كاملاً في جلسة واحدة بعد إتمام حفظه';
+        return 'لم يُسمِّع كاملاً بعد: ${missing.map((j) => 'الجزء ${unitNum(step.dir, j)}').join('، ')}';
     }
   }
 }
@@ -354,11 +361,50 @@ ExamReady examReadiness(String dir, int start, Set<String> passedKeys, List<Map<
     if (doneDate.compareTo(since) > 0) since = doneDate;
   }
   final missing = <int>[];
-  for (var j = step.start; j <= step.end; j++) {
-    final a = qJuz[j - 1][0], b = qJuz[j - 1][1];
+  for (final j in step.units) {
+    final r = unitRange(dir, j);
+    final a = r[0], b = r[1];
     final done = logs.any((l) =>
         (l['date'] ?? '').toString().compareTo(since) >= 0 && l['status'] == 'recited' && reviewsCoverRange(l['reviews'], a, b));
     if (!done) missing.add(j);
   }
   return missing.isEmpty ? const ExamReady(true, 'ok') : ExamReady(false, 'review', missing);
+}
+
+
+// ===================== مهلة المراجعة قبل الاختبار =====================
+/// بداية مهلة المراجعة (yyyy-MM-dd) أو null إذا لا توجد مهلة الآن.
+/// المفرد: من يوم إتمام حفظ الجزء. المجمّع: من يوم آخر اختبار نجح فيه.
+String? reviewSince(String dir, DailyStatus st, List<Map<String, dynamic>> logs, String lastPassDate) {
+  if (st.mode != 'review_exam' || st.step == null) return null;
+  final step = st.step!;
+  if (step.type > 1) return lastPassDate.isEmpty ? null : lastPassDate;
+  final o = memOrder(dir);
+  final end = o.jEnd[step.start];
+  final sorted = [...logs]..sort((a, b) => (a['date'] ?? '').toString().compareTo((b['date'] ?? '').toString()));
+  for (final l in sorted) {
+    final nm = l['newMem'];
+    final tg = nm is Map ? _int(nm['toG']) : null;
+    if (tg != null && o.pos[tg] >= end) return (l['date'] ?? '').toString();
+  }
+  return lastPassDate.isEmpty ? null : lastPassDate;
+}
+
+/// الأيام المتبقية من المهلة (سالب = متجاوز)، أو null
+int? reviewDaysLeft(String dir, DailyStatus st, List<Map<String, dynamic>> logs, String lastPassDate) {
+  final since = reviewSince(dir, st, logs, lastPassDate);
+  if (since == null || since.isEmpty) return null;
+  final d = DateTime.tryParse(since);
+  if (d == null) return null;
+  final n = DateTime.now();
+  final days = DateTime(n.year, n.month, n.day).difference(DateTime(d.year, d.month, d.day)).inDays;
+  return st.step!.reviewDays - days;
+}
+
+String reviewDeadlineText(int left, int total) {
+  if (left < 0) return 'تجاوز مهلة المراجعة بـ ${-left} ${-left == 1 ? 'يوم' : (-left == 2 ? 'يومين' : 'أيام')}';
+  if (left == 0) return 'مهلة المراجعة: اليوم آخر يوم';
+  final per = total == 7 ? 'أسبوع' : (total == 30 ? 'شهر' : 'شهرين');
+  final l = left == 1 ? 'يوم' : (left == 2 ? 'يومين' : '$left أيام');
+  return 'مهلة المراجعة: باقي $l من $per';
 }

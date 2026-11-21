@@ -214,7 +214,7 @@ class _ExamScreenState extends State<ExamScreen> {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           children: [
-            Text('${examTypes[s.type]} — ${juzLabel(s.startJuz, s.endJuz)}',
+            Text('${examTypes[s.type]} — ${juzLabel(s.startJuz, s.endJuz, type: s.type, dir: s.dir)}',
                 textAlign: TextAlign.center, style: TextStyle(color: context.sub, fontSize: 13.5)),
             const SizedBox(height: 12),
             Row(children: [for (var i = 0; i < qCount; i++) _circle(i)]),

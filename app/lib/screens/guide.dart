@@ -31,12 +31,16 @@ class _GuideScreenState extends State<GuideScreen> {
           Panel(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               _h('مسار الحفظ'),
-              _p('كل طالب يمشي في مسار ثابت من 40 اختباراً، ويحدد التطبيق الاختبار التالي له تلقائياً عند اختياره.'),
-              _p('كل عشرة أجزاء لها نفس الترتيب:'),
-              _p('• 3 أجزاء مفردة ← اختبار مجمّع 3 أجزاء\n'
-                  '• جزءان مفردان ← اختبار مجمّع 5 أجزاء\n'
-                  '• 5 أجزاء مفردة ← اختبار مجمّع 10 أجزاء'),
-              _p('وبعد العشرات الثلاث: اختبار المصحف كاملاً، وبعده يصبح الطالب حافظاً للقرآن الكريم.'),
+              _p('حسب خطة المركز: كل طالب يمشي في مسار ثابت، ويحدد التطبيق الاختبار التالي له تلقائياً.'),
+              _p('الأجزاء محسوبة بالسور الكاملة (بداية الجزء ونهايته كما في خطة المركز).'),
+              _p('كل مستوى (10 أجزاء) له نفس الترتيب:'),
+              _p('• 3 أجزاء مفردة ← مجمّع 3 أجزاء\n'
+                  '• جزءان ← مجمّع 5 أجزاء\n'
+                  '• 3 أجزاء مفردة ← مجمّع 3 أجزاء\n'
+                  '• جزءان ← مجمّع 5 أجزاء\n'
+                  '• ثم الاختبار النهائي للمستوى: 10 أجزاء'),
+              _p('وبعد المستويات الثلاثة: اختبار المصحف كاملاً، وبعده يصبح الطالب حافظاً للقرآن الكريم.'),
+              _p('مهلة المراجعة قبل الاختبار: أسبوع للجزء، شهر للمجمّع، شهران للمستوى (10 أجزاء)، ولا يحفظ الطالب جديداً خلالها.'),
               _p('الاتجاه حسب الطالب: من الناس (من الجزء 30 نزولاً) أو من البقرة (من الجزء 1 صعوداً)، ويبدأ من الجزء الذي حددته الإدارة له.'),
             ]),
           ),
@@ -70,28 +74,37 @@ class _GuideScreenState extends State<GuideScreen> {
   Widget _timeline(String dir) {
     final steps = buildPath(dir);
     final items = <Widget>[];
-    const names = ['العشر الأولى', 'العشر الثانية', 'العشر الثالثة'];
+    var lastLevel = 0;
     for (var i = 0; i < steps.length; i++) {
       final s = steps[i];
-      if (i % 13 == 0 && i < 39) {
-        final a = steps[i].start;
-        final b = steps[i + 12].start + steps[i + 12].type - 1;
-        final first = dir == 'asc' ? a : steps[i].start;
-        final last = dir == 'asc' ? b : steps[i + 12].start;
+      if (s.level != lastLevel) {
+        lastLevel = s.level;
+        final inLevel = steps.where((x) => x.level == s.level && x.type == 1).toList();
+        String range = '';
+        if (s.level < 4 && inLevel.isNotEmpty) {
+          final lo = inLevel.map((x) => x.start).reduce((a, b) => a < b ? a : b);
+          final hi = inLevel.map((x) => x.end).reduce((a, b) => a > b ? a : b);
+          range = dir == 'asc' ? ': الأجزاء $lo ← $hi' : ': الأجزاء $hi ← $lo';
+        }
         items.add(Padding(
           padding: EdgeInsets.fromLTRB(4, i == 0 ? 4 : 16, 4, 8),
-          child: Text('${names[i ~/ 13]}: الأجزاء $first ← $last',
+          child: Text('${levelNames[s.level]}$range',
               style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: 15)),
         ));
       }
-      if (i == 39) {
-        items.add(Padding(
-          padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-          child: Text('الختام', style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: 15)),
-        ));
-      }
       final cumulative = s.type > 1;
+      final big = s.type >= 10;
       final isLast = i == steps.length - 1;
+      final title = s.type == 1
+          ? 'الجزء ${unitNum(dir, s.start)}'
+          : s.type == 30
+              ? 'الختام: المصحف كاملاً'
+              : 'مجمّع ${s.type} أجزاء (${s.start}–${s.end})';
+      final sub = s.type == 1 ? unitDesc(dir, s.start) : (s.type == 30 ? 'بعده يصبح الطالب حافظاً' : rangeSurahs(s.a, s.b));
+      final per = s.type == 30 ? '' : (s.reviewDays == 7 ? 'أسبوع' : (s.reviewDays == 30 ? 'شهر' : 'شهرين'));
+      final Color bg = big ? context.chosen : (cumulative ? context.goldBg : context.surface);
+      final Color fg = big ? const Color(0xFFF2D27A) : (cumulative ? context.goldFg : context.ink);
+      final Color subC = big ? const Color(0xFFCFE3F1) : context.sub;
       items.add(IntrinsicHeight(
         child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           SizedBox(
@@ -118,16 +131,25 @@ class _GuideScreenState extends State<GuideScreen> {
           Expanded(
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: cumulative ? context.goldBg : context.surface,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Text(s.label,
-                  style: TextStyle(
-                      fontWeight: cumulative ? FontWeight.w800 : FontWeight.w600,
-                      color: cumulative ? context.goldFg : context.ink,
-                      fontSize: 14.5)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+              child: Row(children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: fg, fontSize: 14.5)),
+                    Text(sub, style: TextStyle(color: subC, fontSize: 12.5)),
+                  ]),
+                ),
+                if (per.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: big ? const Color(0x26FFFFFF) : context.field,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(per, style: TextStyle(fontSize: 11, color: big ? Colors.white : context.sub)),
+                  ),
+              ]),
             ),
           ),
         ]),

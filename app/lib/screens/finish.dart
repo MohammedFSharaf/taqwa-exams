@@ -272,6 +272,7 @@ class _ResultScreenState extends State<ResultScreen> {
       'startJuz': s.startJuz,
       'endJuz': s.endJuz,
       'isRetest': s.isRetest,
+      'pathDir': s.dir,
       'questions': [
         for (var i = 0; i < qCount; i++) i < widget.questions.length ? widget.questions[i].toMap() : null,
       ],
@@ -296,7 +297,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
   String get _parts {
     final s = widget.setup;
-    return s.type == 1 ? 'الجزء ${s.startJuz}' : 'الأجزاء ${s.startJuz}–${s.endJuz}';
+    return s.type == 1 ? 'الجزء ${unitNum(s.dir, s.startJuz)}' : 'الأجزاء ${s.startJuz}–${s.endJuz}';
   }
 
   Future<void> _share() async {
@@ -304,7 +305,7 @@ class _ResultScreenState extends State<ResultScreen> {
     final res = _closed ? 'لم يُكمل الاختبار' : '${fmt(_total)} من 100 — ${_passed ? 'ناجح' : 'لم ينجح هذه المرة'}';
     final msg = 'السلام عليكم ورحمة الله\n'
         'نتيجة اختبار الطالب ${s.studentName} في مركز التقوى لتعليم وتحفيظ القرآن الكريم:\n'
-        '${examTypes[s.type] ?? ''} — ${juzLabel(s.startJuz, s.endJuz)}\n'
+        '${examTypes[s.type] ?? ''} — ${juzLabel(s.startJuz, s.endJuz, type: s.type, dir: s.dir)}\n'
         'النتيجة: $res\n'
         '${_passed ? 'بارك الله فيه وزاده حفظاً وإتقاناً.' : 'يراجع $_parts ويعيد الاختبار بإذن الله.'}';
     try {
@@ -361,7 +362,7 @@ class _ResultScreenState extends State<ResultScreen> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: _passed ? context.okFg : context.badFg),
             ),
             Text(
-              '${s.studentName}${s.isRetest ? ' (إعادة)' : ''} · ${juzLabel(s.startJuz, s.endJuz)}',
+              '${s.studentName}${s.isRetest ? ' (إعادة)' : ''} · ${juzLabel(s.startJuz, s.endJuz, type: s.type, dir: s.dir)}',
               textAlign: TextAlign.center,
               style: TextStyle(color: context.sub, fontSize: 14),
             ),

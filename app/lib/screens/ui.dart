@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../daily.dart';
 import '../repo.dart';
 import '../update_check.dart';
 import 'widgets.dart';
@@ -614,4 +615,23 @@ void showSettingsSheet(BuildContext context) {
       },
     ),
   );
+}
+
+/// شارة مهلة المراجعة قبل الاختبار
+class DeadlineTag extends StatelessWidget {
+  final int left, total;
+  const DeadlineTag(this.left, this.total, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color fg, Color bg) = left < 0
+        ? (context.badFg, context.badBg)
+        : left <= 2
+            ? (context.goldFg, context.goldBg)
+            : (context.okFg, context.okBg);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Tag(reviewDeadlineText(left, total), fg: fg, bg: bg),
+    );
+  }
 }

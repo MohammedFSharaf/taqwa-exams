@@ -28,7 +28,7 @@ class MyExamsScreen extends StatefulWidget {
     showAppSheet<void>(
       context,
       title: '${e['studentName'] ?? ''}${e['isRetest'] == true ? ' (إعادة)' : ''}',
-      subtitle: '${examTypes[e['type']] ?? ''} · ${juzLabel(e['startJuz'] ?? 1, e['endJuz'] ?? 1)}',
+      subtitle: '${examTypes[e['type']] ?? ''} · ${juzLabel(e['startJuz'] ?? 1, e['endJuz'] ?? 1, type: (e['type'] as num?)?.toInt() ?? 0, dir: (e['pathDir'] ?? 'desc').toString())}',
       builder: (ctx, _) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         row('التاريخ', '${e['createdAtText'] ?? ''}'),
         row('الحلقة', '${e['halaqaName'] ?? ''}'),
@@ -184,7 +184,13 @@ class _ExamListState extends State<ExamList> {
             ? (context.okFg, context.okBg)
             : (context.badFg, context.badBg);
     final sj = e['startJuz'] ?? 1, ej = e['endJuz'] ?? 1;
-    final parts = sj == ej ? 'الجزء $sj' : '${(ej as num) - (sj as num) + 1} أجزاء: $sj–$ej';
+    final tp = (e['type'] as num?)?.toInt() ?? 1;
+    final dir = (e['pathDir'] ?? 'desc').toString();
+    final parts = tp == 1
+        ? 'الجزء ${unitNum(dir, (sj as num).toInt())}'
+        : tp == 30
+            ? 'المصحف كاملاً'
+            : '$tp أجزاء: $sj–$ej';
     final time = dt == null ? '' : '${two(dt.hour)}:${two(dt.minute)}';
     return Panel(
       margin: const EdgeInsets.only(bottom: 8),
