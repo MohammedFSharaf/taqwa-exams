@@ -575,7 +575,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       appBar: AppBar(
         title: const BrandTitle('السجل اليومي'),
         actions: [
-          IconButton(tooltip: 'سجل الأسبوع', icon: const Icon(Icons.date_range_rounded), onPressed: _openWeek),
+          IconButton(tooltip: 'سجل الأسبوع', icon: const Icon(Icons.list_alt_rounded), onPressed: _openWeek),
           const SettingsButton(),
           TextButton(onPressed: _logout, child: Text('خروج', style: TextStyle(color: context.sub))),
         ],

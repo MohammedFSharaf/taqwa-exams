@@ -87,7 +87,7 @@ Widget _weekNav(BuildContext context, int offset, ValueChanged<int> set) => Pane
             haptic();
             set(offset + 1);
           },
-          icon: Icon(Icons.chevron_right_rounded, color: context.accent),
+          icon: Transform.flip(flipX: true, child: Icon(Icons.chevron_left_rounded, color: context.accent)),
         ),
         Expanded(
           child: Column(children: [
@@ -175,7 +175,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
               SectionLabel('${widget.halaqaName.isEmpty ? 'الطلاب' : widget.halaqaName} (${widget.students.length}) — اضغط على الطالب للتفاصيل'),
               if (week.isEmpty)
                 const EmptyState(
-                  icon: Icons.event_note_rounded,
+                  icon: Icons.assignment_outlined,
                   title: 'لا يوجد تسجيل بهذا الأسبوع',
                   text: 'التسميع الذي يُسجَّل في أيام هذا الأسبوع يظهر هنا.',
                 ),
@@ -289,7 +289,7 @@ class _StudentWeekScreenState extends State<StudentWeekScreen> {
               ]),
               const SizedBox(height: 10),
               if (logs.isEmpty)
-                const EmptyState(icon: Icons.event_busy_rounded, title: 'لا يوجد تسجيل بهذا الأسبوع'),
+                const EmptyState(icon: Icons.assignment_outlined, title: 'لا يوجد تسجيل بهذا الأسبوع'),
               for (final l in logs) _day(l),
             ],
           );
