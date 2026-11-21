@@ -40,6 +40,11 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // البيانات الشخصية للطلاب (الميلاد، ولي الأمر، الجوال، السكن...): الإدارة فقط
+    match /studentInfo/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // أذونات إعادة اختبار ناجح: الإدارة فقط تكتب، والتطبيق يقرأ
     match /permits/{id} {
       allow read: if isApp();

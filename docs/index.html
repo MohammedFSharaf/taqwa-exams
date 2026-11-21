@@ -723,7 +723,7 @@
       <div class="card">
         <h2>إضافة طالب</h2>
         <div class="row">
-          <label>اسم الطالب<input id="newStudentName" style="min-width:260px"></label>
+          <label>اسم الطالب رباعياً<input id="newStudentName" style="min-width:260px"></label>
           <label>الحلقة<select id="newStudentHalaqa"></select></label>
           <label>الاتجاه<select id="newDir"></select></label>
           <label>مرحلة البداية<select id="newStart" style="max-width:300px"></select></label>
@@ -743,10 +743,12 @@
           <label>بحث<input id="sSearch"></label>
           <label>الحلقة<select id="sHalaqa"></select></label>
           <label>الحالة<select id="sState"><option value="active">على رأس الحلقة</option><option value="inactive">منقطع</option><option value="">الكل</option></select></label>
+          <label>البيانات<select id="sInfo"><option value="">الكل</option><option value="orphan">الأيتام</option><option value="displaced">النازحون</option><option value="missing">بيانات ناقصة</option></select></label>
+          <button id="sInfoExcel">تصدير بيانات الطلاب</button>
           <span class="muted" id="studentsCount"></span>
         </div>
         <div class="tblwrap"><table>
-          <thead><tr><th>الاسم</th><th>الحلقة</th><th>المسار</th><th>الاختبار التالي</th><th>الاختبارات</th><th></th></tr></thead>
+          <thead><tr><th>الاسم</th><th>الحلقة</th><th class="hm">العمر / الصف</th><th>المسار</th><th>الاختبار التالي</th><th>الاختبارات</th><th></th></tr></thead>
           <tbody id="studentsBody"></tbody>
         </table></div>
       </div>
@@ -1098,7 +1100,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const DAY_NAMES_ = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
-const S = { halaqat:[], students:[], examiners:[], exams:[], permits:[], sheikhs:[], logs:[], progress:[], holidays:[], audit:[], settings:{} };
+const S = { info:{}, infoErr:false, halaqat:[], students:[], examiners:[], exams:[], permits:[], sheikhs:[], logs:[], progress:[], holidays:[], audit:[], settings:{} };
 let unsubs = [];
 const $ = id => document.getElementById(id);
 
@@ -1176,6 +1178,10 @@ function listen(name, cb){
 function startListeners(){
   listen("halaqat"); listen("students"); listen("examiners"); listen("exams"); listen("permits");
   listen("sheikhs"); listen("logs"); listen("progress"); listen("holidays");
+  // البيانات الشخصية: للإدارة فقط (مجموعة منفصلة لا يقرؤها التطبيق)
+  unsubs.push(onSnapshot(collection(db, "studentInfo"), snap => {
+    S.info = {}; snap.docs.forEach(d => S.info[d.id] = d.data()); S.infoErr = false; renderAll();
+  }, err => { console.error(err); S.infoErr = true; renderAll(); }));
   unsubs.push(onSnapshot(query(collection(db,"audit"), orderBy("atMs","desc"), limit(500)), snap => {
     S.audit = snap.docs.map(d => ({ id:d.id, ...d.data() }));
     if (curTab === "audit") renderAudit();
@@ -1238,6 +1244,79 @@ document.addEventListener("click", ev => {
 });
 (() => { const d = new Date(); $("pageSub").textContent = `${DAY_NAMES_[d.getDay()]} ${d.getDate()} / ${d.getMonth()+1} / ${d.getFullYear()}`; })();
 
+
+
+// =================== البيانات الشخصية (للإدارة فقط) ===================
+const GRADES = ["رياض أطفال","الأول","الثاني","الثالث","الرابع","الخامس","السادس","السابع","الثامن","التاسع","العاشر","الحادي عشر","الثاني عشر","جامعي","غير ملتحق بالمدرسة"];
+const INFO_FIELDS = [["dob","تاريخ الميلاد"],["grade","الصف الدراسي"],["guardianName","اسم ولي الأمر"],["guardianPhone","جوال ولي الأمر"],["address","السكن"],["housing","نازح / مقيم"],["orphan","يتيم"],["joinedAt","تاريخ الالتحاق"]];
+function ageOf(dob){ if (!dob) return null; const b = new Date(dob + "T12:00:00"), n = new Date(); if (isNaN(b)) return null; let a = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--; return a; }
+function infoMissing(sid){ const i = S.info[sid] || {}; return INFO_FIELDS.filter(([k]) => k === "orphan" ? typeof i.orphan !== "boolean" : !i[k]).map(([,t]) => t); }
+function nameParts(n){ return String(n||"").trim().split(/\s+/).filter(Boolean).length; }
+function infoCardHtml(st){
+  if (S.infoErr) return `<div class="card"><h2>البيانات الشخصية</h2><p class="fail">لا يمكن عرض البيانات الشخصية: لازم تُنشر قواعد الأمان الجديدة في Firebase (studentInfo).</p></div>`;
+  const i = S.info[st.id] || {}, a = ageOf(i.dob), miss = infoMissing(st.id);
+  const v = x => x ? esc(x) : '<span class="muted">—</span>';
+  const tel = i.guardianPhone ? `<a href="tel:${esc(i.guardianPhone)}" dir="ltr" style="color:var(--blue)">${esc(i.guardianPhone)}</a>` : v("");
+  return `<div class="card">
+    <h2>البيانات الشخصية <span style="display:flex;gap:6px;align-items:center">${miss.length ? pill("p-wa", `ناقص ${miss.length}`) : pill("p-ok","مكتملة")}<button class="small primary" data-info="${st.id}">تعديل</button></span></h2>
+    <div class="info4">
+      <div><div class="muted">الاسم رباعياً</div><b>${esc(st.name)}</b>${nameParts(st.name) < 4 ? ' <span class="pill p-wa">ليس رباعياً</span>' : ""}</div>
+      <div><div class="muted">تاريخ الميلاد</div>${i.dob ? `${esc(i.dob)} <span class="muted">(${a} سنة)</span>` : v("")}</div>
+      <div><div class="muted">الصف الدراسي</div>${v(i.grade)}</div>
+      <div><div class="muted">تاريخ الالتحاق بالمركز</div>${v(i.joinedAt)}</div>
+      <div><div class="muted">اسم ولي الأمر</div>${v(i.guardianName)}</div>
+      <div><div class="muted">جوال ولي الأمر</div>${tel}</div>
+      <div><div class="muted">السكن</div>${v(i.address)}${i.housing ? " " + pill(i.housing === "نازح" ? "p-wa" : "p-gr", esc(i.housing)) : ""}</div>
+      <div><div class="muted">يتيم</div>${i.orphan === true ? pill("p-wa","يتيم") : i.orphan === false ? "لا" : v("")}</div>
+    </div>
+    <p class="muted" style="margin:10px 0 0">هذه البيانات تظهر في لوحة الإدارة فقط، ولا تصل للتطبيق.</p>
+  </div>`;
+}
+function infoEditor(sid, stOverride, isNew){
+  const st = stOverride || stuById(sid) || {}, i = S.info[sid] || {};
+  const opt = (arr, cur) => `<option value="">—</option>` + arr.map(x => `<option ${x === cur ? "selected" : ""}>${x}</option>`).join("");
+  openDialog(isNew ? "بيانات الطالب الجديد" : "تعديل البيانات الشخصية", `
+    ${isNew ? '<p class="muted">تمت إضافة الطالب. أكمل بياناته الآن أو لاحقاً من ملفه.</p>' : ""}
+    <div class="grid2">
+      <label style="grid-column:1/-1">اسم الطالب رباعياً<input id="inName" value="${esc(st.name||"")}"></label>
+      <label>تاريخ الميلاد<input type="date" id="inDob" value="${esc(i.dob||"")}"></label>
+      <label>الصف الدراسي<select id="inGrade">${opt(GRADES, i.grade)}</select></label>
+      <label>اسم ولي الأمر<input id="inGName" value="${esc(i.guardianName||"")}"></label>
+      <label>جوال ولي الأمر<input id="inGPhone" type="tel" dir="ltr" placeholder="059xxxxxxx" value="${esc(i.guardianPhone||"")}"></label>
+      <label>السكن<input id="inAddr" placeholder="المنطقة / الحي" value="${esc(i.address||"")}"></label>
+      <label>نازح / مقيم<select id="inHousing">${opt(["مقيم","نازح"], i.housing)}</select></label>
+      <label>يتيم<select id="inOrphan"><option value="">—</option><option value="1" ${i.orphan === true ? "selected" : ""}>نعم</option><option value="0" ${i.orphan === false ? "selected" : ""}>لا</option></select></label>
+      <label>تاريخ الالتحاق بالمركز<input type="date" id="inJoined" value="${esc(i.joinedAt || (isNew ? dayKey(new Date()) : ""))}"></label>
+    </div>
+    <div class="err" id="inErr"></div>`, [
+    { text:"حفظ", cls:"primary", onClick: async () => {
+      const name = $("inName").value.trim().replace(/\s+/g, " ");
+      const phone = $("inGPhone").value.replace(/[^\d+]/g, "");
+      if (!name){ $("inErr").textContent = "اكتب اسم الطالب"; return false; }
+      if (phone && phone.replace(/\D/g, "").length < 9){ $("inErr").textContent = "رقم الجوال غير صحيح"; return false; }
+      const o = $("inOrphan").value;
+      const data = { dob: $("inDob").value, grade: $("inGrade").value, guardianName: $("inGName").value.trim(), guardianPhone: phone,
+        address: $("inAddr").value.trim(), housing: $("inHousing").value, orphan: o === "" ? null : o === "1", joinedAt: $("inJoined").value, updatedAt: serverTimestamp() };
+      try {
+        await setDoc(doc(db, "studentInfo", sid), data, { merge: true });
+        if (name !== st.name) await updateDoc(doc(db, "students", sid), { name });
+        audit("تعديل البيانات الشخصية", name, "");
+        toast("تم حفظ البيانات");
+      } catch(e){ console.error(e); $("inErr").textContent = "لم تُحفظ: تأكد من نشر قواعد الأمان الجديدة (studentInfo)"; return false; }
+    }},
+    { text: isNew ? "لاحقاً" : "إلغاء" }
+  ]);
+}
+document.addEventListener("click", ev => { const b = ev.target.closest("[data-info]"); if (b){ ev.preventDefault(); infoEditor(b.dataset.info); } });
+$("sInfoExcel").onclick = () => {
+  const inf = $("sInfo").value, h = $("sHalaqa").value;
+  const rows = sortAr(approvedStudents().filter(s => (!h || s.halaqaId === h))).filter(s => !inf || (inf === "orphan" ? (S.info[s.id]||{}).orphan === true : inf === "displaced" ? (S.info[s.id]||{}).housing === "نازح" : infoMissing(s.id).length)).map(s => {
+    const i = S.info[s.id] || {};
+    return { "اسم الطالب": s.name, "الحلقة": halaqaName(s.halaqaId), "تاريخ الميلاد": i.dob || "", "العمر": ageOf(i.dob) ?? "", "الصف": i.grade || "",
+      "اسم ولي الأمر": i.guardianName || "", "جوال ولي الأمر": i.guardianPhone || "", "السكن": i.address || "", "نازح / مقيم": i.housing || "",
+      "يتيم": i.orphan === true ? "نعم" : i.orphan === false ? "لا" : "", "تاريخ الالتحاق": i.joinedAt || "" }; });
+  const wb = XLSX.utils.book_new(); addSheet(wb, rows, "بيانات الطلاب"); XLSX.writeFile(wb, `بيانات-طلاب-مركز-التقوى-${dayKey(new Date())}.xlsx`);
+};
 
 // =================== صفحات جديدة ===================
 // ----- سجل الأسبوع -----
@@ -2086,6 +2165,7 @@ function renderStudentPage(){
       <div class="muted"><span style="color:var(--green)">■</span> اجتازها &nbsp; <span style="color:var(--gold)">■</span> التالية &nbsp; <span style="color:#cfd8d3">■</span> قبل نقطة البداية &nbsp; <span style="color:#e3e7e5">■</span> لم تبدأ — مرّر الماوس على المربع لترى المرحلة</div>
     </div>`;
   }
+  if (st) pathCard += infoCardHtml(st);
   el.innerHTML = `
     <div class="pagehead">
       <div><div class="crumb"><a data-go="students">→ العودة لقائمة الطلاب</a></div><h2>${esc(name)}</h2>${st && st.status === "pending" ? pill("p-wa","بانتظار الاعتماد") : ""}${st && st.status === "inactive" ? pill("p-no", `منقطع منذ ${st.inactiveAtMs ? dayKey(new Date(st.inactiveAtMs)) : "—"}${st.inactiveReason ? " — " + esc(st.inactiveReason) : ""}`) : ""}
@@ -2531,19 +2611,22 @@ function mergeStudent(s){
 }
 
 // ===== الطلاب =====
-["sSearch","sHalaqa","sState"].forEach(id => $(id).addEventListener("input", () => { PG.students = 0; renderStudents(); }));
+["sSearch","sHalaqa","sState","sInfo"].forEach(id => $(id).addEventListener("input", () => { PG.students = 0; renderStudents(); }));
 function renderStudents(){
   const q = $("sSearch").value.trim(), h = $("sHalaqa").value;
   const stt = $("sState").value;
-  const list = sortAr(S.students.filter(s => s.status!=="pending" && (!stt || (stt === "inactive") === (s.status === "inactive")) && (!q || s.name.includes(q)) && (!h || s.halaqaId===h)));
+  const inf = $("sInfo").value;
+  const list = sortAr(S.students.filter(s => s.status!=="pending" && (!stt || (stt === "inactive") === (s.status === "inactive")) && (!q || s.name.includes(q)) && (!h || s.halaqaId===h)
+    && (!inf || (inf === "orphan" ? (S.info[s.id]||{}).orphan === true : inf === "displaced" ? (S.info[s.id]||{}).housing === "نازح" : infoMissing(s.id).length))));
   $("studentsCount").textContent = `${list.length} طالب`;
-  $("studentsBody").innerHTML = (list.length ? "" : `<tr><td colspan="6" class="empty-td">${emptyHtml("لا يوجد طلاب بهذه الفلاتر")}</td></tr>`) + pageSlice("students", list).map(s => `
+  $("studentsBody").innerHTML = (list.length ? "" : `<tr><td colspan="7" class="empty-td">${emptyHtml("لا يوجد طلاب بهذه الفلاتر")}</td></tr>`) + pageSlice("students", list).map(s => `
     <tr class="${s.status==="inactive"?"inactive":""}"><td style="white-space:nowrap">${nameLink(s.id, s.name, true)}${s.status==="inactive" ? ' <span class="pill p-gr">منقطع</span>' : ""}</td><td>${hqTag(s.halaqaId)}</td>
+    <td class="muted hm">${(() => { const i = S.info[s.id] || {}, a = ageOf(i.dob); return [a !== null ? a + " سنة" : "", i.grade || ""].filter(Boolean).join(" · ") || "—"; })()}</td>
     <td class="muted">${sDir(s)==="asc"?"من البقرة":"من الناس"} · ${s.pathFrom ? esc(startLabel(s)) : "من الجزء " + sStart(s)}</td>
     <td>${(() => { const t = nextText(s); return t === "حافظ للقرآن" ? `<span class="hafiz">حافظ للقرآن</span>` : esc(t); })()}</td>
     <td>${examsOfStudent(s.id).length}</td>
     <td class="actions"><button class="small primary" data-rec="${s.id}">الملف</button>
-    ${moreMenu(`<button data-edit="${s.id}">تعديل البيانات</button><hr><button class="danger" data-del="${s.id}">حذف</button>`)}</td></tr>`).join("") + pager("students", list.length, 6);
+    ${moreMenu(`<button data-edit="${s.id}">تعديل البيانات</button><hr><button class="danger" data-del="${s.id}">حذف</button>`)}</td></tr>`).join("") + pager("students", list.length, 7);
 }
 $("studentsBody").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
@@ -2552,7 +2635,7 @@ $("studentsBody").addEventListener("click", ev => {
   if (b.dataset.del){
     const s = S.students.find(x=>x.id===b.dataset.del);
     if (examsOfStudent(s.id).length){ toast("لا يمكن حذف طالب له اختبارات"); return; }
-    confirmDlg(`حذف الطالب ${s.name}؟`, async () => { await deleteDoc(doc(db,"students",s.id)); audit("حذف طالب", s.name, halaqaName(s.halaqaId)); toast("تم الحذف"); });
+    confirmDlg(`حذف الطالب ${s.name}؟`, async () => { await deleteDoc(doc(db,"students",s.id)); if (S.info[s.id]) deleteDoc(doc(db,"studentInfo",s.id)).catch(()=>{}); audit("حذف طالب", s.name, halaqaName(s.halaqaId)); toast("تم الحذف"); });
   }
 });
 function editStudent(id, approving){
@@ -2588,10 +2671,11 @@ $("addStudentBtn").onclick = async () => {
   const name = $("newStudentName").value.trim(), halaqaId = $("newStudentHalaqa").value;
   if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة (أضف حلقة أولاً إن لم توجد)"); return; }
   if (S.students.some(s=>s.name===name && s.halaqaId===halaqaId)){ toast("الطالب موجود بنفس الحلقة"); return; }
-  await addDoc(collection(db,"students"), { name, halaqaId, status:"approved", createdBy:"الإدارة", createdAt: serverTimestamp(),
+  const ref = await addDoc(collection(db,"students"), { name, halaqaId, status:"approved", createdBy:"الإدارة", createdAt: serverTimestamp(),
     pathDir: $("newDir").value, ...readStart($("newStart").value) });
   audit("إضافة طالب", name, halaqaName(halaqaId));
-  $("newStudentName").value = ""; $("newStudentName").focus(); toast("تمت الإضافة");
+  $("newStudentName").value = ""; toast("تمت الإضافة");
+  infoEditor(ref.id, { name, halaqaId }, true);
 };
 $("newStudentName").addEventListener("keydown", e => { if (e.key==="Enter") $("addStudentBtn").click(); });
 fillPathSelects($("newDir"), $("newStart"), "desc", "1|30");
