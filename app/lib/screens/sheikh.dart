@@ -309,32 +309,25 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Flexible(
-              child: Text(_halaqaName.isEmpty ? 'الحلقة' : _halaqaName,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: context.ink, fontSize: 20, fontWeight: FontWeight.w800)),
+          Text(_halaqaName.isEmpty ? 'الحلقة' : _halaqaName,
+              style: TextStyle(color: context.ink, fontSize: 20, fontWeight: FontWeight.w800, height: 1.4)),
+          const SizedBox(height: 2),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+              child: Text('${dayName(now)} ${now.day}/${now.month} · المشايخ: ${names.isEmpty ? _sheikhName : names}',
+                  style: TextStyle(color: context.sub, fontSize: 12.5, height: 1.5)),
             ),
-            const SizedBox(width: 8),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Text('${dayName(now)} ${now.day}/${now.month}',
-                  style: TextStyle(color: context.sub, fontSize: 13)),
-            ),
-            const Spacer(),
             if (!_holidayAll)
               InkWell(
                 onTap: _toggleHoliday,
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   child: Text(_holidayHalaqa ? 'إلغاء الإجازة' : 'إجازة',
                       style: const TextStyle(color: brandGold, fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
               ),
           ]),
-          Text('المشايخ: ${names.isEmpty ? _sheikhName : names}',
-              style: TextStyle(color: context.sub, fontSize: 12.5), overflow: TextOverflow.ellipsis),
           if (holiday || !_isSessionDay)
             Container(
               margin: const EdgeInsets.only(top: 6),
