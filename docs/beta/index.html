@@ -647,7 +647,7 @@
       <div class="stats" id="dSummary"></div>
       <div class="card" style="padding:0;overflow:auto">
         <table>
-          <thead><tr><th>الطالب</th><th>الحلقة</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>المرحلة الآن</th><th>الشيخ</th><th></th></tr></thead>
+          <thead><tr><th>الطالب</th><th>الحلقة</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>المرحلة الآن</th><th>المُسجِّل</th><th></th></tr></thead>
           <tbody id="dBody"></tbody>
         </table>
       </div>
@@ -1060,10 +1060,14 @@ function fillPathSelects(dirSel, startSel, dir, sel){
   dirSel.onchange = () => { startSel.innerHTML = stepOptions(dirSel.value, dirSel.value === "asc" ? "1|1" : "1|30"); };
 }
 
+// كل التواريخ بتوقيت غزة مهما كانت ساعة الجهاز
+const GZF = new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Gaza",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric",second:"numeric",hourCycle:"h23"});
+function gz(d){ if (!d || isNaN(d)) return d; const o = {}; GZF.formatToParts(d).forEach(x => o[x.type] = x.value); return new Date(+o.year, +o.month-1, +o.day, +o.hour % 24, +o.minute, +o.second); }
+function nowG(){ return gz(new Date()); }
 function fmtNum(n){ return (n === null || n === undefined) ? "" : (Math.round(n*100)/100).toString(); }
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function examDate(e){
-  if (e.createdAt && e.createdAt.toDate) return e.createdAt.toDate();
+  if (e.createdAt && e.createdAt.toDate) return gz(e.createdAt.toDate());
   return null;
 }
 function dateText(e){
@@ -1247,14 +1251,14 @@ document.addEventListener("click", ev => {
   const g = ev.target.closest("[data-go]"); if (g){ ev.preventDefault(); go(g.dataset.go); return; }
   const r = ev.target.closest("a[data-rec],tr[data-rec]"); if (r){ ev.preventDefault(); studentRecord(r.dataset.rec); }
 });
-(() => { const d = new Date(); $("pageSub").textContent = `${DAY_NAMES_[d.getDay()]} ${d.getDate()} / ${d.getMonth()+1} / ${d.getFullYear()}`; })();
+(() => { const d = nowG(); $("pageSub").textContent = `${DAY_NAMES_[d.getDay()]} ${d.getDate()} / ${d.getMonth()+1} / ${d.getFullYear()}`; })();
 
 
 
 // =================== البيانات الشخصية (للإدارة فقط) ===================
 const GRADES = ["رياض أطفال","الأول","الثاني","الثالث","الرابع","الخامس","السادس","السابع","الثامن","التاسع","العاشر","الحادي عشر","الثاني عشر","جامعي","غير ملتحق بالمدرسة"];
 const INFO_FIELDS = [["dob","تاريخ الميلاد"],["grade","الصف الدراسي"],["guardianName","اسم ولي الأمر"],["guardianPhone","جوال ولي الأمر"],["address","السكن"],["housing","نازح / مقيم"],["orphan","يتيم"],["joinedAt","تاريخ الالتحاق"]];
-function ageOf(dob){ if (!dob) return null; const b = new Date(dob + "T12:00:00"), n = new Date(); if (isNaN(b)) return null; let a = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--; return a; }
+function ageOf(dob){ if (!dob) return null; const b = new Date(dob + "T12:00:00"), n = nowG(); if (isNaN(b)) return null; let a = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--; return a; }
 function infoMissing(sid){ const i = S.info[sid] || {}; return INFO_FIELDS.filter(([k]) => k === "orphan" ? typeof i.orphan !== "boolean" : !i[k]).map(([,t]) => t); }
 // يقسم الاسم لأجزاء مع إبقاء الأسماء المركّبة معاً (عبد الرحمن، أبو بكر…)
 function splitName(n){
@@ -1312,7 +1316,7 @@ function infoEditor(sid, stOverride, isNew){
       <label>السكن<input id="inAddr" placeholder="المنطقة / الحي" value="${esc(i.address||"")}"></label>
       <label>نازح / مقيم<select id="inHousing">${opt(["مقيم","نازح"], i.housing)}</select></label>
       <label>يتيم<select id="inOrphan"><option value="">—</option><option value="1" ${i.orphan === true ? "selected" : ""}>نعم</option><option value="0" ${i.orphan === false ? "selected" : ""}>لا</option></select></label>
-      <label>تاريخ الالتحاق بالمركز<input type="date" id="inJoined" value="${esc(i.joinedAt || (isNew ? dayKey(new Date()) : ""))}"></label>
+      <label>تاريخ الالتحاق بالمركز<input type="date" id="inJoined" value="${esc(i.joinedAt || (isNew ? dayKey(nowG()) : ""))}"></label>
     </div>
     <div class="err" id="inErr"></div>`, [
     { text:"حفظ", cls:"primary", onClick: async () => {
@@ -1344,13 +1348,13 @@ $("sInfoExcel").onclick = () => {
     return { "الاسم الأول": np[0], "اسم الأب": np[1], "اسم الجد": np[2], "اسم العائلة": np[3], "الاسم كاملاً": s.name, "الحلقة": halaqaName(s.halaqaId), "تاريخ الميلاد": i.dob || "", "العمر": ageOf(i.dob) ?? "", "الصف": i.grade || "",
       "اسم ولي الأمر": i.guardianName || "", "جوال ولي الأمر": i.guardianPhone || "", "السكن": i.address || "", "نازح / مقيم": i.housing || "",
       "يتيم": i.orphan === true ? "نعم" : i.orphan === false ? "لا" : "", "تاريخ الالتحاق": i.joinedAt || "" }; });
-  const wb = XLSX.utils.book_new(); addSheet(wb, rows, "بيانات الطلاب"); XLSX.writeFile(wb, `بيانات-طلاب-مركز-التقوى-${dayKey(new Date())}.xlsx`);
+  const wb = XLSX.utils.book_new(); addSheet(wb, rows, "بيانات الطلاب"); XLSX.writeFile(wb, `بيانات-طلاب-مركز-التقوى-${dayKey(nowG())}.xlsx`);
 };
 
 // =================== صفحات جديدة ===================
 // ----- سجل الأسبوع -----
 let WK = 0;
-function wkStart(off){ const d = new Date(); d.setHours(12,0,0,0); const back = (d.getDay() + 1) % 7; d.setDate(d.getDate() - back - 7*off); return d; }
+function wkStart(off){ const d = nowG(); d.setHours(12,0,0,0); const back = (d.getDay() + 1) % 7; d.setDate(d.getDate() - back - 7*off); return d; }
 function wkRange(off){ const a = wkStart(off), b = new Date(a); b.setDate(a.getDate() + 6); return [dayKey(a), dayKey(b), a]; }
 const ST_DOT = { recited:"✓", absent:"غ", excused:"ع", norecite:"ل" };
 function renderWeekly(){
@@ -1431,7 +1435,7 @@ function printWeekStudent(sid, off){
   <tr><th>الحضور</th><td>${w.L.length ? `${w.pres} من ${w.L.length} جلسات` : "لا تسجيل"}${w.abs ? ` (غائب ${w.abs})` : ""}${w.exc ? ` (بعذر ${w.exc})` : ""}</td><th>الصفحات</th><td>حفظ ${fp(w.np)} · مراجعة ${fp(w.rp)}</td></tr>
   ${dl ? `<tr><th>مهلة المراجعة</th><td colspan="3">${dl.left < 0 ? `تجاوز المهلة بـ ${-dl.left} يوم` : `باقي ${dl.left} يوم`}</td></tr>` : ""}</table>
   <h2>الجلسات</h2>
-  ${w.L.length ? `<table><thead><tr><th>اليوم</th><th>الحضور</th><th>الحفظ الجديد</th><th>المراجعة</th><th>ملاحظة</th><th>الشيخ</th></tr></thead><tbody>${
+  ${w.L.length ? `<table><thead><tr><th>اليوم</th><th>الحضور</th><th>الحفظ الجديد</th><th>المراجعة</th><th>ملاحظة</th><th>المُسجِّل</th></tr></thead><tbody>${
     w.L.map(l => { const dd = new Date(l.date + "T12:00:00"); return `<tr><td>${DAY_NAMES[dd.getDay()]} ${l.date}</td><td>${ST_TEXT[l.status]||""}</td>
     <td>${l.newMem ? esc(l.newMem.label||"") + ` (${fp(l.newPages)} ص)` : "—"}</td><td>${(l.reviews||[]).length ? esc((l.reviews||[]).map(r => r.label).join("، ")) + ` (${fp(l.reviewPages)} ص)` : "—"}</td>
     <td>${esc(l.notes||"")}</td><td>${esc(l.editedBy || l.sheikhName || "")}</td></tr>`; }).join("")}</tbody></table>` : '<p class="muted">لا يوجد تسجيل في هذا الأسبوع</p>'}
@@ -1733,7 +1737,7 @@ $("exportBtn").onclick = () => {
   if (!list.length){ toast("لا توجد بيانات للتصدير"); return; }
   const wb = newBook();
   addSheet(wb, list.map(examRow), "الاختبارات");
-  const d = new Date();
+  const d = nowG();
   XLSX.writeFile(wb, `اختبارات-مركز-التقوى-${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}.xlsx`);
 };
 
@@ -1769,7 +1773,7 @@ function printDoc(title, inner){
   </style></head><body>
   <div class="hdr"><img src="${logo}"><div><h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1><img src="${slogan}" style="width:190px;height:auto;display:block;margin:2px 0 4px"><div>${esc(title)}</div></div></div>
   ${inner}
-  <p class="muted">تاريخ الطباعة: ${dayKey(new Date())}</p>
+  <p class="muted">تاريخ الطباعة: ${dayKey(nowG())}</p>
   <p style="text-align:center;color:#8a6d2b;font-size:12px;margin-top:18px;border-top:1px solid #ddd;padding-top:8px">${DED_SHORT}</p>
   <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`);
   w.document.close();
@@ -1791,7 +1795,7 @@ function pendingRetests(){
   }
   return out.sort((a,b)=>(examDate(a.last)||0)-(examDate(b.last)||0));
 }
-function daysSince(e){ const d = examDate(e); return d ? Math.floor((Date.now()-d)/86400000) : ""; }
+function daysSince(e){ const d = examDate(e); return d ? Math.floor((nowG()-d)/86400000) : ""; }
 function renderRetests(){
   const all = pendingRetests();
   $("retestBadge").textContent = all.length;
@@ -1936,7 +1940,7 @@ function emptyHtml(text){
 }
 function dayGroupLabel(d){
   if (!d) return "بدون تاريخ";
-  const k = dayKey(d), t = new Date(), y = new Date(); y.setDate(t.getDate() - 1);
+  const k = dayKey(d), t = nowG(), y = nowG(); y.setDate(t.getDate() - 1);
   const dn = DAY_NAMES_[d.getDay()], ds = `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;
   if (k === dayKey(t)) return `اليوم — ${dn} ${ds}`;
   if (k === dayKey(y)) return `أمس — ${dn} ${ds}`;
@@ -1977,13 +1981,13 @@ document.addEventListener("click", ev => {
 function moreRow(key, total, cols){ return total > LIM[key] ? `<tr class="grp-row"><td colspan="${cols}" class="moreRow"><button data-more="${key}">عرض المزيد (${total - LIM[key]} متبقٍّ)</button></td></tr>` : ""; }
 function approvedStudents(){ return S.students.filter(isActive); }
 function stalledList(){
-  const N = stallDays(), now = Date.now(), out = [];
+  const N = stallDays(), now = nowG(), out = [];
   for (const s of approvedStudents()){
     const p = studentPath(s); if (p.hafiz) continue;
     const keys = new Set(p.steps.map(x=>x.key));
     const ex = S.exams.filter(e=>e.studentId===s.id);
     const lastPass = ex.filter(e=>e.passed && keys.has(e.type+"|"+e.startJuz)).map(examDate).filter(Boolean).sort((a,b)=>b-a)[0];
-    const since = lastPass || (s.createdAt && s.createdAt.toDate ? s.createdAt.toDate() : null);
+    const since = lastPass || (s.createdAt && s.createdAt.toDate ? gz(s.createdAt.toDate()) : null);
     if (since){ const d = Math.floor((now - since)/86400000); if (d > N) out.push({ s, d }); }
   }
   return out.sort((a,b)=>b.d-a.d);
@@ -2001,7 +2005,7 @@ function examReady(s){
   if (p.hafiz) return { ok:true, hafiz:true, reason:"hafiz", missing:[] };
   const step = p.steps[p.next], O = memOrder(sDir(s)), logs = logsOf(s.id), pr = progressOf(s.id);
   const ms = S.exams.filter(e => e.studentId === s.id).map(examMs).filter(Boolean);
-  let since = ms.length ? dayKey(new Date(Math.max(...ms))) : "";
+  let since = ms.length ? dayKey(gz(new Date(Math.max(...ms)))) : "";
   if (step.type === 1){
     const J = step.start; let cursor = null, hasData = !!pr, doneDate = "";
     if (pr && pr.lastG) cursor = O.pos[pr.lastG];
@@ -2035,7 +2039,7 @@ function reviewLeft(st){
   if (!d || d.mode !== "review_exam" || !d.step) return null;
   const step = d.step, dir = sDir(st);
   const lastPass = S.exams.filter(e => e.studentId === st.id && e.passed).map(examMs).filter(Boolean);
-  const lp = lastPass.length ? dayKey(new Date(Math.max(...lastPass))) : "";
+  const lp = lastPass.length ? dayKey(gz(new Date(Math.max(...lastPass)))) : "";
   let since = "";
   if (step.type === 1){
     const O = memOrder(dir), end = O.jEnd[step.start];
@@ -2044,7 +2048,7 @@ function reviewLeft(st){
     since = hit ? hit.date : lp;
   } else since = lp;
   if (!since) return null;
-  const days = Math.round((new Date(dayKey(new Date()) + "T12:00:00") - new Date(since + "T12:00:00")) / 86400000);
+  const days = Math.round((new Date(dayKey(nowG()) + "T12:00:00") - new Date(since + "T12:00:00")) / 86400000);
   return { left: step.reviewDays - days, total: step.reviewDays };
 }
 function deadlinePill(st){
@@ -2064,7 +2068,7 @@ function renderBadges(){
   $("readyBadge").textContent = od; $("readyBadge").classList.toggle("hidden", !od); $("readyBadge").classList.toggle("red", !!od);
 }
 function renderHome(){
-  const now = new Date(), tk = dayKey(now), mk = tk.slice(0,7);
+  const now = nowG(), tk = dayKey(now), mk = tk.slice(0,7);
   const pm = dayKey(new Date(now.getFullYear(), now.getMonth()-1, 1)).slice(0,7);
   const exToday = S.exams.filter(e => { const d = examDate(e); return d && dayKey(d) === tk; });
   const exPass = exToday.filter(e=>e.passed).length;
@@ -2139,7 +2143,7 @@ $("homeAlerts").addEventListener("click", ev => {
 });
 $("homeHalaqat").addEventListener("click", ev => {
   const r = ev.target.closest("tr[data-hq]"); if (!r) return;
-  $("dDate").value = dayKey(new Date()); $("dHalaqa").value = r.dataset.hq; renderDaily(); go("daily");
+  $("dDate").value = dayKey(nowG()); $("dHalaqa").value = r.dataset.hq; renderDaily(); go("daily");
 });
 
 // ===== تصاريح الإعادة =====
@@ -2150,7 +2154,7 @@ function renderPermits(){
   $("permitsList").innerHTML = list.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>تاريخ التصريح</th><th></th></tr></thead><tbody>${
     list.map(p => { const st = S.students.find(x=>x.id===p.studentId) || {};
       return `<tr><td>${nameLink(p.studentId, st.name || p.studentName)}</td><td>${hqTag(st.halaqaId)}</td>
-      <td>${esc(TYPES[p.type]||p.type)} — ${esc(lab(p))} ${p.kind === "exam" ? pill("p-wa","بدون شرط التسميع") : pill("p-gr","إعادة ناجح")}</td><td>${p.grantedAtMs ? dayKey(new Date(p.grantedAtMs)) : ""}</td>
+      <td>${esc(TYPES[p.type]||p.type)} — ${esc(lab(p))} ${p.kind === "exam" ? pill("p-wa","بدون شرط التسميع") : pill("p-gr","إعادة ناجح")}</td><td>${p.grantedAtMs ? dayKey(gz(new Date(p.grantedAtMs))) : ""}</td>
       <td class="actions"><button class="small danger" data-prevoke="${p.id}">إلغاء التصريح</button></td></tr>`; }).join("")}</tbody></table>`
     : emptyHtml("لا توجد تصاريح فعّالة الآن");
 }
@@ -2169,7 +2173,7 @@ function renderStudentPage(){
   if (!st && !exams.length){ el.innerHTML = `<div class="card"><p class="muted">لم يُعثر على الطالب (قد يكون حُذف أو لم تُحمَّل البيانات بعد).</p><button data-go="students">العودة للطلاب</button></div>`; return; }
   const name = (st && st.name) || exams[0].studentName || "", hName = halaqaName(st && st.halaqaId) || (exams[0]||{}).halaqaName || "";
   const ls = logsOf(sid);
-  const now = new Date(), wk = new Date(now); wk.setDate(now.getDate() - ((now.getDay() + 1) % 7));
+  const now = nowG(), wk = new Date(now); wk.setDate(now.getDate() - ((now.getDay() + 1) % 7));
   const W = aggLogs(ls.filter(l => l.date >= dayKey(wk))), M = aggLogs(ls.filter(l => l.date >= dayKey(new Date(now.getFullYear(), now.getMonth(), 1))));
   const pass = exams.filter(e=>e.passed).length;
   const sh = st ? S.sheikhs.filter(x => x.halaqaId === st.halaqaId).map(x=>x.name).join("، ") : "";
@@ -2197,8 +2201,8 @@ function renderStudentPage(){
   if (st) pathCard += infoCardHtml(st);
   el.innerHTML = `
     <div class="pagehead">
-      <div><div class="crumb"><a data-go="students">→ العودة لقائمة الطلاب</a></div><h2>${esc(name)}</h2>${st && st.status === "pending" ? pill("p-wa","بانتظار الاعتماد") : ""}${st && st.status === "inactive" ? pill("p-no", `منقطع منذ ${st.inactiveAtMs ? dayKey(new Date(st.inactiveAtMs)) : "—"}${st.inactiveReason ? " — " + esc(st.inactiveReason) : ""}`) : ""}
-        ${st && (st.transfers||[]).length ? `<div class="muted" style="margin-top:4px">${st.transfers.map(t => `نُقل من ${esc(halaqaName(t.from) || "حلقة محذوفة")} إلى ${esc(halaqaName(t.to))} بتاريخ ${dayKey(new Date(t.atMs))}`).join(" · ")}</div>` : ""}</div>
+      <div><div class="crumb"><a data-go="students">→ العودة لقائمة الطلاب</a></div><h2>${esc(name)}</h2>${st && st.status === "pending" ? pill("p-wa","بانتظار الاعتماد") : ""}${st && st.status === "inactive" ? pill("p-no", `منقطع منذ ${st.inactiveAtMs ? dayKey(gz(new Date(st.inactiveAtMs))) : "—"}${st.inactiveReason ? " — " + esc(st.inactiveReason) : ""}`) : ""}
+        ${st && (st.transfers||[]).length ? `<div class="muted" style="margin-top:4px">${st.transfers.map(t => `نُقل من ${esc(halaqaName(t.from) || "حلقة محذوفة")} إلى ${esc(halaqaName(t.to))} بتاريخ ${dayKey(gz(new Date(t.atMs)))}`).join(" · ")}</div>` : ""}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">${st && st.status !== "pending" ? `<button data-sedit="${sid}">تعديل البيانات</button><button data-smove="${sid}">نقل لحلقة أخرى</button>
         ${st.status === "inactive" ? `<button data-sact="${sid}">إعادة تفعيل</button>` : `<button class="danger" data-sinact="${sid}">منقطع</button>`}` : ""}<button data-wkrep="${sid}">التقرير الأسبوعي</button><button class="primary" data-sprint="1">طباعة الملف</button></div>
     </div>
@@ -2232,7 +2236,7 @@ function logEditor(sid, lg){
   const st = stuById(sid); if (!st) return;
   const dir = sDir(st), O = memOrder(dir);
   const isNew = !lg;
-  let date = lg ? lg.date : dayKey(new Date());
+  let date = lg ? lg.date : dayKey(nowG());
   let reviews = lg ? JSON.parse(JSON.stringify(lg.reviews || [])) : [];
   const nm = lg && lg.newMem;
   const sugg = () => { try { return dailyStatus(dir, sStart(st), passedKeys(sid), logsOf(sid).filter(l => l.date < date), progressOf(sid), minNewPages(), st.pathFrom); } catch(_){ return {}; } };
@@ -2406,17 +2410,17 @@ function renderAudit(){
   const q = norm($("auQ").value), src = $("auSrc").value;
   const list = S.audit.filter(a => (!src || a.source === src) && (!q || norm(`${a.action} ${a.target} ${a.details} ${a.by}`).includes(q)));
   $("auCount").textContent = `${list.length} عملية`;
-  const tm = ms => { if (!ms) return ""; const d = new Date(ms); return `${dayKey(d)} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+  const tm = ms => { if (!ms) return ""; const d = gz(new Date(ms)); return `${dayKey(d)} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
   let lastG = null;
   $("auBody").innerHTML = list.length ? `<div class="tblwrap"><table><thead><tr><th>الوقت</th><th>بواسطة</th><th>العملية</th><th>الطالب / البند</th><th>التفاصيل</th><th>قبل</th><th>بعد</th></tr></thead><tbody>${
-    pageSlice("audit", list).map(a => { const g = dayGroupLabel(a.atMs ? new Date(a.atMs) : null); const h = g !== lastG ? `<tr class="grp-row"><td colspan="7">${g}</td></tr>` : ""; lastG = g; return h + `<tr><td style="white-space:nowrap">${tm(a.atMs).slice(11)}</td><td>${a.source === "app" ? pill("p-wa", esc(a.by)) : pill("p-gr", esc(a.by || "الإدارة"))}</td>
+    pageSlice("audit", list).map(a => { const g = dayGroupLabel(a.atMs ? gz(new Date(a.atMs)) : null); const h = g !== lastG ? `<tr class="grp-row"><td colspan="7">${g}</td></tr>` : ""; lastG = g; return h + `<tr><td style="white-space:nowrap">${tm(a.atMs).slice(11)}</td><td>${a.source === "app" ? pill("p-wa", esc(a.by)) : pill("p-gr", esc(a.by || "الإدارة"))}</td>
       <td><b>${esc(a.action)}</b></td><td>${a.studentId ? nameLink(a.studentId, a.target) : esc(a.target)}</td><td class="muted">${esc(a.details)}</td>
       <td class="muted">${esc(a.before || "")}</td><td>${esc(a.after || "")}</td></tr>`; }).join("")}${pager("audit", list.length, 7)}</tbody></table></div>`
     : emptyHtml("لا توجد عمليات مسجلة بعد");
 }
 
 // ===== الترتيب والتكريم =====
-(() => { $("rkMonth").value = dayKey(new Date()).slice(0,7); })();
+(() => { $("rkMonth").value = dayKey(nowG()).slice(0,7); })();
 $("rkMonth").addEventListener("input", renderRanking);
 function rankingData(){
   const m = $("rkMonth").value;
@@ -2502,7 +2506,7 @@ function renderPathStats(){
   const studs = S.students.filter(isActive);
   const blocks = new Map([["المستوى الأول",0],["المستوى الثاني",0],["المستوى الثالث",0],["اختبار المصحف كاملاً",0],["حافظ للقرآن",0]]);
   const hafiz = [], stalled = [];
-  const N = stallDays(), now = Date.now();
+  const N = stallDays(), now = nowG();
   const durs = [[],[],[]];
   for (const s of studs){
     const p = studentPath(s);
@@ -2518,7 +2522,7 @@ function renderPathStats(){
     if (p.hafiz){ hafiz.push(s); continue; }
     const keys = new Set(p.steps.map(x=>x.key));
     const lastPass = ex.filter(e=>e.passed && keys.has(e.type+"|"+e.startJuz)).map(examDate).filter(Boolean).sort((a,b)=>b-a)[0];
-    const since = lastPass || (s.createdAt && s.createdAt.toDate ? s.createdAt.toDate() : null);
+    const since = lastPass || (s.createdAt && s.createdAt.toDate ? gz(s.createdAt.toDate()) : null);
     if (since){ const d = Math.floor((now - since)/86400000); if (d > N) stalled.push({ s, d, step: p.steps[p.next] }); }
   }
   stalled.sort((a,b)=>b.d-a.d);
@@ -2553,9 +2557,9 @@ function renderStats(){
     .sort((a,b)=>b.label.localeCompare(a.label)), "الشهر");
 }
 ["stFrom","stTo"].forEach(id => $(id).addEventListener("input", renderStats));
-$("stThisMonth").onclick = () => { const d=new Date(); $("stFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("stTo").value = dayKey(d); renderStats(); };
+$("stThisMonth").onclick = () => { const d=nowG(); $("stFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("stTo").value = dayKey(d); renderStats(); };
 $("stAll").onclick = () => { $("stFrom").value = ""; $("stTo").value = ""; renderStats(); };
-(() => { const d = new Date(); $("repMonth").value = dayKey(d).slice(0,7); })();
+(() => { const d = nowG(); $("repMonth").value = dayKey(d).slice(0,7); })();
 
 function monthExams(){
   const m = $("repMonth").value;
@@ -2829,11 +2833,11 @@ function logBrief(l){ if (!l || !l.status) return ""; const t = [ST_TEXT[l.statu
   if (l.newMem) t.push(`حفظ: ${l.newMem.label} (${fp(l.newPages)} ص)`); if ((l.reviews||[]).length) t.push(`مراجعة: ${fp(l.reviewPages)} ص`); return t.join(" · "); }
 function reviewsText(l){ return (l.reviews||[]).map(r => `${esc(r.label)} (${fp(r.pages)})`).join("، "); }
 
-(() => { const d = new Date(); $("dDate").value = dayKey(d); $("hDate").value = dayKey(d);
+(() => { const d = nowG(); $("dDate").value = dayKey(d); $("hDate").value = dayKey(d);
   $("dsFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("dsTo").value = dayKey(d); })();
 ["dDate","dHalaqa","dsFrom","dsTo","dsHalaqa"].forEach(id => $(id).addEventListener("input", () => { if (id === "dDate" || id === "dHalaqa") PG.daily = 0; renderDaily(); }));
-$("dsWeek").onclick = () => { const d = new Date(); const back = (d.getDay() + 1) % 7; const s = new Date(d); s.setDate(d.getDate() - back); $("dsFrom").value = dayKey(s); $("dsTo").value = dayKey(d); renderDaily(); };
-$("dsMonth").onclick = () => { const d = new Date(); $("dsFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("dsTo").value = dayKey(d); renderDaily(); };
+$("dsWeek").onclick = () => { const d = nowG(); const back = (d.getDay() + 1) % 7; const s = new Date(d); s.setDate(d.getDate() - back); $("dsFrom").value = dayKey(s); $("dsTo").value = dayKey(d); renderDaily(); };
+$("dsMonth").onclick = () => { const d = nowG(); $("dsFrom").value = dayKey(new Date(d.getFullYear(), d.getMonth(), 1)); $("dsTo").value = dayKey(d); renderDaily(); };
 
 function renderDaily(){
   if (!$("dDate").value) return;
@@ -3010,7 +3014,7 @@ function dailyRecordHtml(sid){
   const st = S.students.find(x => x.id === sid); if (!st) return "";
   const d = dailyOf(st), pr = progressOf(sid);
   const ls = logsOf(sid).sort((a,b)=>b.date.localeCompare(a.date));
-  const now = new Date(), wkStart = new Date(now); wkStart.setDate(now.getDate() - ((now.getDay() + 1) % 7));
+  const now = nowG(), wkStart = new Date(now); wkStart.setDate(now.getDate() - ((now.getDay() + 1) % 7));
   const mStart = dayKey(new Date(now.getFullYear(), now.getMonth(), 1)), wKey = dayKey(wkStart);
   const wk = aggLogs(ls.filter(l => l.date >= wKey)), mo = aggLogs(ls.filter(l => l.date >= mStart));
   const start = pr ? (pr.lastG ? `آخر آية محفوظة عند البداية: ${posLabel(pr.lastG)}` : "بدأ الجزء من أوله") : "لم تُحدَّد";
@@ -3022,7 +3026,7 @@ function dailyRecordHtml(sid){
       <tr><td>هذا الشهر</td><td>حفظ ${fp(mo.newPages)} ص · مراجعة ${fp(mo.reviewPages)} ص · حضور ${mo.attendance}% (${mo.sessions} جلسة)</td></tr>
     </table>
     <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px"><b>الجلسات</b><button class="small primary" data-addlog="${sid}">+ إضافة جلسة</button></div>
-    <table><thead><tr><th>التاريخ</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>الشيخ</th><th></th></tr></thead><tbody>
+    <table><thead><tr><th>التاريخ</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>المُسجِّل</th><th></th></tr></thead><tbody>
     ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${logHoliday(l) ? ' <span class="muted">(إجازة)</span>' : (l.extraDay ? ' <span class="muted">(إضافية)</span>' : "")}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
       <td>${l.newMem ? `${esc(l.newMem.label)} (${fp(l.newPages)})` : ""}</td><td>${reviewsText(l)}${(l.reviews||[]).length ? ` = ${fp(l.reviewPages)}` : ""}</td>
       <td>${esc(l.sheikhName||"")}${l.editedBy ? ' <span class="muted">(عُدّلت)</span>' : ""}</td><td class="actions" style="white-space:nowrap"><button class="small" data-editlog="${l.id}">تعديل</button> <button class="small danger" data-dellog="${l.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">لا توجد جلسات</td></tr>`}
