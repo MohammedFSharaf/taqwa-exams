@@ -354,6 +354,8 @@
   .tl .st.c10 .cnt{background:rgba(255,255,255,.15);color:#fff}
   #rdBody .pill{white-space:normal;line-height:1.5;padding:2px 9px}
   #rdBody td:first-child{min-width:170px}#rdBody td:nth-child(3){min-width:200px}
+  .nmpart{display:inline-flex;flex-direction:column;background:var(--sky);border-radius:10px;padding:3px 12px;margin:4px 0 0 6px;font-weight:700;color:var(--navy)}
+  .nmpart i{font-style:normal;font-size:11px;color:var(--muted);font-weight:600}
   .tl .lv{font-weight:800;color:var(--blue);margin:10px 2px 2px;font-size:14px}
   /* الوضع الليلي */
   body.dark{--bg:#0D161E;--card:#16222D;--line:#263644;--text:#DCE6EE;--muted:#8FA3B3;--zebra:#18252F;--hover:#1C2E3D;--th:#14283A;--thtext:#DCEBF5;--sky:#1B2D3C;--navy:#E8F1F7;--sh:none}
@@ -723,7 +725,10 @@
       <div class="card">
         <h2>إضافة طالب</h2>
         <div class="row">
-          <label>اسم الطالب رباعياً<input id="newStudentName" style="min-width:260px"></label>
+          <label>الاسم الأول<input id="newN1" style="width:120px"></label>
+          <label>اسم الأب<input id="newN2" style="width:120px"></label>
+          <label>اسم الجد<input id="newN3" style="width:120px"></label>
+          <label>اسم العائلة<input id="newN4" style="width:130px"></label>
           <label>الحلقة<select id="newStudentHalaqa"></select></label>
           <label>الاتجاه<select id="newDir"></select></label>
           <label>مرحلة البداية<select id="newStart" style="max-width:300px"></select></label>
@@ -1251,7 +1256,23 @@ const GRADES = ["رياض أطفال","الأول","الثاني","الثالث"
 const INFO_FIELDS = [["dob","تاريخ الميلاد"],["grade","الصف الدراسي"],["guardianName","اسم ولي الأمر"],["guardianPhone","جوال ولي الأمر"],["address","السكن"],["housing","نازح / مقيم"],["orphan","يتيم"],["joinedAt","تاريخ الالتحاق"]];
 function ageOf(dob){ if (!dob) return null; const b = new Date(dob + "T12:00:00"), n = new Date(); if (isNaN(b)) return null; let a = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--; return a; }
 function infoMissing(sid){ const i = S.info[sid] || {}; return INFO_FIELDS.filter(([k]) => k === "orphan" ? typeof i.orphan !== "boolean" : !i[k]).map(([,t]) => t); }
-function nameParts(n){ return String(n||"").trim().split(/\s+/).filter(Boolean).length; }
+// يقسم الاسم لأجزاء مع إبقاء الأسماء المركّبة معاً (عبد الرحمن، أبو بكر…)
+function splitName(n){
+  const t = String(n||"").trim().split(/\s+/).filter(Boolean), out = [];
+  for (let i = 0; i < t.length; i++){
+    if ((t[i] === "عبد" || t[i] === "أبو" || t[i] === "ابو" || t[i] === "أبي") && i + 1 < t.length){ out.push(t[i] + " " + t[i+1]); i++; }
+    else if (/^(الدين|الله)$/.test(t[i]) && out.length){ out[out.length-1] += " " + t[i]; }
+    else out.push(t[i]);
+  }
+  return out;
+}
+function nameParts(n){ return splitName(n).length; }
+function namePartsOf(st, i){
+  if (i && i.n1) return [i.n1, i.n2 || "", i.n3 || "", i.n4 || ""];
+  const p = splitName(st.name);
+  if (p.length <= 4) return [p[0]||"", p[1]||"", p[2]||"", p[3]||""];
+  return [p[0], p[1], p.slice(2, p.length - 1).join(" "), p[p.length - 1]];
+}
 function infoCardHtml(st){
   if (S.infoErr) return `<div class="card"><h2>البيانات الشخصية</h2><p class="fail">لا يمكن عرض البيانات الشخصية: لازم تُنشر قواعد الأمان الجديدة في Firebase (studentInfo).</p></div>`;
   const i = S.info[st.id] || {}, a = ageOf(i.dob), miss = infoMissing(st.id);
@@ -1260,7 +1281,8 @@ function infoCardHtml(st){
   return `<div class="card">
     <h2>البيانات الشخصية <span style="display:flex;gap:6px;align-items:center">${miss.length ? pill("p-wa", `ناقص ${miss.length}`) : pill("p-ok","مكتملة")}<button class="small primary" data-info="${st.id}">تعديل</button></span></h2>
     <div class="info4">
-      <div><div class="muted">الاسم رباعياً</div><b>${esc(st.name)}</b>${nameParts(st.name) < 4 ? ' <span class="pill p-wa">ليس رباعياً</span>' : ""}</div>
+      <div style="grid-column:1/-1"><div class="muted">الاسم رباعياً</div>${(() => { const np = namePartsOf(st, i);
+        return ["الأول","الأب","الجد","العائلة"].map((t, k) => `<span class="nmpart"><i>${t}</i>${np[k] ? esc(np[k]) : '<span class="muted">—</span>'}</span>`).join("") + (np.filter(Boolean).length < 4 ? ' <span class="pill p-wa">ليس رباعياً</span>' : ""); })()}</div>
       <div><div class="muted">تاريخ الميلاد</div>${i.dob ? `${esc(i.dob)} <span class="muted">(${a} سنة)</span>` : v("")}</div>
       <div><div class="muted">الصف الدراسي</div>${v(i.grade)}</div>
       <div><div class="muted">تاريخ الالتحاق بالمركز</div>${v(i.joinedAt)}</div>
@@ -1278,7 +1300,11 @@ function infoEditor(sid, stOverride, isNew){
   openDialog(isNew ? "بيانات الطالب الجديد" : "تعديل البيانات الشخصية", `
     ${isNew ? '<p class="muted">تمت إضافة الطالب. أكمل بياناته الآن أو لاحقاً من ملفه.</p>' : ""}
     <div class="grid2">
-      <label style="grid-column:1/-1">اسم الطالب رباعياً<input id="inName" value="${esc(st.name||"")}"></label>
+      ${(() => { const np = namePartsOf(st, i); return `
+      <label>الاسم الأول<input id="inN1" value="${esc(np[0])}"></label>
+      <label>اسم الأب<input id="inN2" value="${esc(np[1])}"></label>
+      <label>اسم الجد<input id="inN3" value="${esc(np[2])}"></label>
+      <label>اسم العائلة<input id="inN4" value="${esc(np[3])}"></label>`; })()}
       <label>تاريخ الميلاد<input type="date" id="inDob" value="${esc(i.dob||"")}"></label>
       <label>الصف الدراسي<select id="inGrade">${opt(GRADES, i.grade)}</select></label>
       <label>اسم ولي الأمر<input id="inGName" value="${esc(i.guardianName||"")}"></label>
@@ -1290,12 +1316,14 @@ function infoEditor(sid, stOverride, isNew){
     </div>
     <div class="err" id="inErr"></div>`, [
     { text:"حفظ", cls:"primary", onClick: async () => {
-      const name = $("inName").value.trim().replace(/\s+/g, " ");
+      const parts = ["inN1","inN2","inN3","inN4"].map(id => $(id).value.trim().replace(/\s+/g, " "));
+      const name = parts.filter(Boolean).join(" ");
       const phone = $("inGPhone").value.replace(/[^\d+]/g, "");
-      if (!name){ $("inErr").textContent = "اكتب اسم الطالب"; return false; }
+      if (!parts[0]){ $("inErr").textContent = "اكتب الاسم الأول"; return false; }
+      if (parts.filter(Boolean).length < 4 && !confirm("الاسم ليس رباعياً. حفظ على كل حال؟")) return false;
       if (phone && phone.replace(/\D/g, "").length < 9){ $("inErr").textContent = "رقم الجوال غير صحيح"; return false; }
       const o = $("inOrphan").value;
-      const data = { dob: $("inDob").value, grade: $("inGrade").value, guardianName: $("inGName").value.trim(), guardianPhone: phone,
+      const data = { n1: parts[0], n2: parts[1], n3: parts[2], n4: parts[3], dob: $("inDob").value, grade: $("inGrade").value, guardianName: $("inGName").value.trim(), guardianPhone: phone,
         address: $("inAddr").value.trim(), housing: $("inHousing").value, orphan: o === "" ? null : o === "1", joinedAt: $("inJoined").value, updatedAt: serverTimestamp() };
       try {
         await setDoc(doc(db, "studentInfo", sid), data, { merge: true });
@@ -1312,7 +1340,8 @@ $("sInfoExcel").onclick = () => {
   const inf = $("sInfo").value, h = $("sHalaqa").value;
   const rows = sortAr(approvedStudents().filter(s => (!h || s.halaqaId === h))).filter(s => !inf || (inf === "orphan" ? (S.info[s.id]||{}).orphan === true : inf === "displaced" ? (S.info[s.id]||{}).housing === "نازح" : infoMissing(s.id).length)).map(s => {
     const i = S.info[s.id] || {};
-    return { "اسم الطالب": s.name, "الحلقة": halaqaName(s.halaqaId), "تاريخ الميلاد": i.dob || "", "العمر": ageOf(i.dob) ?? "", "الصف": i.grade || "",
+    const np = namePartsOf(s, i);
+    return { "الاسم الأول": np[0], "اسم الأب": np[1], "اسم الجد": np[2], "اسم العائلة": np[3], "الاسم كاملاً": s.name, "الحلقة": halaqaName(s.halaqaId), "تاريخ الميلاد": i.dob || "", "العمر": ageOf(i.dob) ?? "", "الصف": i.grade || "",
       "اسم ولي الأمر": i.guardianName || "", "جوال ولي الأمر": i.guardianPhone || "", "السكن": i.address || "", "نازح / مقيم": i.housing || "",
       "يتيم": i.orphan === true ? "نعم" : i.orphan === false ? "لا" : "", "تاريخ الالتحاق": i.joinedAt || "" }; });
   const wb = XLSX.utils.book_new(); addSheet(wb, rows, "بيانات الطلاب"); XLSX.writeFile(wb, `بيانات-طلاب-مركز-التقوى-${dayKey(new Date())}.xlsx`);
@@ -2668,16 +2697,18 @@ function editStudent(id, approving){
   $("esDir").onchange = () => { $("esStart").innerHTML = stepOptions($("esDir").value, $("esDir").value === "asc" ? "1|1" : "1|30"); };
 }
 $("addStudentBtn").onclick = async () => {
-  const name = $("newStudentName").value.trim(), halaqaId = $("newStudentHalaqa").value;
+  const np = ["newN1","newN2","newN3","newN4"].map(id => $(id).value.trim().replace(/\s+/g, " "));
+  const name = np.filter(Boolean).join(" "), halaqaId = $("newStudentHalaqa").value;
   if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة (أضف حلقة أولاً إن لم توجد)"); return; }
   if (S.students.some(s=>s.name===name && s.halaqaId===halaqaId)){ toast("الطالب موجود بنفس الحلقة"); return; }
   const ref = await addDoc(collection(db,"students"), { name, halaqaId, status:"approved", createdBy:"الإدارة", createdAt: serverTimestamp(),
     pathDir: $("newDir").value, ...readStart($("newStart").value) });
   audit("إضافة طالب", name, halaqaName(halaqaId));
-  $("newStudentName").value = ""; toast("تمت الإضافة");
+  ["newN1","newN2","newN3","newN4"].forEach(id => $(id).value = ""); toast("تمت الإضافة");
+  if (np[0]) setDoc(doc(db, "studentInfo", ref.id), { n1: np[0], n2: np[1], n3: np[2], n4: np[3] }, { merge: true }).catch(()=>{});
   infoEditor(ref.id, { name, halaqaId }, true);
 };
-$("newStudentName").addEventListener("keydown", e => { if (e.key==="Enter") $("addStudentBtn").click(); });
+["newN1","newN2","newN3","newN4"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key==="Enter") $("addStudentBtn").click(); }));
 fillPathSelects($("newDir"), $("newStart"), "desc", "1|30");
 
 $("importBtn").onclick = async () => {
