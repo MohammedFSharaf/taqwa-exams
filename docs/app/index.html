@@ -10,58 +10,85 @@
 <meta property="og:description" content="تحميل تطبيق المركز — الاختبارات والتسميع اليومي">
 <meta property="og:image" content="https://mohammedfsharaf.github.io/taqwa-exams/logo.png">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#174A36">
+<meta name="theme-color" content="#CFEAFB">
 <link rel="icon" href="../logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box}
-  body{margin:0;font-family:Cairo,Tahoma,Arial,sans-serif;background:#F4F6F5;color:#1e2a25;min-height:100vh;display:flex;flex-direction:column}
-  header{background:radial-gradient(120% 90% at 80% 0%,#2a7a5b 0%,#174A36 55%,#0f3426 100%);color:#fff;text-align:center;padding:40px 20px 70px}
-  .logo{width:120px;height:120px;border-radius:50%;background:#fff;padding:4px;border:3px solid #C9A24A;box-shadow:0 0 0 8px rgba(201,162,74,.18)}
-  h1{font-size:24px;line-height:1.6;margin:16px 0 4px;font-weight:800}
-  .slogan{height:40px;margin-top:4px}
-  main{flex:1;padding:0 18px;margin-top:-44px}
-  .card{max-width:480px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 10px 30px rgba(18,61,44,.12);padding:26px 22px}
+  :root{--navy:#0B3F63;--blue:#0A86C4;--sky:#E6F2FA;--gold:#E3B21B;--gold2:#C99A10;--ink:#1E2A33;--sub:#6B7D8A;--bg:#F6FAFD}
+  body{margin:0;font-family:Cairo,Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+  header{position:relative;text-align:center;padding:40px 20px 128px;background:linear-gradient(180deg,#CFEAFB 0%,#EAF6FD 62%,var(--bg) 100%);overflow:hidden}
+  .mosque{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);width:230px;height:115px;pointer-events:none}
+  .logo{position:relative;width:128px;height:128px;border-radius:50%;background:#fff;padding:5px;box-shadow:0 10px 30px rgba(10,134,196,.25),0 0 0 8px rgba(255,255,255,.7)}
+  h1{position:relative;font-size:23px;line-height:1.6;margin:16px 0 6px;font-weight:800;color:var(--navy)}
+  .slogan{position:relative;height:40px}
+  main{flex:1;padding:0 16px;margin-top:-16px;position:relative}
+  .card{max-width:480px;margin:0 auto 14px;background:#fff;border-radius:22px;box-shadow:0 10px 30px rgba(10,60,100,.10);padding:24px 20px}
   .app{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-  .app img{width:56px;height:56px;border-radius:14px;background:#fff;border:1px solid #e1e6e3;padding:2px}
-  .app b{font-size:18px;display:block}
-  .app span{color:#6b7a73;font-size:13.5px}
-  .dl{display:block;text-align:center;background:#1F5F46;color:#fff;text-decoration:none;font-size:20px;font-weight:800;padding:16px;border-radius:14px;box-shadow:0 6px 16px rgba(31,95,70,.3)}
+  .app img{width:60px;height:60px;border-radius:16px;padding:4px;background:linear-gradient(180deg,#CFEAFB,#fff)}
+  .app b{font-size:18px;display:block;color:var(--navy)}
+  .app span{color:var(--sub);font-size:13.5px}
+  .ver{display:inline-block;margin-top:4px;background:var(--sky);color:var(--blue);font-weight:700;font-size:12px;border-radius:20px;padding:1px 10px}
+  .dl{display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(180deg,#F2C94C,#DDA915);color:#3B2C00;text-decoration:none;font-size:20px;font-weight:800;padding:17px;border-radius:16px;box-shadow:0 8px 20px rgba(201,154,16,.32)}
   .dl:active{transform:scale(.99)}
-  .note{color:#6b7a73;font-size:13px;text-align:center;margin:10px 0 0}
-  h2{font-size:16px;margin:24px 0 8px;color:#174A36}
-  ol{margin:0;padding-right:20px;line-height:2;font-size:14.5px}
-  .tip{background:#FBF4E2;color:#7a5a12;border-radius:12px;padding:10px 14px;font-size:13.5px;line-height:1.8;margin-top:14px}
-  .ded{color:#A87E2A;font-weight:700;font-size:13px;text-align:center;margin:22px 0 0}
-  footer{text-align:center;color:#8a958f;font-size:12.5px;padding:22px 10px 26px}
-  footer b{color:#4a5a52}
+  .dl svg{width:24px;height:24px}
+  .note{color:var(--sub);font-size:13px;text-align:center;margin:10px 0 0}
+  .feats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+  .feat{background:var(--sky);border-radius:16px;padding:12px 6px;text-align:center;font-size:12.5px;font-weight:700;color:var(--navy);line-height:1.5}
+  .feat i{display:block;font-style:normal;font-size:22px;margin-bottom:2px}
+  h2{font-size:16.5px;margin:0 0 12px;color:var(--navy)}
+  .steps{list-style:none;margin:0;padding:0}
+  .steps li{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;line-height:1.85;margin-bottom:10px}
+  .steps li:last-child{margin-bottom:0}
+  .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;margin-top:2px}
+  .tip{background:#FFF4DE;color:#8A5A00;border-radius:14px;padding:11px 14px;font-size:13.5px;line-height:1.8;margin-top:14px}
+  .ded{max-width:480px;margin:0 auto;border-radius:18px;padding:16px 18px;text-align:center;background:linear-gradient(160deg,#1C6E9E,#0B3F63 60%,#082A43);color:#F2D27A;font-weight:700;font-size:14px;line-height:1.8}
+  .ded small{display:block;color:#CFE3F1;font-weight:600;font-size:12.5px}
+  footer{text-align:center;color:#8A9AA6;font-size:12.5px;padding:22px 10px 28px}
+  footer b{color:#4A5C6A}
 </style>
 </head>
 <body>
 <header>
+  <svg class="mosque" viewBox="0 0 300 150" fill="none" stroke="#E3B21B" stroke-opacity=".6" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+    <path d="M40 150V95H260V150M95 95Q95 40 150 30Q205 40 205 95M150 30V16M18 150V55M28 150V55M12 47H34L23 58ZM272 150V55M282 150V55M266 47H288L277 58Z
+      M120 150V119A15 15 0 0 1 150 119V150M150 150V119A15 15 0 0 1 180 119V150M60 150V120A10 10 0 0 1 80 120V150M220 150V120A10 10 0 0 1 240 120V150"/>
+    <circle cx="150" cy="12" r="3" fill="#E3B21B" fill-opacity=".6" stroke="none"/>
+  </svg>
   <img class="logo" src="../logo.png" alt="شعار مركز التقوى">
   <h1>مركز التقوى لتعليم وتحفيظ القرآن الكريم</h1>
-  <img class="slogan" src="../slogan_gold.png" alt="نحو مدرسة قرآنية">
+  <img class="slogan" src="../slogan_dark.png" alt="نحو مدرسة قرآنية">
 </header>
 <main>
   <div class="card">
     <div class="app">
       <img src="../logo.png" alt="">
-      <div><b>تطبيق مركز التقوى</b><span>الاختبارات والتسميع اليومي — للمختبرين والمشايخ</span></div>
+      <div><b>تطبيق مركز التقوى</b><span>الاختبارات والتسميع اليومي — للمختبرين والمشايخ</span><br><span class="ver">الإصدار الأول 1.0</span></div>
     </div>
-    <a class="dl" href="https://github.com/MohammedFSharaf/taqwa-exams/releases/latest/download/app-release.apk">⬇ تحميل التطبيق</a>
+    <a class="dl" href="https://github.com/MohammedFSharaf/taqwa-exams/releases/latest/download/app-release.apk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+      تحميل التطبيق
+    </a>
     <p class="note">لأجهزة أندرويد · يُحمَّل دائماً آخر إصدار</p>
+    <div class="feats">
+      <div class="feat"><i>📖</i>التسميع اليومي</div>
+      <div class="feat"><i>✅</i>الاختبارات والنتائج</div>
+      <div class="feat"><i>📶</i>يعمل بدون إنترنت</div>
+    </div>
+  </div>
 
+  <div class="card">
     <h2>طريقة التثبيت</h2>
-    <ol>
-      <li>اضغط «تحميل التطبيق» وانتظر حتى ينتهي التنزيل.</li>
-      <li>افتح الملف من الإشعارات أو من «التنزيلات».</li>
-      <li>إذا ظهرت رسالة «مصادر غير معروفة»: اضغط <b>الإعدادات</b> ← فعّل <b>السماح من هذا المصدر</b> ← ارجع واضغط <b>تثبيت</b>.</li>
-      <li>إذا كان التطبيق القديم مثبتاً، يُثبَّت الجديد فوقه دون فقدان البيانات.</li>
+    <ol class="steps">
+      <li><span class="n">1</span><span>اضغط «تحميل التطبيق» وانتظر حتى ينتهي التنزيل.</span></li>
+      <li><span class="n">2</span><span>افتح الملف من الإشعارات أو من «التنزيلات».</span></li>
+      <li><span class="n">3</span><span>إذا ظهرت رسالة «مصادر غير معروفة»: اضغط <b>الإعدادات</b> ← فعّل <b>السماح من هذا المصدر</b> ← ارجع واضغط <b>تثبيت</b>.</span></li>
+      <li><span class="n">4</span><span>إذا كان التطبيق القديم مثبتاً، يُثبَّت الجديد فوقه دون فقدان البيانات.</span></li>
     </ol>
     <div class="tip">إذا فتحت هذه الصفحة من واتساب ولم يبدأ التحميل: اضغط ⋮ في الأعلى ثم «فتح في Chrome».</div>
-    <p class="ded">صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله</p>
   </div>
+
+  <div class="ded">صدقة جارية عن أرواح مؤسسي مركز التقوى<small>رحمهم الله وجعل هذا العمل في ميزان حسناتهم</small></div>
 </main>
 <footer>تصميم وتطوير: <b dir="ltr">Eng. Mohammed F Sharaf</b></footer>
 </body>
