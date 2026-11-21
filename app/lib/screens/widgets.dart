@@ -202,7 +202,7 @@ Future<String> appVersionText() async {
     final info = await PackageInfo.fromPlatform();
     final v = info.version.endsWith('.0') ? info.version.substring(0, info.version.length - 2) : info.version;
     final first = info.version == '1.0.0' ? 'الإصدار الأول ' : 'الإصدار ';
-    return '$first$v (${info.buildNumber})${kBeta ? ' — تجريبي' : ''}';
+    return '$first$v${kBeta ? ' — تجريبي' : ''}';
   } catch (_) {
     return '';
   }
