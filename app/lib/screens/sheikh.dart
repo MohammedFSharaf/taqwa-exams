@@ -126,6 +126,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   String _halaqaName = '';
   bool _loaded = false;
   bool _showDone = true;
+  bool _showLast = Repo.I.prefs.getBool('sheikh_show_last') ?? false;
   String _q = '';
 
   String get _halaqaId => (widget.sheikh['halaqaId'] ?? '').toString();
@@ -355,9 +356,27 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
             const SizedBox(width: 10),
             Expanded(child: MiniBar(total == 0 ? 0 : done / total, color: context.accent, height: 7)),
           ]),
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: InkWell(
+          Row(children: [
+            Expanded(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _setShowLast(!_showLast),
+                child: Row(children: [
+                  SizedBox(
+                    height: 30,
+                    child: FittedBox(
+                      child: Switch(value: _showLast, onChanged: _setShowLast),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text('آخر تسميع تحت كل طالب',
+                        style: TextStyle(color: context.sub, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  ),
+                ]),
+              ),
+            ),
+            InkWell(
               onTap: _openWeek,
               borderRadius: BorderRadius.circular(8),
               child: Padding(
@@ -365,7 +384,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                 child: Text('سجل الأسبوع ←', style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: 13.5)),
               ),
             ),
-          ),
+          ]),
           if (absent > 0 || pending > 0)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -543,6 +562,18 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     Repo.I.setProgress(s.id, _halaqaId, res == 0 ? null : res, _sheikhName);
     if (mounted) showSavedTick(context, title: 'تم تحديد البداية', sub: s.name);
   }
+
+  void _setShowLast(bool v) {
+    haptic();
+    Repo.I.prefs.setBool('sheikh_show_last', v);
+    setState(() => _showLast = v);
+  }
+
+  /// جلسات الطالب قبل اليوم (الأحدث أولاً)
+  List<Map<String, dynamic>> _before(String sid) => _logsOf(sid)
+      .where((l) => (l['date'] ?? '').toString().compareTo(_today) < 0)
+      .toList()
+    ..sort((a, b) => (b['date'] ?? '').toString().compareTo((a['date'] ?? '').toString()));
 
   void _openWeek() {
     haptic();
@@ -763,6 +794,13 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                   ]),
                   style: TextStyle(color: subColor, fontSize: 12.5, height: 1.5),
                 ),
+                if (_showLast && l == null)
+                  () {
+                    final rec = _before(s.id);
+                    return rec.isEmpty
+                        ? Text('لا يوجد تسميع سابق', style: TextStyle(color: context.sub, fontSize: 12))
+                        : Padding(padding: const EdgeInsets.only(top: 5), child: LastRecital(recent: rec, compact: true));
+                  }(),
                 if (warn != null) Text(warn, style: TextStyle(color: context.goldFg, fontSize: 12)),
                 if (deadline != null && st.step != null) DeadlineTag(deadline, st.step!.reviewDays),
                 if (l != null && l['_pending'] == true)
@@ -1304,40 +1342,6 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   Widget _topLine() {
     final pct = juzProgress(_dir, _st);
     final rec = _c.recent;
-    Widget dot(String? st) {
-      final (Color c, String t) = switch (st) {
-        'recited' => (okGreen, '✓'),
-        'absent' => (const Color(0xFFC0392B), 'غ'),
-        'excused' => (const Color(0xFFC88A12), 'ع'),
-        'norecite' => (const Color(0xFFE57373), 'ل'),
-        _ => (Colors.grey, '·'),
-      };
-      return Container(
-        width: 20,
-        height: 20,
-        margin: const EdgeInsetsDirectional.only(start: 4),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-        child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
-      );
-    }
-
-    String? lastLine;
-    if (rec.isNotEmpty) {
-      final l = rec.first;
-      final d = DateTime.tryParse((l['date'] ?? '').toString());
-      final when = d == null ? '' : '${dayName(d)} ${d.day}/${d.month}';
-      final parts = <String>[];
-      if (l['status'] != 'recited') {
-        parts.add(SheikhHomeScreenStateText.of(l['status'] as String?));
-      } else {
-        final nm = l['newMem'];
-        if (nm is Map) parts.add('سمّع ${nm['label'] ?? ''}');
-        final rv = ((l['reviews'] as List?) ?? []).whereType<Map>().map((r) => r['label']).join('، ');
-        if (rv.isNotEmpty) parts.add('راجع $rv');
-      }
-      lastLine = 'آخر مرة ($when): ${parts.join(' · ')}';
-    }
     var title = _st.title;
     if (_st.mode == 'memorize' && _st.fromG != null) title += ' · ${surahName(surahOf(_st.fromG!))}';
     return Padding(
@@ -1359,21 +1363,9 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
         if (_c.deadline != null && _st.step != null) DeadlineTag(_c.deadline!, _st.step!.reviewDays),
         if (_c.ready != null) Padding(padding: const EdgeInsets.only(top: 10), child: _readyBox()),
         if (rec.isNotEmpty)
-          InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: _recentSheet,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Flexible(
-                  child: Text(lastLine ?? '',
-                      overflow: TextOverflow.ellipsis, style: TextStyle(color: context.sub, fontSize: 12)),
-                ),
-                const SizedBox(width: 4),
-                for (final l in rec.reversed) dot(l['status'] as String?),
-                Icon(Icons.chevron_left_rounded, size: 18, color: context.accent),
-              ]),
-            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: LastRecital(recent: rec, onTap: _recentSheet),
           ),
       ]),
     );
@@ -1806,4 +1798,118 @@ class SheikhHomeScreenStateText {
         'excused' => 'غائب بعذر',
         _ => '',
       };
+}
+
+
+/// آخر تسميع للطالب: آخر جلسة، وإن غاب فيها فآخر جلسة سمّع فيها
+class LastRecital extends StatelessWidget {
+  final List<Map<String, dynamic>> recent; // الأحدث أولاً
+  final VoidCallback? onTap;
+  final bool compact;
+  const LastRecital({super.key, required this.recent, this.onTap, this.compact = false});
+
+  static String _when(Map<String, dynamic> l) {
+    final d = DateTime.tryParse((l['date'] ?? '').toString());
+    return d == null ? '' : '${dayName(d)} ${d.day}/${d.month}';
+  }
+
+  static double _n(dynamic v) => v is num ? v.toDouble() : 0;
+
+  /// سطرا الحفظ والمراجعة لجلسة
+  static List<(String, String)> lines(Map<String, dynamic> l) {
+    final out = <(String, String)>[];
+    final nm = l['newMem'];
+    if (nm is Map) out.add(('حفظ', '${nm['label'] ?? ''} (${fmtPages(_n(l['newPages']))} ص)'));
+    final revs = ((l['reviews'] as List?) ?? []).whereType<Map>().map((r) => (r['label'] ?? '').toString()).toList();
+    if (revs.isNotEmpty) out.add(('راجع', '${revs.join('، ')} (${fmtPages(_n(l['reviewPages']))} ص)'));
+    if (out.isEmpty && l['status'] == 'recited') out.add(('', 'سمّع بدون تفاصيل'));
+    return out;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (recent.isEmpty) return const SizedBox.shrink();
+    final last = recent.first;
+    final st = (last['status'] ?? '').toString();
+    final recited = st == 'recited';
+    final prev = recited ? null : recent.where((l) => l['status'] == 'recited').firstOrNull;
+    final fs = compact ? 12.0 : 14.0;
+    Widget line((String, String) x, {Color? c}) => Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Text.rich(
+            TextSpan(children: [
+              if (x.$1.isNotEmpty)
+                TextSpan(text: '${x.$1}: ', style: TextStyle(color: context.sub, fontWeight: FontWeight.w700)),
+              TextSpan(text: x.$2, style: TextStyle(color: c ?? context.ink, fontWeight: FontWeight.w700)),
+            ]),
+            style: TextStyle(fontSize: fs, height: 1.55),
+          ),
+        );
+    final (Color fg, Color bg) = switch (st) {
+      'recited' => (context.okFg, context.okBg),
+      'excused' => (context.goldFg, context.goldBg),
+      _ => (context.badFg, context.badBg),
+    };
+    final body = <Widget>[
+      Row(children: [
+        if (!compact) ...[Icon(Icons.replay_rounded, size: 18, color: context.accent), const SizedBox(width: 6)],
+        Expanded(
+          child: Text('آخر تسميع · ${_when(last)}',
+              style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: compact ? 12 : 14.5)),
+        ),
+        if (!recited) Tag(SheikhHomeScreenStateText.of(st), fg: fg, bg: bg),
+      ]),
+      if (recited) for (final x in lines(last)) line(x),
+      if (!recited && prev != null) ...[
+        line(('', 'آخر مرة سمّع: ${_when(prev)}'), c: context.sub),
+        for (final x in lines(prev)) line(x),
+      ],
+      if (!recited && prev == null && (last['notes'] ?? '').toString().isNotEmpty)
+        line(('ملاحظة', (last['notes'] ?? '').toString())),
+    ];
+    if (compact) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(color: context.soft, borderRadius: BorderRadius.circular(12)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: body),
+      );
+    }
+    Widget dot(String? s) {
+      final (Color c, String t) = switch (s) {
+        'recited' => (okGreen, '✓'),
+        'absent' => (const Color(0xFFC0392B), 'غ'),
+        'excused' => (const Color(0xFFC88A12), 'ع'),
+        'norecite' => (const Color(0xFFE57373), 'ل'),
+        _ => (Colors.grey, '·'),
+      };
+      return Container(
+        width: 20,
+        height: 20,
+        margin: const EdgeInsetsDirectional.only(end: 4),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+        child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+      );
+    }
+
+    return Panel(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      color: context.soft,
+      onTap: onTap,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        ...body,
+        const SizedBox(height: 8),
+        Row(children: [
+          for (final l in recent.reversed) dot(l['status'] as String?),
+          const Spacer(),
+          if (onTap != null) ...[
+            Text('آخر الجلسات', style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: 12.5)),
+            Icon(Icons.chevron_left_rounded, size: 18, color: context.accent),
+          ],
+        ]),
+      ]),
+    );
+  }
 }
