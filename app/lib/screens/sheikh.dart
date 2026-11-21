@@ -9,6 +9,7 @@ import '../quran_data.dart';
 import '../repo.dart';
 import '../update_check.dart';
 import 'gate.dart';
+import 'ui.dart';
 import 'widgets.dart';
 
 // ===================== دخول الشيخ (نموذج داخل شاشة الدخول) =====================
@@ -97,7 +98,7 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
                     child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
                   ),
                 const SizedBox(height: 18),
-                BigButton(icon: Icons.login, text: 'دخول', onPressed: () => _login(list)),
+                BigButton(icon: Icons.login, text: 'دخول', onPressed: () => _login(list), gold: true),
               ],
             );
           },
@@ -123,7 +124,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   Map<String, dynamic> _settings = {};
   String _halaqaName = '';
   bool _loaded = false;
-  bool _showDone = false;
+  bool _showDone = true;
   String _q = '';
 
   String get _halaqaId => (widget.sheikh['halaqaId'] ?? '').toString();
@@ -298,38 +299,29 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         .map((x) => (x['name'] ?? '').toString())
         .where((n) => n.isNotEmpty)
         .join('، ');
-    const white70 = TextStyle(color: Color(0xFFDCEAF4), fontSize: 13);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0B3F63), brandGreen],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(14),
-      ),
+    final holiday = _holidayAll || _holidayHalaqa;
+    return Panel(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Expanded(
+          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Flexible(
               child: Text(_halaqaName.isEmpty ? 'الحلقة' : _halaqaName,
-                  style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: context.ink, fontSize: 20, fontWeight: FontWeight.w800)),
             ),
-            Text('${dayName(now)} ', style: const TextStyle(color: brandGold, fontSize: 15, fontWeight: FontWeight.bold)),
-            Text('${now.day}/${now.month}/${now.year}',
-                textDirection: TextDirection.ltr,
-                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-          ]),
-          Row(children: [
-            Expanded(
-                child: Text('المشايخ: ${names.isEmpty ? _sheikhName : names}',
-                    style: white70, overflow: TextOverflow.ellipsis)),
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 3),
+              child: Text('${dayName(now)} ${now.day}/${now.month}',
+                  style: TextStyle(color: context.sub, fontSize: 13)),
+            ),
+            const Spacer(),
             if (!_holidayAll)
               InkWell(
                 onTap: _toggleHoliday,
+                borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                   child: Text(_holidayHalaqa ? 'إلغاء الإجازة' : 'إجازة',
@@ -337,32 +329,37 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                 ),
               ),
           ]),
-          if (_holidayAll || _holidayHalaqa || !_isSessionDay)
-            Text(
-              [
-                if (_holidayAll) 'اليوم إجازة للمركز',
-                if (!_holidayAll && _holidayHalaqa) 'اليوم إجازة للحلقة',
-                if (!_isSessionDay) 'جلسة إضافية (ليس يوم تحفيظ)',
-              ].join(' — '),
-              style: const TextStyle(color: brandGold, fontSize: 13, fontWeight: FontWeight.bold),
+          Text('المشايخ: ${names.isEmpty ? _sheikhName : names}',
+              style: TextStyle(color: context.sub, fontSize: 12.5), overflow: TextOverflow.ellipsis),
+          if (holiday || !_isSessionDay)
+            Container(
+              margin: const EdgeInsets.only(top: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(color: context.goldBg, borderRadius: BorderRadius.circular(8)),
+              child: Text(
+                [
+                  if (_holidayAll) 'اليوم إجازة للمركز — التسجيل اختياري',
+                  if (!_holidayAll && _holidayHalaqa) 'اليوم إجازة للحلقة — التسجيل اختياري',
+                  if (!_isSessionDay) 'جلسة إضافية (ليس يوم تحفيظ)',
+                ].join(' · '),
+                style: TextStyle(color: context.goldFg, fontSize: 12.5, fontWeight: FontWeight.bold),
+              ),
             ),
-          const SizedBox(height: 6),
-          Text(
-            (_holidayAll || _holidayHalaqa)
-                ? 'يوم إجازة — التسجيل اختياري · سمّع $done${pending > 0 ? ' · بانتظار الرفع $pending' : ''}'
-                : 'سُجّل $done · لم يُسجّل $todo · غياب $absent${pending > 0 ? ' · بانتظار الرفع $pending' : ''}',
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: total == 0 ? 0 : done / total,
-              minHeight: 6,
-              color: brandGold,
-              backgroundColor: Colors.white24,
+          const SizedBox(height: 10),
+          Row(children: [
+            Text('$done من $total سجّلوا',
+                style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: 14)),
+            const SizedBox(width: 10),
+            Expanded(child: MiniBar(total == 0 ? 0 : done / total, color: context.accent, height: 7)),
+          ]),
+          if (absent > 0 || pending > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                [if (absent > 0) 'غياب $absent', if (pending > 0) 'بانتظار الرفع $pending'].join(' · '),
+                style: TextStyle(color: context.sub, fontSize: 12.5),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -385,22 +382,24 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   }
 
   Future<void> _longPress(Student s, DailyStatus st, Map<String, dynamic>? l) async {
-    final r = await showDialog<String>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(s.name),
+    haptic();
+    final r = await showAppSheet<String>(
+      context,
+      title: s.name,
+      builder: (ctx, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final e in const {'absent': 'غائب', 'excused': 'غائب بعذر', 'norecite': 'حضر ولم يسمّع'}.entries)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(ctx, e.key),
-              child: Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(e.value, style: const TextStyle(fontSize: 16))),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                onPressed: () => Navigator.pop(ctx, e.key),
+                child: Text(e.value, style: TextStyle(fontSize: 16, color: ctx.ink, fontWeight: FontWeight.w700)),
+              ),
             ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(ctx, 'details'),
-            child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 6),
-                child: Text('تسجيل مفصّل', style: TextStyle(fontSize: 16, color: brandGreen))),
-          ),
+          const SizedBox(height: 4),
+          NavyButton(text: 'تسجيل مفصّل', onPressed: () => Navigator.pop(ctx, 'details')),
         ],
       ),
     );
@@ -409,6 +408,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       _open(s, st, l);
     } else {
       _quickStatus(s, st, r);
+      if (mounted) showSavedTick(context, sub: s.name);
     }
   }
 
@@ -428,6 +428,110 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     for (final s in todo) {
       _quickStatus(s, _statusOf(s), 'absent');
     }
+    if (mounted) showSavedTick(context, sub: 'سُجّل ${todo.length} غائبين');
+  }
+
+  /// نقطة البداية (نافذة من تحت)
+  Future<void> _startSheet(Student s, DailyStatus st) async {
+    final j = st.juz;
+    if (j <= 0) return;
+    final dir = s.pathDir;
+    final surahs = surahsOfJuz(dir, j);
+    List<int> ayahsIn(int x) {
+      final lo = qJuz[j - 1][0] > surahFirst(x) ? qJuz[j - 1][0] : surahFirst(x);
+      final hi = qJuz[j - 1][1] < surahEnd(x) ? qJuz[j - 1][1] : surahEnd(x);
+      return [for (var g = lo; g <= hi; g++) ayahNo(g)];
+    }
+
+    var fresh = true;
+    var sel = surahs.first;
+    var ay = ayahsIn(sel).last;
+    final res = await showAppSheet<int?>(
+      context,
+      title: 'من وين بيبلش «${s.name}»؟',
+      subtitle: 'مرة واحدة فقط — بعدها التطبيق بيكمل لحاله',
+      builder: (ctx, setS) {
+        Widget opt(String t, bool on, VoidCallback f) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Material(
+                color: on ? ctx.soft : ctx.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: on ? ctx.accent : ctx.line, width: on ? 2 : 1),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    haptic();
+                    setS(f);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: Row(children: [
+                      Icon(on ? Icons.radio_button_checked : Icons.radio_button_off,
+                          color: on ? ctx.accent : ctx.sub, size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                          child: Text(t, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: ctx.ink))),
+                    ]),
+                  ),
+                ),
+              ),
+            );
+        final ayahs = ayahsIn(sel);
+        if (!ayahs.contains(ay)) ay = ayahs.last;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            opt('بيبلش الجزء $j من أوله', fresh, () => fresh = true),
+            opt('حافظ لحد آية معيّنة', !fresh, () => fresh = false),
+            if (!fresh) ...[
+              Row(children: [
+                Expanded(
+                  flex: 3,
+                  child: DropdownButtonFormField<int>(
+                    value: sel,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'السورة'),
+                    items: [for (final x in surahs) DropdownMenuItem(value: x, child: Text(surahName(x)))],
+                    onChanged: (v) => setS(() {
+                      sel = v ?? sel;
+                      ay = ayahsIn(sel).last;
+                    }),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: DropdownButtonFormField<int>(
+                    value: ay,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'الآية'),
+                    items: [for (final x in ayahs) DropdownMenuItem(value: x, child: Text('$x'))],
+                    onChanged: (v) => setS(() => ay = v ?? ay),
+                  ),
+                ),
+              ]),
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text('آخر آية حفظها. إذا أنهى الجزء كاملاً اختر آخر آية فيه.',
+                    style: TextStyle(color: ctx.sub, fontSize: 12.5)),
+              ),
+            ],
+            const SizedBox(height: 16),
+            NavyButton(text: 'حفظ', onPressed: () => Navigator.pop(ctx, fresh ? 0 : gidOf(sel, ay))),
+          ],
+        );
+      },
+    );
+    if (res == null) return;
+    Repo.I.setProgress(s.id, _halaqaId, res == 0 ? null : res, _sheikhName);
+    if (mounted) showSavedTick(context, title: 'تم تحديد البداية', sub: s.name);
+  }
+
+  void _logout() {
+    Repo.I.setSheikhId(null);
+    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const GateScreen()), (r) => false);
   }
 
   @override
@@ -445,91 +549,93 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       return l['status'] == 'absent' || l['status'] == 'excused';
     }).length;
     final pending = _logs.where((l) => l['_pending'] == true).length;
+    final holiday = _holidayAll || _holidayHalaqa;
     return Scaffold(
       appBar: AppBar(
         title: const BrandTitle('السجل اليومي'),
         actions: [
-          TextButton(
-            onPressed: () {
-              Repo.I.setSheikhId(null);
-              Navigator.of(context)
-                  .pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const GateScreen()), (r) => false);
-            },
-            child: const Text('خروج', style: TextStyle(color: Colors.white)),
-          ),
+          const SettingsButton(),
+          TextButton(onPressed: _logout, child: Text('خروج', style: TextStyle(color: context.sub))),
         ],
       ),
-      body: !_loaded
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 20),
-              children: [
-                _header(now, doneAll.length, todoAll.length, absent, pending, all.length),
-                const SizedBox(height: 8),
-                if (all.length > 6)
-                  TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'بحث عن طالب',
-                      prefixIcon: Icon(Icons.search),
-                      isDense: true,
-                    ),
-                    onChanged: (v) => setState(() => _q = v.trim()),
-                  ),
-                if (all.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('لا يوجد طلاب في الحلقة', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-                  ),
-                if (todo.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
-                    child: Text('${(_holidayAll || _holidayHalaqa) ? 'إجازة' : 'لم يُسجّل بعد'} (${todo.length})',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
-                  ),
-                  if (!(_holidayAll || _holidayHalaqa))
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
-                      child: Text('اضغط مطوّلاً على الطالب لتسجيل الغياب', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                    )
-                  else
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
-                    child: Text('لا يُحسب غياب اليوم. من يسمّع يُسجَّل له حفظه ومراجعته.',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF9A6700))),
-                  ),
-                  for (final s in todo) _studentRow(s, numbers[s.id] ?? 0),
-                ],
-                if (done.isNotEmpty)
-                  InkWell(
-                    onTap: () => setState(() => _showDone = !_showDone),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
-                      child: Row(children: [
-                        Expanded(
-                          child: Text('تم التسجيل (${done.length})',
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
+      body: Column(children: [
+        const OfflineBanner(),
+        Expanded(
+          child: !_loaded
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
+                  children: [
+                    _header(now, doneAll.length, todoAll.length, absent, pending, all.length),
+                    if (all.length > 6)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: TextField(
+                          decoration: const InputDecoration(
+                            hintText: 'بحث عن طالب',
+                            prefixIcon: Icon(Icons.search),
+                            isDense: true,
+                          ),
+                          onChanged: (v) => setState(() => _q = v.trim()),
                         ),
-                        Text(_showDone ? 'إخفاء' : 'عرض',
-                            style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold)),
-                      ]),
-                    ),
-                  ),
-                if (_showDone || _q.isNotEmpty)
-                  for (final s in done) _studentRow(s, numbers[s.id] ?? 0),
-                if (todoAll.isNotEmpty && !_holidayAll && !_holidayHalaqa && _q.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(46),
-                        foregroundColor: Colors.red.shade700,
                       ),
-                      onPressed: () => _markRestAbsent(todoAll),
-                      child: Text('تسجيل الباقين غائب (${todoAll.length})'),
-                    ),
-                  ),
-              ],
-            ),
+                    if (all.isEmpty)
+                      const EmptyState(
+                        icon: Icons.groups_rounded,
+                        title: 'لا يوجد طلاب في الحلقة',
+                        text: 'تضيف الإدارة الطلاب من لوحة الإدارة، وبيظهروا هنا مباشرة.',
+                      ),
+                    if (all.isNotEmpty && todo.isEmpty && done.isNotEmpty && _q.isEmpty)
+                      Panel(
+                        color: context.okBg,
+                        child: Row(children: [
+                          Icon(Icons.check_circle_rounded, color: context.okFg),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text('سجّلت كل الطلاب اليوم — بارك الله فيك',
+                                style: TextStyle(color: context.okFg, fontWeight: FontWeight.w800)),
+                          ),
+                        ]),
+                      ),
+                    if (todo.isNotEmpty) ...[
+                      SectionLabel('${holiday ? 'إجازة' : 'لم يُسجّل بعد'} (${todo.length})'),
+                      for (final s in todo) _studentRow(s, numbers[s.id] ?? 0),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(6, 0, 6, 4),
+                        child: Text(
+                            holiday
+                                ? 'لا يُحسب غياب اليوم. من يسمّع يُسجَّل له حفظه ومراجعته.'
+                                : 'اضغط مطوّلاً على الطالب لتسجيل الغياب',
+                            style: TextStyle(fontSize: 12, color: holiday ? context.goldFg : context.sub)),
+                      ),
+                    ],
+                    if (done.isNotEmpty)
+                      SectionLabel(
+                        'تم التسجيل (${done.length})',
+                        trailing: InkWell(
+                          onTap: () => setState(() => _showDone = !_showDone),
+                          child: Text(_showDone ? 'إخفاء' : 'عرض',
+                              style: TextStyle(color: context.accent, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    if (_showDone || _q.isNotEmpty)
+                      for (final s in done) _studentRow(s, numbers[s.id] ?? 0),
+                    if (todoAll.isNotEmpty && !holiday && _q.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 14),
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            foregroundColor: context.badFg,
+                          ),
+                          onPressed: () => _markRestAbsent(todoAll),
+                          child: Text('تسجيل الباقين غائب (${todoAll.length})'),
+                        ),
+                      ),
+                  ],
+                ),
+        ),
+      ]),
     );
   }
 
@@ -537,81 +643,117 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     final st = _statusOf(s);
     final l = _todayLog(s.id);
     final warn = l == null ? null : _warning(l, st);
-    final Color modeColor = switch (st.mode) {
-      'memorize' => brandGreen,
-      'review_surah' => Colors.red.shade700,
-      'needs_start' => const Color(0xFF9A6700),
-      _ => const Color(0xFF1F4E8C),
-    };
     final status = l == null ? null : (l['status'] ?? '').toString();
-    final Color stColor = switch (status) {
-      'recited' => brandGreen,
-      'absent' => Colors.red.shade700,
-      'excused' => const Color(0xFF9A6700),
-      'norecite' => Colors.red.shade400,
-      _ => Colors.grey,
+    final (Color stFg, Color stBg) = switch (status) {
+      'recited' => (context.okFg, context.okBg),
+      'absent' => (context.badFg, context.badBg),
+      'excused' => (context.goldFg, context.goldBg),
+      'norecite' => (context.badFg, context.badBg),
+      _ => (context.sub, context.field),
+    };
+    final Color avatar = switch (status) {
+      'recited' => okGreen,
+      'absent' => const Color(0xFFC0392B),
+      'excused' => const Color(0xFFC88A12),
+      'norecite' => const Color(0xFFE57373),
+      _ => const Color(0xFF9AAAB6),
     };
     final canQuick = l == null && st.mode == 'memorize' && st.fromG != null && st.suggestToG != null;
     String sub = st.title;
+    Color subColor = context.sub;
+    String? nextLine;
     if (canQuick) {
-      sub = '${st.title}\nالحفظ التالي: ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!)} '
-          '(${fmtPages(memRangePages(s.pathDir, st.fromG!, st.suggestToG!))} ص)';
+      nextLine = 'التالي: ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!)}';
     } else if (l != null && status == 'recited') {
-      sub = '${st.title}\n${_shortSummary(l)}';
+      sub = _shortSummary(l);
+    } else if (l != null) {
+      sub = statusText(status);
     }
+    if (st.mode == 'review_surah' && l == null) subColor = context.badFg;
+    var ready = false;
     if (st.mode == 'review_exam') {
       final r = _readiness(s, _logsOf(s.id));
-      sub += r.ok ? '\nجاهز للاختبار ✓' : '\nقبل الاختبار: ${st.juzFrom == st.juzTo ? 'تسميع الجزء كاملاً في جلسة' : 'تسميع كل جزء كاملاً'}';
+      ready = r.ok;
+      if (l == null) {
+        sub += r.ok
+            ? ' · جاهز للاختبار ✓'
+            : ' · قبل الاختبار: ${st.juzFrom == st.juzTo ? 'تسميع الجزء كاملاً في جلسة' : 'تسميع كل جزء كاملاً'}';
+      }
     }
+    final prog = l == null ? juzProgress(s.pathDir, st) : null;
     final holiday = _holidayAll || _holidayHalaqa;
     Widget action;
     if (l == null && holiday && st.mode == 'needs_start') {
-      action = const Text('إجازة', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold));
+      action = Tag('إجازة', fg: context.sub, bg: context.field);
     } else if (l != null) {
-      action = Text(statusText(status), style: TextStyle(color: stColor, fontWeight: FontWeight.bold));
+      action = Tag(statusText(status), fg: stFg, bg: stBg);
     } else if (st.mode == 'needs_start') {
-      action = OutlinedButton(onPressed: () => _open(s, st, l), child: const Text('تحديد البداية'));
+      action = FilledButton.tonal(onPressed: () => _startSheet(s, st), child: const Text('تحديد البداية'));
     } else if (canQuick) {
-      action = FilledButton(onPressed: () => _quickRecite(s, st), child: const Text('سمّع'));
-    } else {
-      action = FilledButton.tonal(onPressed: () => _open(s, st, l), child: const Text('تسجيل'));
-    }
-    return Card(
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
-      margin: const EdgeInsets.symmetric(vertical: 3),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _open(s, st, l),
-        onLongPress: () => _longPress(s, st, l),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 15,
-                backgroundColor: const Color(0xFFE6F2FA),
-                child: Text('$number', style: const TextStyle(color: brandGreen, fontSize: 13, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(s.name + (s.pending ? ' (جديد)' : ''),
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                    Text(sub, style: TextStyle(color: modeColor, fontSize: 12.5, height: 1.4)),
-                    if (warn != null) Text(warn, style: const TextStyle(color: Color(0xFF9A6700), fontSize: 12)),
-                    if (l != null && l['_pending'] == true)
-                      const Text('بانتظار الرفع', style: TextStyle(color: Color(0xFF9A6700), fontSize: 11.5)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              action,
-            ],
-          ),
+      action = FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: brandBlue,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(76, 46),
+          textStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 17, fontWeight: FontWeight.w800),
         ),
+        onPressed: () {
+          _quickRecite(s, st);
+          showSavedTick(context, sub: s.name);
+        },
+        child: const Text('سمّع'),
+      );
+    } else {
+      action = FilledButton.tonal(
+        style: FilledButton.styleFrom(backgroundColor: context.soft, foregroundColor: context.accent),
+        onPressed: () => _open(s, st, l),
+        child: const Text('تسجيل'),
+      );
+    }
+    return Panel(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      onTap: () {
+        if (st.mode == 'needs_start' && l == null) {
+          _startSheet(s, st);
+        } else {
+          _open(s, st, l);
+        }
+      },
+      onLongPress: () => _longPress(s, st, l),
+      child: Row(
+        children: [
+          NameAvatar(s.name, color: avatar, size: 44),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(s.name + (s.pending ? ' (جديد)' : ''),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: context.ink)),
+                Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: sub),
+                    if (nextLine != null) const TextSpan(text: ' · '),
+                    if (nextLine != null)
+                      TextSpan(text: nextLine, style: TextStyle(color: context.accent, fontWeight: FontWeight.w700)),
+                  ]),
+                  style: TextStyle(color: subColor, fontSize: 12.5, height: 1.5),
+                ),
+                if (warn != null) Text(warn, style: TextStyle(color: context.goldFg, fontSize: 12)),
+                if (l != null && l['_pending'] == true)
+                  Text('بانتظار الرفع', style: TextStyle(color: context.goldFg, fontSize: 11.5)),
+                if (prog != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, left: 8),
+                    child: MiniBar(prog, color: ready ? okGreen : goldButton),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          action,
+        ],
       ),
     );
   }
@@ -691,6 +833,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   int? _from, _to;
   final List<Map<String, dynamic>> _reviews = [];
   final _notes = TextEditingController();
+  bool _showNote = false;
 
   // نقطة البداية
   int? _startSurah, _startAyah;
@@ -838,11 +981,43 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     return null;
   }
 
-  Future<void> _reviewDialog(String kind) async {
-    var s = 1, a1 = 1, a2 = qCounts[0], j1 = 30, j2 = 30;
-    final r = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setD) {
+  /// نافذة «إضافة مراجعة»
+  Future<void> _addReviewSheet() async {
+    var kind = 'surah';
+    var s = 1, a1 = 1, a2 = qCounts[0], j1 = _st.juz > 0 ? _st.juz : 30, j2 = _st.juz > 0 ? _st.juz : 30;
+    final sugg = _suggestedReview;
+    bool added(Map<String, dynamic> r) => _reviews.any((x) => x['fromG'] == r['fromG'] && x['toG'] == r['toG']);
+    final quick = [
+      if (sugg != null && !added(sugg)) MapEntry('المطلوبة: ${sugg['label']}', [sugg]),
+      ..._quickReviews,
+    ];
+    final r = await showAppSheet<List<Map<String, dynamic>>>(
+      context,
+      title: 'إضافة مراجعة',
+      builder: (ctx, setD) {
+        Widget quickTile(MapEntry<String, List<Map<String, dynamic>>> q) {
+          final p = q.value.fold(0.0, (a, r) => a + ((r['pages'] ?? 0) as num).toDouble());
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: ctx.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: ctx.line)),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => Navigator.pop(ctx, q.value),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: Row(children: [
+                    Expanded(
+                        child: Text(q.key, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: ctx.ink))),
+                    Text('${fmtPages(p)} ص', style: TextStyle(color: ctx.sub, fontSize: 15)),
+                  ]),
+                ),
+              ),
+            ),
+          );
+        }
+
         Widget surahPick() => DropdownButtonFormField<int>(
               value: s,
               isExpanded: true,
@@ -868,30 +1043,50 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
               items: [for (var i = 1; i <= 30; i++) DropdownMenuItem(value: i, child: Text('الجزء $i'))],
               onChanged: (x) => setD(() => f(x ?? v)),
             );
-        final children = <Widget>[];
+        const kinds = ['surah', 'ayat', 'juz'];
+        final pickers = <Widget>[];
         if (kind == 'juz') {
-          children.addAll([
-            juzPick('من الجزء', j1, (x) => j1 = x),
-            const SizedBox(height: 10),
-            juzPick('إلى الجزء', j2, (x) => j2 = x),
+          pickers.addAll([
+            Row(children: [
+              Expanded(child: juzPick('من الجزء', j1, (x) => j1 = x)),
+              const SizedBox(width: 8),
+              Expanded(child: juzPick('إلى الجزء', j2, (x) => j2 = x)),
+            ]),
           ]);
         } else {
-          children.add(surahPick());
+          pickers.add(surahPick());
           if (kind == 'ayat') {
-            children.addAll([
+            pickers.addAll([
               const SizedBox(height: 10),
-              ayahPick('من الآية', a1, (x) => a1 = x),
-              const SizedBox(height: 10),
-              ayahPick('إلى الآية', a2, (x) => a2 = x),
+              Row(children: [
+                Expanded(child: ayahPick('من الآية', a1, (x) => a1 = x)),
+                const SizedBox(width: 8),
+                Expanded(child: ayahPick('إلى الآية', a2, (x) => a2 = x)),
+              ]),
             ]);
           }
         }
-        return AlertDialog(
-          title: Text(kind == 'juz' ? 'مراجعة أجزاء' : kind == 'surah' ? 'مراجعة سورة' : 'مراجعة آيات'),
-          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: children)),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            FilledButton(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (quick.isNotEmpty) ...[
+              Text('سريع', style: TextStyle(color: ctx.sub, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              for (final q in quick) quickTile(q),
+              const SizedBox(height: 8),
+              Text('أو حدّد', style: TextStyle(color: ctx.sub, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+            ],
+            PillChoice(
+              items: const ['سورة', 'آيات', 'جزء'],
+              selected: kinds.indexOf(kind),
+              onChanged: (i) => setD(() => kind = kinds[i]),
+            ),
+            const SizedBox(height: 12),
+            ...pickers,
+            const SizedBox(height: 16),
+            NavyButton(
+              text: 'إضافة',
               onPressed: () {
                 int fromG, toG;
                 String label;
@@ -910,21 +1105,22 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
                   toG = gidOf(s, hi);
                   label = rangeLabel(fromG, toG);
                 }
-                Navigator.pop(ctx, {
-                  'kind': kind,
-                  'fromG': fromG,
-                  'toG': toG,
-                  'pages': pagesOfRange(fromG, toG),
-                  'label': label,
-                });
+                Navigator.pop(ctx, [
+                  {'kind': kind, 'fromG': fromG, 'toG': toG, 'pages': pagesOfRange(fromG, toG), 'label': label}
+                ]);
               },
-              child: const Text('إضافة'),
             ),
           ],
         );
-      }),
+      },
     );
-    if (r != null) _addReview(r);
+    if (r == null) return;
+    setState(() {
+      for (final x in r) {
+        if (!added(x)) _reviews.add(x);
+      }
+      _ensureNewAfterSurahReview();
+    });
   }
 
   int? get _nextIndex {
@@ -950,17 +1146,13 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       'reviewPages': recited ? _reviewPages : 0,
       'notes': _notes.text.trim(),
     });
-    final messenger = ScaffoldMessenger.of(context);
+    showSavedTick(context, sub: widget.student.name);
     final ni = next ? _nextIndex : null;
     if (ni != null) {
       Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => widget.builder(widget.order[ni])));
     } else {
       Navigator.of(context).pop();
     }
-    messenger.showSnackBar(SnackBar(
-      content: Text('تم حفظ ${widget.student.name}'),
-      duration: const Duration(seconds: 2),
-    ));
   }
 
   /// شرط الاختبار: تسميع الجزء كاملاً مراجعةً في جلسة واحدة
@@ -991,107 +1183,60 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     }
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-          color: ok ? const Color(0xFFE2F3E9) : const Color(0xFFFFF4DE), borderRadius: BorderRadius.circular(10)),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(color: ok ? context.okBg : context.goldBg, borderRadius: BorderRadius.circular(12)),
       child: Text(text,
           style: TextStyle(
-              color: ok ? brandGreen : const Color(0xFF8A5A00), fontWeight: FontWeight.bold, fontSize: 13.5, height: 1.5)),
+              color: ok ? context.okFg : context.goldFg, fontWeight: FontWeight.bold, fontSize: 13.5, height: 1.5)),
     );
   }
 
   // ---------- عناصر التصميم ----------
-  Widget _card({required Widget child, String? title, Widget? trailing}) => Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (title != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(children: [
-                  Expanded(
-                    child: Text(title,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: brandGreen)),
-                  ),
-                  if (trailing != null) trailing,
-                ]),
-              ),
-            child,
-          ],
-        ),
-      );
+  Widget _tagPages(double p, {bool warn = false}) => Tag('${fmtPages(p)} ص',
+      fg: warn ? context.goldFg : context.accent, bg: warn ? context.goldBg : context.soft);
 
-  Widget _pill(String t, Color c) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-        decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(12)),
-        child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+  Widget _link(String t, VoidCallback f, {Color? color}) => InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          haptic();
+          f();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          child: Text(t, style: TextStyle(color: color ?? context.accent, fontWeight: FontWeight.w800, fontSize: 14.5)),
+        ),
       );
 
   Widget _box(String text, Color bg, Color fg) => Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-        child: Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, height: 1.5)),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+        child: Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.w700, height: 1.6, fontSize: 13.5)),
       );
 
-  Widget _h(String t) => Padding(
-        padding: const EdgeInsets.only(top: 16, bottom: 6),
-        child: Text(t, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: brandGreen)),
-      );
-
-  static const _blue = Color(0xFF1F4E8C);
-  static const _amber = Color(0xFF9A6700);
-
-  // ---------- المربع العلوي ----------
-  Widget _topCard() {
-    final j = _st.juz;
-    final cp = _cursorPos;
-    String? pctText;
-    double? pct;
-    if (j > 0 && cp != null) {
-      final js = _o.jStart[j];
-      var done = 0.0;
-      for (var i = js; i <= cp; i++) {
-        done += ayahFrac(_o.order[i]);
-      }
-      final total = pagesOfRange(qJuz[j - 1][0], qJuz[j - 1][1]);
-      pct = total == 0 ? 0 : (done / total).clamp(0.0, 1.0);
-      pctText = 'أنجز ${(pct * 100).round()}% من الجزء';
-    } else if (_st.mode == 'review_exam' && _st.juzFrom == _st.juzTo) {
-      pct = 1;
-      pctText = 'أنهى حفظ الجزء';
-    }
-    // خريطة سور الجزء
-    final chips = <Widget>[];
-    if ((_st.mode == 'memorize' || _st.mode == 'review_surah') && j > 0) {
-      final curS = _st.fromG != null ? surahOf(_st.fromG!) : null;
-      for (final s in surahsOfJuz(_dir, j)) {
-        final g = _ayahsIn(s, j);
-        final doneS = cp != null && _o.pos[g.reduce((a, b) => _o.pos[a] > _o.pos[b] ? a : b)] <= cp;
-        final cur = !doneS && s == curS;
-        chips.add(Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-          decoration: BoxDecoration(
-            color: doneS ? brandGreen : Colors.white,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: cur ? const Color(0xFFC88A12) : (doneS ? brandGreen : const Color(0xFFBCD6E8)), width: cur ? 2 : 1),
-          ),
-          child: Text(surahName(s),
-              style: TextStyle(
-                  fontSize: 11.5,
-                  color: doneS ? Colors.white : (cur ? _amber : brandGreen),
-                  fontWeight: cur ? FontWeight.bold : FontWeight.normal)),
-        ));
-      }
-    }
-    // آخر الجلسات
+  // ---------- السطر العلوي ----------
+  Widget _topLine() {
+    final pct = juzProgress(_dir, _st);
     final rec = _c.recent;
+    Widget dot(String? st) {
+      final (Color c, String t) = switch (st) {
+        'recited' => (okGreen, '✓'),
+        'absent' => (const Color(0xFFC0392B), 'غ'),
+        'excused' => (const Color(0xFFC88A12), 'ع'),
+        'norecite' => (const Color(0xFFE57373), 'ل'),
+        _ => (Colors.grey, '·'),
+      };
+      return Container(
+        width: 20,
+        height: 20,
+        margin: const EdgeInsetsDirectional.only(start: 4),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+        child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+      );
+    }
+
     String? lastLine;
     if (rec.isNotEmpty) {
       final l = rec.first;
@@ -1108,74 +1253,38 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       }
       lastLine = 'آخر مرة ($when): ${parts.join(' · ')}';
     }
-    Widget dot(String? st) {
-      final (Color c, String t) = switch (st) {
-        'recited' => (brandGreen, '✓'),
-        'absent' => (Colors.red.shade700, 'غ'),
-        'excused' => (const Color(0xFFC88A12), 'ع'),
-        'norecite' => (Colors.red.shade300, 'ل'),
-        _ => (Colors.grey, '·'),
-      };
-      return Container(
-        width: 22,
-        height: 22,
-        margin: const EdgeInsetsDirectional.only(start: 4),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-        child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-      );
-    }
-
-    final req = _todayRequired;
-    final holidayToday = _c.base['holiday'] == true;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(color: const Color(0xFFE6F2FA), borderRadius: BorderRadius.circular(14)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (holidayToday)
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: const Color(0xFFFFF4DE), borderRadius: BorderRadius.circular(8)),
-              child: const Text('يوم إجازة — التسجيل اختياري ولا يُحسب غياب',
-                  style: TextStyle(color: _amber, fontSize: 12.5, fontWeight: FontWeight.bold)),
-            ),
-          Row(children: [
-            Expanded(child: Text(_st.title, style: const TextStyle(color: brandGreen, fontSize: 13.5))),
-            if (pctText != null) Text(pctText, style: const TextStyle(color: brandGreen, fontSize: 13)),
-          ]),
-          if (pct != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: LinearProgressIndicator(
-                    value: pct, minHeight: 6, color: brandGreen, backgroundColor: const Color(0xFFCFE2EF)),
+    var title = _st.title;
+    if (_st.mode == 'memorize' && _st.fromG != null) title += ' · ${surahName(surahOf(_st.fromG!))}';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 2, 4, 12),
+      child: Column(children: [
+        if (_c.base['holiday'] == true)
+          _box('يوم إجازة — التسجيل اختياري ولا يُحسب غياب', context.goldBg, context.goldFg),
+        Text(title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: _st.mode == 'review_surah' ? context.badFg : context.sub,
+                fontSize: 13.5,
+                fontWeight: _st.mode == 'review_surah' ? FontWeight.w800 : FontWeight.w500)),
+        if (pct != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(40, 8, 40, 0),
+            child: MiniBar(pct, height: 7),
+          ),
+        if (_c.ready != null) Padding(padding: const EdgeInsets.only(top: 10), child: _readyBox()),
+        if (rec.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Flexible(
+                child: Text(lastLine ?? '',
+                    overflow: TextOverflow.ellipsis, style: TextStyle(color: context.sub, fontSize: 12)),
               ),
-            ),
-          if (req != null)
-            Text(req, style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 16, height: 1.5)),
-          if (_c.ready != null) _readyBox(),
-          if (chips.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Wrap(spacing: 4, runSpacing: 4, children: chips),
-            ),
-          if (lastLine != null || rec.isNotEmpty) ...[
-            const Divider(height: 18, color: Color(0xFFBCD6E8)),
-            if (lastLine != null) Text(lastLine, style: const TextStyle(color: Color(0xFF5B6B63), fontSize: 12.5)),
-            const SizedBox(height: 6),
-            Row(children: [
-              const Text('آخر الجلسات:', style: TextStyle(color: Color(0xFF5B6B63), fontSize: 12.5)),
+              const SizedBox(width: 4),
               for (final l in rec.reversed) dot(l['status'] as String?),
             ]),
-          ],
-        ],
-      ),
+          ),
+      ]),
     );
   }
 
@@ -1190,18 +1299,19 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         _box('أول مرة للطالب في السجل اليومي.\nحدّد آخر آية حفظها في الجزء $j (${juzNames[j]})، وبعدها يكمل التطبيق تلقائياً.',
-            const Color(0xFFFFF4DE), const Color(0xFF9A6700)),
-        const SizedBox(height: 16),
-        BigButton(
-          icon: Icons.play_arrow,
-          text: 'لم يبدأ حفظ الجزء $j بعد',
-          filled: false,
+            context.goldBg, context.goldFg),
+        const SizedBox(height: 8),
+        NavyButton(
+          text: 'بيبلش الجزء $j من أوله',
           onPressed: () {
             Repo.I.setProgress(widget.student.id, widget.halaqaId, null, widget.sheikhName);
             Navigator.of(context).pop();
+            showSavedTick(context, title: 'تم تحديد البداية', sub: widget.student.name);
           },
         ),
-        _h('أو: آخر آية حفظها'),
+        const SizedBox(height: 18),
+        Text('أو: آخر آية حفظها', style: TextStyle(color: context.ink, fontWeight: FontWeight.w800, fontSize: 16)),
+        const SizedBox(height: 10),
         DropdownButtonFormField<int>(
           value: s,
           isExpanded: true,
@@ -1221,303 +1331,378 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
           onChanged: (v) => setState(() => _startAyah = v),
         ),
         const SizedBox(height: 6),
-        const Text('إذا أنهى الجزء كاملاً اختر آخر آية فيه.', style: TextStyle(color: Colors.black54)),
+        Text('إذا أنهى الجزء كاملاً اختر آخر آية فيه.', style: TextStyle(color: context.sub)),
         const SizedBox(height: 16),
-        BigButton(
-          icon: Icons.save,
+        GoldButton(
           text: 'حفظ نقطة البداية',
           onPressed: () {
             Repo.I.setProgress(widget.student.id, widget.halaqaId, gidOf(s, a), widget.sheikhName);
             Navigator.of(context).pop();
+            showSavedTick(context, title: 'تم تحديد البداية', sub: widget.student.name);
           },
         ),
       ],
     );
   }
 
-  // ---------- الحفظ الجديد ----------
-  Widget _newMemBody() {
-    final o = _o;
-    final j = _juz;
-    final fromPos = o.pos[_from!];
-    final surahs = surahsOfJuz(_dir, j).where((s) => _ayahsIn(s, j).any((x) => o.pos[x] >= fromPos)).toList();
-    final toS = surahOf(_to!);
-    final toAyahs = _ayahsIn(toS, j).where((g) => o.pos[g] >= fromPos).toList();
-    final pages = _newPages;
-    final p1 = pageOf(_from! < _to! ? _from! : _to!), p2 = pageOf(_from! < _to! ? _to! : _from!);
-    final seg = _ayahsIn(toS, j);
-    final segDone = seg.where((g) => o.pos[g] <= o.pos[_to!]).length;
-    Widget chip(String t, double v) {
-      final on = (pages - v).abs() < 0.26;
-      return Expanded(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 3),
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              backgroundColor: on ? const Color(0xFFE6F2FA) : null,
-              side: BorderSide(color: on ? brandGreen : const Color(0xFFCFD6D2)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+  // ---------- نافذة «تغيير» الحفظ الجديد ----------
+  Future<void> _newMemSheet() async {
+    if (_from == null) return;
+    _to ??= _toForPages(widget.minNew);
+    _hasNew = true;
+    setState(() {});
+    await showAppSheet<void>(
+      context,
+      title: 'الحفظ الجديد',
+      builder: (ctx, setS) {
+        void upd(VoidCallback f) {
+          setState(f);
+          setS(() {});
+        }
+
+        final o = _o;
+        final j = _juz;
+        final fromPos = o.pos[_from!];
+        final surahs = surahsOfJuz(_dir, j).where((s) => _ayahsIn(s, j).any((x) => o.pos[x] >= fromPos)).toList();
+        final toS = surahOf(_to!);
+        final toAyahs = _ayahsIn(toS, j).where((g) => o.pos[g] >= fromPos).toList();
+        final pages = _newPages;
+        final idx = toAyahs.indexOf(_to!);
+        const chips = [0.5, 1.0, 2.0, 3.0];
+        final selChip = chips.indexWhere((v) => (pages - v).abs() < 0.26);
+        Widget stepBtn(IconData ic, VoidCallback? f) => IconButton(
+              onPressed: f == null
+                  ? null
+                  : () {
+                      haptic();
+                      f();
+                    },
+              icon: Icon(ic, color: f == null ? ctx.line : ctx.ink),
+            );
+        final p1 = pageOf(_from! < _to! ? _from! : _to!), p2 = pageOf(_from! < _to! ? _to! : _from!);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('من ${posLabel(_from!)}', style: TextStyle(color: ctx.sub, fontSize: 13)),
+            const SizedBox(height: 8),
+            PillChoice(
+              items: const ['½ ص', '1 ص', '2 ص', '3 ص'],
+              selected: selChip,
+              height: 52,
+              fontSize: 16,
+              onChanged: (i) => upd(() => _to = _toForPages(chips[i])),
             ),
-            onPressed: () => setState(() => _to = _toForPages(v)),
-            child: Text(t, style: TextStyle(fontSize: 12.5, color: on ? brandGreen : Colors.black87)),
-          ),
-        ),
+            const SizedBox(height: 14),
+            Text('أو حدّد آخر آية سمّعها', style: TextStyle(color: ctx.sub, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                flex: 3,
+                child: DropdownButtonFormField<int>(
+                  value: surahs.contains(toS) ? toS : null,
+                  isExpanded: true,
+                  items: [for (final s in surahs) DropdownMenuItem(value: s, child: Text(surahName(s)))],
+                  onChanged: (v) => upd(() {
+                    if (v == null) return;
+                    _to = _ayahsIn(v, j).where((g) => o.pos[g] >= fromPos).toList().last;
+                  }),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                      color: ctx.field, borderRadius: BorderRadius.circular(14), border: Border.all(color: ctx.line)),
+                  child: Row(children: [
+                    stepBtn(Icons.add, idx >= 0 && idx < toAyahs.length - 1 ? () => upd(() => _to = toAyahs[idx + 1]) : null),
+                    Expanded(
+                      child: Text('${ayahNo(_to!)}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: ctx.ink)),
+                    ),
+                    stepBtn(Icons.remove, idx > 0 ? () => upd(() => _to = toAyahs[idx - 1]) : null),
+                  ]),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(color: ctx.soft, borderRadius: BorderRadius.circular(14)),
+              child: Text(
+                '${memRangeLabel(_dir, _from!, _to!)} · ${fmtPages(pages)} صفحة  (ص ${p1 == p2 ? '$p1' : '$p1–$p2'})',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: ctx.accent, fontWeight: FontWeight.w800, fontSize: 15.5),
+              ),
+            ),
+            if (pages < widget.minNew - 1e-9)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text('أقل من الحد الأدنى للحفظ (${fmt(widget.minNew)} صفحة)',
+                    textAlign: TextAlign.center, style: TextStyle(color: ctx.goldFg, fontSize: 12.5)),
+              ),
+            const SizedBox(height: 14),
+            NavyButton(text: 'تم', onPressed: () => Navigator.pop(ctx)),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () {
+                setState(() => _hasNew = false);
+                Navigator.pop(ctx);
+              },
+              child: Text('ما سمّع حفظاً جديداً اليوم', style: TextStyle(color: ctx.badFg, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ---------- البطاقة الرئيسية: الحفظ + المراجعة ----------
+  Widget _mainCard() {
+    final rows = <Widget>[];
+    Widget label(String t) =>
+        Text(t, style: TextStyle(color: context.sub, fontSize: 13, fontWeight: FontWeight.w700));
+    // الحفظ الجديد
+    Widget newBody;
+    Widget? newAction;
+    if (_st.mode == 'review_surah' && !_surahReviewDone) {
+      newBody = Text('لازم يراجع ${rangeLabel(_st.segFrom!, _st.segTo!)} كاملة قبل الحفظ الجديد',
+          style: TextStyle(color: context.badFg, fontWeight: FontWeight.w700, height: 1.5));
+    } else if (_canNew && _from != null) {
+      if (_hasNew && _to != null) {
+        final pages = _newPages;
+        newBody = Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, runSpacing: 4, children: [
+          Text(memRangeLabel(_dir, _from!, _to!),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.ink)),
+          _tagPages(pages, warn: pages < widget.minNew - 1e-9),
+        ]);
+      } else {
+        newBody = Text('ما سمّع حفظاً جديداً', style: TextStyle(color: context.sub, fontSize: 15));
+      }
+      newAction = _link('تغيير', _newMemSheet);
+    } else {
+      newBody = Text(
+        _st.mode == 'review_exam'
+            ? 'لا حفظ جديد — مرحلة المراجعة للاختبار'
+            : _st.mode == 'hafiz'
+                ? 'حافظ للقرآن — مراجعة فقط'
+                : 'لا يوجد حفظ جديد متاح',
+        style: TextStyle(color: context.sub, fontSize: 14.5),
       );
     }
+    rows.add(Row(children: [
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          label('الحفظ الجديد'),
+          const SizedBox(height: 4),
+          newBody,
+        ]),
+      ),
+      if (newAction != null) newAction,
+    ]));
+    rows.add(Divider(height: 26, color: context.line));
+    // المراجعة
+    final sugg = _suggestedReview;
+    bool added(Map<String, dynamic> r) => _reviews.any((x) => x['fromG'] == r['fromG'] && x['toG'] == r['toG']);
+    rows.add(Row(children: [
+      Expanded(child: label('المراجعة')),
+      if (_reviews.isNotEmpty) _tagPages(_reviewPages, warn: _st.isReview && _reviewPages < widget.minReview - 1e-9),
+    ]));
+    rows.add(const SizedBox(height: 4));
+    if (_reviews.isEmpty) {
+      rows.add(Text('لا مراجعة بعد', style: TextStyle(color: context.sub, fontSize: 15)));
+    }
+    for (var i = 0; i < _reviews.length; i++) {
+      rows.add(Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(children: [
+          Expanded(
+            child: Text('${_reviews[i]['label']}',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: context.ink)),
+          ),
+          Text('${fmtPages(((_reviews[i]['pages'] ?? 0) as num).toDouble())} ص',
+              style: TextStyle(color: context.sub, fontSize: 13)),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            tooltip: 'حذف',
+            onPressed: () {
+              haptic();
+              setState(() => _reviews.removeAt(i));
+            },
+            icon: Icon(Icons.close_rounded, size: 20, color: context.sub),
+          ),
+        ]),
+      ));
+    }
+    // اقتراحات بضغطة
+    final quick = [
+      if (sugg != null && !added(sugg)) MapEntry('المطلوبة: ${sugg['label']}', [sugg]),
+      for (final q in _quickReviews)
+        if (!q.value.every(added)) q,
+    ];
+    if (quick.isNotEmpty) {
+      rows.add(Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Wrap(spacing: 6, runSpacing: 6, children: [
+          for (final q in quick)
+            ActionChip(
+              avatar: Icon(Icons.add, size: 18, color: context.accent),
+              label: Text(q.key),
+              labelStyle: TextStyle(color: context.accent, fontWeight: FontWeight.w700, fontFamily: 'Cairo'),
+              backgroundColor: context.soft,
+              side: BorderSide.none,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              onPressed: () {
+                haptic();
+                setState(() {
+                  for (final r in q.value) {
+                    if (!added(r)) _reviews.add(r);
+                  }
+                  _ensureNewAfterSurahReview();
+                });
+              },
+            ),
+        ]),
+      ));
+    }
+    rows.add(Divider(height: 26, color: context.line));
+    rows.add(Wrap(alignment: WrapAlignment.start, children: [
+      _link('+ إضافة مراجعة', _addReviewSheet),
+      if (!_showNote && _notes.text.isEmpty)
+        _link('+ ملاحظة', () => setState(() => _showNote = true)),
+    ]));
+    if (_showNote || _notes.text.isNotEmpty) {
+      rows.add(Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: TextField(
+          controller: _notes,
+          decoration: const InputDecoration(hintText: 'ملاحظة (اختياري)', isDense: true),
+        ),
+      ));
+    }
+    return Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows));
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(children: [chip('½ صفحة', 0.5), chip('صفحة', 1), chip('صفحتين', 2), chip('3 صفحات', 3)]),
-        const SizedBox(height: 10),
-        Row(children: [
-          const SizedBox(width: 34, child: Text('من', style: TextStyle(color: Colors.black54))),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF6F7F6),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFD5DAD7)),
-              ),
-              child: Text(posLabel(_from!), style: const TextStyle(fontSize: 15)),
-            ),
-          ),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          const SizedBox(width: 34, child: Text('إلى', style: TextStyle(color: Colors.black54))),
-          Expanded(
-            child: DropdownButtonFormField<int>(
-              value: surahs.contains(toS) ? toS : null,
-              isExpanded: true,
-              decoration: const InputDecoration(isDense: true),
-              items: [for (final s in surahs) DropdownMenuItem(value: s, child: Text(surahName(s)))],
-              onChanged: (v) => setState(() {
-                if (v == null) return;
-                _to = _ayahsIn(v, j).where((g) => o.pos[g] >= fromPos).toList().last;
-              }),
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 92,
-            child: DropdownButtonFormField<int>(
-              value: toAyahs.contains(_to) ? _to : null,
-              isExpanded: true,
-              decoration: const InputDecoration(isDense: true),
-              items: [for (final g in toAyahs) DropdownMenuItem(value: g, child: Text('${ayahNo(g)}'))],
-              onChanged: (v) => setState(() => _to = v ?? _to),
-            ),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(color: const Color(0xFFF6F7F6), borderRadius: BorderRadius.circular(8)),
-          child: Row(children: [
-            Expanded(
-              child: Text.rich(TextSpan(children: [
-                TextSpan(text: memRangeLabel(_dir, _from!, _to!), style: const TextStyle(fontSize: 15)),
-                TextSpan(
-                    text: p1 == p2 ? '  (ص $p1)' : '  (ص $p1–$p2)',
-                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
-              ])),
-            ),
-            _pill('${fmtPages(pages)} صفحة', pages < widget.minNew - 1e-9 ? _amber : brandGreen),
-          ]),
-        ),
-        if (pages < widget.minNew - 1e-9)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text('أقل من الحد الأدنى للحفظ (${fmt(widget.minNew)} صفحة)',
-                style: const TextStyle(color: _amber, fontSize: 12.5)),
-          ),
-        const SizedBox(height: 8),
-        Text('سورة ${surahName(toS)}: $segDone من ${seg.length} آية بعد اليوم',
-            style: const TextStyle(fontSize: 12.5, color: Colors.black54)),
-        const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: seg.isEmpty ? 0 : segDone / seg.length,
-            minHeight: 7,
-            color: const Color(0xFF7FB6DA),
-            backgroundColor: const Color(0xFFEEEEEE),
-          ),
-        ),
-      ],
-    );
+  List<String> get _warnings {
+    final w = <String>[];
+    if (_att != 'recited' || _c.base['holiday'] == true) return w;
+    if (_hasNew && _canNew && _from != null && _newPages < widget.minNew - 1e-9) {
+      w.add('الحفظ أقل من ${fmt(widget.minNew)} صفحة');
+    }
+    if (_st.isReview && _reviewPages < widget.minReview - 1e-9) w.add('المراجعة أقل من ${fmt(widget.minReview)} صفحات');
+    return w;
   }
 
   @override
   Widget build(BuildContext context) {
     final s = widget.student;
     final idx = widget.order.indexWhere((x) => x.id == s.id);
-    final counter = idx >= 0 ? 'الطالب ${idx + 1} من ${widget.order.length}' : '';
+    final counter = idx >= 0 ? '${idx + 1} من ${widget.order.length}' : '';
     final appBar = AppBar(
       title: BrandTitle(s.name),
       actions: [
         Padding(
           padding: const EdgeInsetsDirectional.only(end: 14),
-          child: Center(child: Text(counter, style: const TextStyle(color: Color(0xFFCFE2EF), fontSize: 13))),
+          child: Center(child: Text(counter, style: TextStyle(color: context.sub, fontSize: 13))),
         ),
       ],
     );
     if (_st.mode == 'needs_start') {
       return Scaffold(appBar: appBar, body: _startPointView());
     }
+    const atts = ['recited', 'norecite', 'absent', 'excused'];
+    final ai = atts.indexOf(_att);
     final recited = _att == 'recited';
-    final sugg = _suggestedReview;
-    bool added(Map<String, dynamic> r) => _reviews.any((x) => x['fromG'] == r['fromG'] && x['toG'] == r['toG']);
-    final quick = _quickReviews;
     final hasNext = _nextIndex != null;
     final summary = recited
-        ? 'اليوم: ${_hasNew && _canNew ? 'حفظ ${fmtPages(_newPages)} ص · ' : ''}مراجعة ${fmtPages(_reviewPages)} ص'
-        : 'اليوم: ${SheikhHomeScreenStateText.of(_att)}';
+        ? [
+            if (_hasNew && _canNew && _from != null && _to != null) 'سمّع ${fmtPages(_newPages)} ص',
+            'راجع ${fmtPages(_reviewPages)} ص',
+          ].join(' · ')
+        : SheikhHomeScreenStateText.of(_att);
+    final warns = _warnings;
     return Scaffold(
       appBar: appBar,
-      backgroundColor: const Color(0xFFF3F2EC),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
         children: [
-          _topCard(),
-          _card(
-            title: 'الحضور',
-            child: SegmentedRow(
-              items: const ['سمّع', 'لم يسمّع', 'غائب', 'بعذر'],
-              selected: const ['recited', 'norecite', 'absent', 'excused'].indexOf(_att),
-              onChanged: (i) => setState(() => _att = const ['recited', 'norecite', 'absent', 'excused'][i]),
-            ),
+          _topLine(),
+          PillChoice(
+            items: [ai == 0 ? '✓ سمّع' : 'سمّع', 'لم يسمّع', 'غائب', 'بعذر'],
+            selected: ai,
+            height: 50,
+            fontSize: 15,
+            onChanged: (i) => setState(() => _att = atts[i]),
           ),
-          if (recited) ...[
-            _card(
-              title: 'الحفظ الجديد',
-              trailing: (_canNew && _from != null) ? Switch(value: _hasNew, onChanged: (v) => setState(() => _hasNew = v)) : null,
-              child: (_st.mode == 'review_surah' && !_surahReviewDone)
-                  ? _box('لازم يراجع ${rangeLabel(_st.segFrom!, _st.segTo!)} كاملة قبل الحفظ الجديد.', Colors.red.shade50,
-                      Colors.red.shade800)
-                  : (_canNew && _from != null)
-                      ? (_hasNew
-                          ? _newMemBody()
-                          : const Text('لم يسمّع حفظاً جديداً اليوم.', style: TextStyle(color: Colors.black54)))
-                      : Text(
-                          _st.mode == 'review_exam'
-                              ? 'لا حفظ جديد: الطالب في مرحلة المراجعة للاختبار.'
-                              : _st.mode == 'hafiz'
-                                  ? 'الطالب حافظ للقرآن — مراجعة فقط.'
-                                  : 'لا يوجد حفظ جديد متاح.',
-                          style: const TextStyle(color: Colors.black54),
-                        ),
+          const SizedBox(height: 12),
+          if (recited)
+            _mainCard()
+          else
+            Panel(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text('سيُسجَّل: ${SheikhHomeScreenStateText.of(_att)}',
+                    style: TextStyle(color: context.ink, fontWeight: FontWeight.w800, fontSize: 16)),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _notes,
+                  decoration: const InputDecoration(hintText: 'ملاحظة (اختياري)', isDense: true),
+                ),
+              ]),
             ),
-            _card(
-              title: 'المراجعة',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if ((sugg != null && !added(sugg)) || quick.isNotEmpty)
-                    Wrap(spacing: 6, runSpacing: 6, children: [
-                      if (sugg != null && !added(sugg))
-                        FilledButton.tonal(
-                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFE6EEF8), foregroundColor: _blue),
-                          onPressed: () => _addReview(sugg),
-                          child: Text('المطلوبة: ${sugg['label']}'),
-                        ),
-                      for (final q in quick)
-                        FilledButton.tonal(
-                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFE6EEF8), foregroundColor: _blue),
-                          onPressed: () => setState(() {
-                            for (final r in q.value) {
-                              if (!added(r)) _reviews.add(r);
-                            }
-                            _ensureNewAfterSurahReview();
-                          }),
-                          child: Text(q.key),
-                        ),
-                    ]),
-                  for (var i = 0; i < _reviews.length; i++)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE)))),
-                      child: Row(children: [
-                        Expanded(child: Text('${_reviews[i]['label']}', style: const TextStyle(fontSize: 14))),
-                        _pill('${fmtPages(((_reviews[i]['pages'] ?? 0) as num).toDouble())} ص', _blue),
-                        TextButton(
-                          onPressed: () => setState(() => _reviews.removeAt(i)),
-                          child: Text('حذف', style: TextStyle(color: Colors.red.shade700, fontSize: 12.5)),
-                        ),
-                      ]),
-                    ),
-                  const SizedBox(height: 8),
-                  Row(children: [
-                    for (final e in const {'ayat': '+ آيات', 'surah': '+ سورة', 'juz': '+ جزء'}.entries)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 3),
-                          child: OutlinedButton(onPressed: () => _reviewDialog(e.key), child: Text(e.value)),
-                        ),
-                      ),
-                  ]),
-                  const SizedBox(height: 8),
-                  Row(children: [
-                    const Expanded(child: Text('مجموع المراجعة', style: TextStyle(fontWeight: FontWeight.bold))),
-                    Text('${fmtPages(_reviewPages)} صفحة', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ]),
-                  if (_st.isReview && _reviewPages < widget.minReview - 1e-9)
-                    Text('أقل من الحد الأدنى للمراجعة (${fmt(widget.minReview)} صفحات)',
-                        style: const TextStyle(color: _amber, fontSize: 12.5)),
-                ],
-              ),
-            ),
-          ],
-          _card(
-            title: 'ملاحظة',
-            child: TextField(
-              controller: _notes,
-              decoration: const InputDecoration(hintText: 'اختياري', isDense: true),
-            ),
-          ),
+          for (final w in warns) _box(w, context.goldBg, context.goldFg),
         ],
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, -2))],
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+          decoration: BoxDecoration(
+            color: context.surface,
+            boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, -2))],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(summary, style: const TextStyle(fontSize: 12.5, color: Colors.black54)),
+              Text(summary, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: context.sub)),
               const SizedBox(height: 6),
-              Row(children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                    onPressed: () => _save(),
-                    child: const Text('حفظ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                if (hasNext) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                      onPressed: () => _save(next: true),
-                      child: const Text('حفظ والتالي ←', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ]),
+              GoldButton(
+                text: hasNext ? 'حفظ والتالي ←' : 'حفظ',
+                onPressed: () => _save(next: hasNext),
+              ),
+              if (hasNext)
+                TextButton(
+                  onPressed: () => _save(),
+                  child: Text('حفظ فقط', style: TextStyle(color: context.accent, fontWeight: FontWeight.w800)),
+                )
+              else
+                const SizedBox(height: 6),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+/// نسبة إنجاز الجزء الحالي (للشريط الصغير)
+double? juzProgress(String dir, DailyStatus st) {
+  if (st.mode == 'review_exam') return st.juzFrom == st.juzTo ? 1.0 : null;
+  final j = st.juz;
+  if (j <= 0) return null;
+  final o = memOrder(dir);
+  int? cp;
+  if (st.mode == 'memorize' && st.fromG != null) cp = o.pos[st.fromG!] - 1;
+  if (st.mode == 'review_surah' && st.segTo != null) cp = o.pos[st.segTo!];
+  if (cp == null) return null;
+  final js = o.jStart[j];
+  var done = 0.0;
+  for (var i = js; i <= cp; i++) {
+    done += ayahFrac(o.order[i]);
+  }
+  final total = pagesOfRange(qJuz[j - 1][0], qJuz[j - 1][1]);
+  return total == 0 ? 0 : (done / total).clamp(0.0, 1.0);
 }
 
 /// نصوص حالات الحضور

@@ -5,6 +5,7 @@ import '../env.dart';
 import '../slogan.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dedication.dart';
+import 'ui.dart';
 
 // ألوان «سماء الشعار»
 const Color brandGreen = Color(0xFF0A6FA6); // اللون الأساسي (أزرق الشعار) — الاسم قديم
@@ -25,9 +26,11 @@ class AppHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 40, 20, 8),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFCFEAFB), Color(0xFFEAF6FD), Color(0x00F6FAFD)],
+          colors: context.dark
+              ? const [Color(0xFF123047), Color(0xFF0F2131), Color(0x000D161E)]
+              : const [Color(0xFFCFEAFB), Color(0xFFEAF6FD), Color(0x00F6FAFD)],
           stops: [0, 0.55, 1],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -53,13 +56,13 @@ class AppHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             centerName,
             textAlign: TextAlign.center,
-            style: TextStyle(color: brandNavy, fontSize: 20, fontWeight: FontWeight.w800, height: 1.5),
+            style: TextStyle(color: context.ink, fontSize: 20, fontWeight: FontWeight.w800, height: 1.5),
           ),
           const SizedBox(height: 8),
-          Image.memory(sloganDarkPng, height: 40, fit: BoxFit.contain, gaplessPlayback: true),
+          Image.memory(context.dark ? sloganPng : sloganDarkPng, height: 40, fit: BoxFit.contain, gaplessPlayback: true),
           if (kBeta)
             Container(
               margin: const EdgeInsets.only(top: 8),
@@ -104,25 +107,29 @@ class TwoWaySwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget part(String t, bool on, bool isFirst) => Expanded(
           child: InkWell(
-            onTap: () => onChanged(isFirst),
+            onTap: () {
+              haptic();
+              onChanged(isFirst);
+            },
             borderRadius: BorderRadius.circular(12),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: on ? brandBlue : Colors.transparent,
+                boxShadow: on ? const [BoxShadow(color: Color(0x330A86C4), blurRadius: 10, offset: Offset(0, 3))] : null,
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
               child: Text(t,
                   style: TextStyle(
-                      color: on ? Colors.white : const Color(0xFF5A7486), fontSize: 16, fontWeight: FontWeight.bold)),
+                      color: on ? Colors.white : context.sub, fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
         );
     return Container(
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: const Color(0xFFE8F1F6), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: context.dark ? const Color(0xFF1A2733) : const Color(0xFFE8F1F6), borderRadius: BorderRadius.circular(16)),
       child: Row(children: [part(first, firstSelected, true), part(second, !firstSelected, false)]),
     );
   }
@@ -140,6 +147,7 @@ class BigButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (gold && filled) return GoldButton(icon: icon, text: text, onPressed: onPressed, height: 60);
     final style = ButtonStyle(
       minimumSize: WidgetStateProperty.all(const Size.fromHeight(60)),
       textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -183,40 +191,7 @@ class SegmentedRow extends StatelessWidget {
   const SegmentedRow({super.key, required this.items, required this.selected, required this.onChanged});
 
   @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFCFD6D2)),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(children: [
-          for (var i = 0; i < items.length; i++)
-            Expanded(
-              child: InkWell(
-                onTap: () => onChanged(i),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: i == selected ? brandGreen : Colors.white,
-                    border: i < items.length - 1
-                        ? const BorderDirectional(end: BorderSide(color: Color(0xFFE3E6E4)))
-                        : null,
-                  ),
-                  child: Text(items[i],
-                      style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
-                          color: i == selected ? Colors.white : Colors.black54)),
-                ),
-              ),
-            ),
-        ]),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => PillChoice(items: items, selected: selected, onChanged: onChanged);
 }
 
 /// اسم المطوّر
@@ -239,7 +214,7 @@ class DevCredit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const st = TextStyle(color: Colors.black38, fontSize: 11.5, height: 1.7);
+    final st = TextStyle(color: context.sub, fontSize: 11.5, height: 1.7);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: FutureBuilder<String>(
@@ -247,7 +222,7 @@ class DevCredit extends StatelessWidget {
         builder: (context, snap) => Column(
           children: [
             const Divider(),
-            const Text('حول التطبيق', style: TextStyle(color: Colors.black45, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text('حول التطبيق', style: TextStyle(color: context.sub, fontSize: 12, fontWeight: FontWeight.bold)),
             if ((snap.data ?? '').isNotEmpty)
               Text.rich(
                 TextSpan(children: [
@@ -257,8 +232,8 @@ class DevCredit extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: st,
               ),
-            const Text.rich(
-              TextSpan(children: [
+            Text.rich(
+              const TextSpan(children: [
                 TextSpan(text: 'تصميم وتطوير: '),
                 TextSpan(text: devCredit, style: TextStyle(fontWeight: FontWeight.bold)),
               ]),

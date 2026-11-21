@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../logic.dart';
 import 'finish.dart';
+import 'ui.dart';
 import 'widgets.dart';
 
 /// شاشة الأسئلة: زر خطأ (−1) وزر تنبيه (−½) لكل سؤال
@@ -127,18 +128,24 @@ class _ExamScreenState extends State<ExamScreen> {
   Widget _counterButton(String text, String sub, Color color, String kind) {
     return Expanded(
       child: SizedBox(
-        height: 110,
+        height: 120,
         child: FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: color,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            foregroundColor: Colors.white,
+            elevation: 2,
+            shadowColor: color.withOpacity(0.4),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           ),
-          onPressed: () => _add(kind),
+          onPressed: () {
+            haptic(true);
+            _add(kind);
+          },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(text, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              Text(sub, style: const TextStyle(fontSize: 15)),
+              Text(text, style: const TextStyle(fontFamily: 'Cairo', fontSize: 26, fontWeight: FontWeight.w800)),
+              Text(sub, style: const TextStyle(fontFamily: 'Cairo', fontSize: 17, fontWeight: FontWeight.w700)),
             ],
           ),
         ),
@@ -146,9 +153,44 @@ class _ExamScreenState extends State<ExamScreen> {
     );
   }
 
+  Widget _circle(int i) {
+    final cur = i == _idx, done = i < _idx;
+    final Color bg = cur ? context.chosen : (done ? context.okBg : context.surface);
+    final Color fg = cur ? Colors.white : (done ? context.okFg : context.sub);
+    return Expanded(
+      child: GestureDetector(
+        onTap: i <= _idx
+            ? () {
+                haptic();
+                setState(() => _idx = i);
+              }
+            : null,
+        child: Column(children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: bg,
+              shape: BoxShape.circle,
+              border: Border.all(color: cur ? context.chosen : (done ? context.okFg.withOpacity(0.4) : context.line), width: 1.5),
+            ),
+            child: Text('${i + 1}', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 17)),
+          ),
+          const SizedBox(height: 4),
+          Text(i <= _idx ? fmt(_qs[i].score) : '—',
+              style: TextStyle(color: cur ? context.ink : context.sub, fontSize: 13, fontWeight: FontWeight.w700)),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.setup;
+    final last = _idx == qCount - 1;
+    final danger = _q.deduction >= closeAt - 2;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -161,96 +203,77 @@ class _ExamScreenState extends State<ExamScreen> {
           actions: [
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 14),
-              child: Row(
-                children: [
-                  const Text('الوقت ', style: TextStyle(fontSize: 14)),
-                  Text(fmtDuration(DateTime.now().difference(s.createdAt).inSeconds),
-                      style: const TextStyle(fontSize: 16, fontFeatures: [FontFeature.tabularFigures()])),
-                ],
+              child: Center(
+                child: Text(fmtDuration(DateTime.now().difference(s.createdAt).inSeconds),
+                    style: TextStyle(
+                        fontSize: 15, color: context.sub, fontFeatures: const [FontFeature.tabularFigures()])),
               ),
             ),
           ],
         ),
         body: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           children: [
             Text('${examTypes[s.type]} — ${juzLabel(s.startJuz, s.endJuz)}',
-                textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54)),
+                textAlign: TextAlign.center, style: TextStyle(color: context.sub, fontSize: 13.5)),
             const SizedBox(height: 12),
-            // مؤشر الأسئلة
-            Row(
-              children: [
-                for (var i = 0; i < qCount; i++)
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: i <= _idx ? () => setState(() => _idx = i) : null,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: i == _idx ? brandGreen : (i < _idx ? const Color(0xFFDCEAF4) : Colors.white),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: brandGreen.withOpacity(0.4)),
-                        ),
-                        child: Column(
-                          children: [
-                            Text('س${i + 1}',
-                                style: TextStyle(
-                                    color: i == _idx ? Colors.white : brandGreen, fontWeight: FontWeight.bold)),
-                            Text(i <= _idx ? fmt(_qs[i].score) : '—',
-                                style: TextStyle(color: i == _idx ? Colors.white : Colors.black87)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text('السؤال ${_idx + 1} من $qCount',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: brandGreen)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            Row(children: [for (var i = 0; i < qCount; i++) _circle(i)]),
+            const SizedBox(height: 16),
+            Panel(
+              color: danger ? context.badBg : null,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
               child: Column(
                 children: [
-                  Text('${fmt(_q.score)} / ${fmt(qMax)}',
-                      style: const TextStyle(fontSize: 44, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Text('أخطاء: ${_q.errors}    تنبيهات: ${_q.alerts}    الخصم: ${fmt(_q.deduction)}',
-                      style: const TextStyle(fontSize: 15, color: Colors.black54)),
-                  if (_q.deduction >= closeAt - 2)
+                  Text('السؤال ${_idx + 1} من $qCount',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: context.sub)),
+                  Text.rich(
+                    TextSpan(children: [
+                      TextSpan(
+                          text: fmt(_q.score),
+                          style: TextStyle(
+                              fontSize: 64, fontWeight: FontWeight.w800, color: danger ? context.badFg : context.ink)),
+                      TextSpan(text: ' / ${fmt(qMax)}', style: TextStyle(fontSize: 20, color: context.sub)),
+                    ]),
+                  ),
+                  Text('أخطاء ${_q.errors} · تنبيهات ${_q.alerts} · الخصم ${fmt(_q.deduction)}',
+                      style: TextStyle(fontSize: 14.5, color: context.sub)),
+                  if (danger)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text('تنبيه: الاختبار يُغلق عند خصم ${fmt(closeAt)} علامات',
-                          style: TextStyle(color: Colors.red.shade700)),
+                          style: TextStyle(color: context.badFg, fontWeight: FontWeight.w700)),
                     ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             Row(
               children: [
-                _counterButton('خطأ', '−1', Colors.red.shade700, 'e'),
+                _counterButton('خطأ', '−1', const Color(0xFFC0392B), 'e'),
                 const SizedBox(width: 12),
-                _counterButton('تنبيه', '−½', const Color(0xFFC88A12), 'a'),
+                _counterButton('تنبيه', '−½', const Color(0xFFD39A12), 'a'),
               ],
             ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _history[_idx].isEmpty ? null : _undo,
-              icon: const Icon(Icons.undo),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: _history[_idx].isEmpty
+                  ? null
+                  : () {
+                      haptic();
+                      _undo();
+                    },
+              icon: const Icon(Icons.undo_rounded),
               label: const Text('تراجع عن آخر ضغطة'),
             ),
-            const SizedBox(height: 24),
-            BigButton(
-              icon: _idx < qCount - 1 ? Icons.arrow_back : Icons.check,
-              text: _idx < qCount - 1 ? 'السؤال التالي' : 'إنهاء الأسئلة',
-              onPressed: _next,
-            ),
           ],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+            child: last
+                ? GoldButton(text: 'إنهاء الأسئلة', icon: Icons.check_rounded, height: 58, onPressed: _next)
+                : NavyButton(text: 'السؤال التالي ←', height: 58, onPressed: _next),
+          ),
         ),
       ),
     );

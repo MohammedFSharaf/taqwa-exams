@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
 import 'repo.dart';
 import 'screens/gate.dart';
+import 'screens/ui.dart';
 import 'screens/widgets.dart';
 import 'update_check.dart';
 
@@ -18,68 +19,99 @@ Future<void> main() async {
   );
   await Repo.I.init();
   UpdateWatcher.I.start();
+  NetWatcher.I.start();
   runApp(const TaqwaApp());
 }
 
 class TaqwaApp extends StatelessWidget {
   const TaqwaApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'اختبارات مركز التقوى',
-      debugShowCheckedModeBanner: false,
-      locale: const Locale('ar'),
-      supportedLocales: const [Locale('ar')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      theme: ThemeData(
-        useMaterial3: true,
-        fontFamily: 'Cairo',
-        colorScheme: ColorScheme.fromSeed(seedColor: brandBlue, primary: brandGreen, secondary: goldButton),
-        scaffoldBackgroundColor: pageBg,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF3F9FD),
-          foregroundColor: brandNavy,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          scrolledUnderElevation: 1,
-          centerTitle: true,
-          titleTextStyle: TextStyle(fontFamily: 'Cairo', color: brandNavy, fontSize: 19, fontWeight: FontWeight.w800),
-          shape: Border(bottom: BorderSide(color: goldButton, width: 3)),
-        ),
-        cardTheme: CardTheme(
-          color: Colors.white,
-          surfaceTintColor: Colors.transparent,
-          elevation: 1.5,
-          shadowColor: const Color(0x220A3C64),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            textStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            side: const BorderSide(color: Color(0xFFD5E0E8)),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFD5E0E8))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFD5E0E8))),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: brandBlue, width: 1.6)),
+  static ThemeData _theme(Brightness b) {
+    final dark = b == Brightness.dark;
+    final surface = dark ? const Color(0xFF16222D) : Colors.white;
+    final border = dark ? const Color(0xFF2A3B4A) : const Color(0xFFD5E0E8);
+    final fg = dark ? const Color(0xFFE8F1F7) : brandNavy;
+    return ThemeData(
+      useMaterial3: true,
+      brightness: b,
+      fontFamily: 'Cairo',
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: brandBlue,
+        brightness: b,
+        primary: dark ? const Color(0xFF4FB3E8) : brandGreen,
+        secondary: goldButton,
+        surface: surface,
+      ),
+      scaffoldBackgroundColor: dark ? const Color(0xFF0D161E) : pageBg,
+      appBarTheme: AppBarTheme(
+        backgroundColor: dark ? const Color(0xFF111C26) : const Color(0xFFF3F9FD),
+        foregroundColor: fg,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        centerTitle: true,
+        titleTextStyle: TextStyle(fontFamily: 'Cairo', color: fg, fontSize: 19, fontWeight: FontWeight.w800),
+        shape: const Border(bottom: BorderSide(color: goldButton, width: 3)),
+      ),
+      cardTheme: CardTheme(
+        color: surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: dark ? 0 : 1.5,
+        shadowColor: const Color(0x220A3C64),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      dialogTheme: DialogTheme(backgroundColor: surface, surfaceTintColor: Colors.transparent),
+      bottomSheetTheme: BottomSheetThemeData(backgroundColor: surface, surfaceTintColor: Colors.transparent),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
         ),
       ),
-      navigatorKey: appNavigatorKey,
-      home: const GateScreen(),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          side: BorderSide(color: border),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: dark ? const Color(0xFF1A2733) : Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: brandBlue, width: 1.6)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: UiPrefs.I,
+      builder: (context, _) => MaterialApp(
+        title: 'مركز التقوى',
+        debugShowCheckedModeBanner: false,
+        locale: const Locale('ar'),
+        supportedLocales: const [Locale('ar')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        theme: _theme(Brightness.light),
+        darkTheme: _theme(Brightness.dark),
+        themeMode: UiPrefs.I.mode,
+        builder: (context, child) {
+          final mq = MediaQuery.of(context);
+          final sys = mq.textScaler.scale(1.0).clamp(0.85, 1.4);
+          return MediaQuery(
+            data: mq.copyWith(textScaler: TextScaler.linear(sys * UiPrefs.I.scale)),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+        navigatorKey: appNavigatorKey,
+        home: const GateScreen(),
+      ),
     );
   }
 }

@@ -8,6 +8,7 @@ import '../daily.dart';
 import '../logic.dart';
 import '../repo.dart';
 import 'exam.dart';
+import 'ui.dart';
 import 'widgets.dart';
 
 /// بيانات الاختبار: الحلقة، الطالب، النوع، جزء البداية، إعادة
@@ -249,220 +250,190 @@ class _NewExamScreenState extends State<NewExamScreen> {
     final details = 'آخر نتيجة: $result$total — ${p['createdAtText'] ?? ''} — المختبر: ${p['examinerName'] ?? ''}';
     final String head;
     final Color bg, fg;
-    final IconData icon;
     if (_passedBefore && !_permitted) {
       head = 'الطالب ناجح سابقاً بهذا الاختبار، ولا يمكن إعادته إلا بإذن من الإدارة.\n';
-      bg = Colors.red.shade50;
-      fg = Colors.red.shade800;
-      icon = Icons.warning_amber;
+      bg = context.badBg;
+      fg = context.badFg;
     } else if (_passedBefore && _permitted) {
       head = 'إعادة بإذن الإدارة لاختبار ناجح سابقاً.\n';
-      bg = const Color(0xFFFFF4DE);
-      fg = const Color(0xFF9A6700);
-      icon = Icons.replay;
+      bg = context.goldBg;
+      fg = context.goldFg;
     } else {
-      head = 'هذا اختبار إعادة. ';
-      bg = Colors.red.shade50;
-      fg = Colors.red.shade700;
-      icon = Icons.replay;
+      head = 'اختبار إعادة. ';
+      bg = context.badBg;
+      fg = context.badFg;
     }
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-      child: Row(
-        children: [
-          Icon(icon, color: fg),
-          const SizedBox(width: 10),
-          Expanded(child: Text(head + details, style: TextStyle(height: 1.5, color: fg))),
-        ],
-      ),
-    );
+    return _note(head + details, bg, fg, Icons.replay_rounded);
   }
 
-  Widget _pathBox() {
-    if (!_pathKnown) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 14),
-        child: Text('جارٍ تحديد الاختبار التالي للطالب...', style: TextStyle(color: Colors.grey)),
+  Widget _note(String text, Color bg, Color fg, IconData icon) => Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: fg, size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text, style: TextStyle(height: 1.6, color: fg, fontWeight: FontWeight.w700, fontSize: 13.5))),
+        ]),
       );
-    }
-    final Color bg, fg;
-    final String text;
+
+  Widget? _logBox() {
     final s = _suggested;
-    if (s == null) {
-      bg = const Color(0xFFE6F2FA);
-      fg = brandGreen;
-      text = 'الطالب حافظ للقرآن الكريم — أتمّ المسار.\nأي اختبار الآن يكون مراجعة بإذن من الإدارة.';
-    } else {
-      final failedBefore = _sExams!.any((e) => e['type'] == s.type && e['startJuz'] == s.start && e['passed'] != true);
-      bg = failedBefore ? Colors.red.shade50 : const Color(0xFFE6F2FA);
-      fg = failedBefore ? Colors.red.shade800 : brandGreen;
-      text = (failedBefore ? 'إعادة: ' : 'الاختبار التالي حسب المسار: ') + s.label;
+    final r = _logReady;
+    if (s == null || r == null) return null;
+    if (r.ok) return _note('جاهز: ${r.message(s)}', context.okBg, context.okFg, Icons.check_circle_rounded);
+    if (_permitted) {
+      return _note('${r.message(s)}\nمسموح بتصريح من الإدارة', context.okBg, context.okFg, Icons.verified_rounded);
     }
-    return Container(
-      margin: const EdgeInsets.only(top: 14),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(text, style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 15, height: 1.5)),
-          if (s != null && _logReady != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                'السجل اليومي: ${_logReady!.message(s)}'
-                    '${!_logReady!.ok && _permitted ? '\nمسموح بتصريح من الإدارة' : ''}'
-                    '${!_logReady!.ok && !_permitted && !_enforce ? '\n(تنبيه فقط — الشرط غير مفعّل حالياً)' : ''}',
-                style: TextStyle(
-                    color: _logReady!.ok || _permitted
-                        ? const Color(0xFF1F4E8C)
-                        : _enforce
-                            ? Colors.red.shade800
-                            : const Color(0xFF9A6700),
-                    fontWeight: FontWeight.w600),
-              ),
-            ),
-        ],
-      ),
-    );
+    if (!_enforce) {
+      return _note('${r.message(s)}\n(تنبيه فقط — الشرط غير مفعّل حالياً)', context.goldBg, context.goldFg,
+          Icons.info_outline_rounded);
+    }
+    return _note(r.message(s), context.badBg, context.badFg, Icons.block_rounded);
   }
 
-  Widget _label(String t) => Padding(
-        padding: const EdgeInsets.only(top: 18, bottom: 8),
-        child: Text(t, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: brandGreen)),
+  Widget _info(String a, String b) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(width: 78, child: Text(a, style: TextStyle(color: context.sub, fontSize: 14.5))),
+          Expanded(
+            child: Text(b,
+                textAlign: TextAlign.end,
+                style: TextStyle(color: context.ink, fontSize: 15.5, fontWeight: FontWeight.w800)),
+          ),
+        ]),
       );
 
   @override
   Widget build(BuildContext context) {
+    final appBar = AppBar(title: const BrandTitle('بدء الاختبار'));
+    if (_student == null || _halaqa == null) {
+      return Scaffold(
+        appBar: appBar,
+        body: EmptyState(
+          icon: Icons.person_search_rounded,
+          title: 'اختر الطالب',
+          action: NavyButton(text: 'بحث عن طالب', onPressed: _quickSearch),
+        ),
+      );
+    }
+    final st = _student!;
+    final now = DateTime.now();
+    final sel = (_type == null || _startJuz == null) ? null : PathStep(_type!, _startJuz!);
+    final reason = _ready
+        ? null
+        : _blocked
+            ? 'لا يمكن بدء الاختبار: الطالب ناجح فيه سابقاً، ويحتاج إذن الإدارة.'
+            : !_logOk
+                ? 'لا يمكن بدء الاختبار قبل تسميع ${(_suggested?.type ?? 1) == 1 ? 'الجزء كاملاً في جلسة واحدة' : 'كل الأجزاء المطلوبة كاملة'} في السجل اليومي، أو بتصريح من الإدارة.'
+                : !_pathKnown
+                    ? 'جارٍ تحديد الاختبار التالي…'
+                    : 'لا يوجد اختبار متاح لبدئه';
+    final logBox = _logBox();
     return Scaffold(
-      appBar: AppBar(title: const BrandTitle('اختبار جديد')),
+      appBar: appBar,
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 20),
         children: [
-          OutlinedButton.icon(
-            onPressed: _quickSearch,
-            icon: const Icon(Icons.search),
-            label: const Text('بحث سريع عن الطالب (من كل الحلقات)', style: TextStyle(fontSize: 16)),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-              backgroundColor: Colors.white,
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text('أو اختر الحلقة ثم الطالب:', style: TextStyle(color: Colors.black54)),
-          ),
-          _label('الحلقة'),
-          StreamBuilder<List<Halaqa>>(
-            stream: Repo.I.halaqat(),
-            builder: (context, snap) {
-              final list = snap.data ?? [];
-              if (list.isEmpty) {
-                return Text(
-                  snap.connectionState == ConnectionState.waiting
-                      ? 'جارٍ التحميل...'
-                      : 'لا توجد حلقات — يجب أن تضيفها الإدارة ويتصل الجهاز بالإنترنت مرة.',
-                  style: const TextStyle(color: Colors.grey),
-                );
-              }
-              final selected = list.where((h) => h.id == _halaqa?.id).isEmpty ? null : _halaqa!.id;
-              return DropdownButtonFormField<String>(
-                value: selected,
-                isExpanded: true,
-                hint: const Text('اختر الحلقة'),
-                items: [for (final h in list) DropdownMenuItem(value: h.id, child: Text(h.name))],
-                onChanged: (id) {
-                  setState(() {
-                    _halaqa = list.firstWhere((h) => h.id == id);
-                    _student = null;
-                  });
-                  _watchStudent();
-                },
-              );
-            },
-          ),
-          _label('اسم الطالب'),
-          OutlinedButton.icon(
-            onPressed: _halaqa == null ? null : _pickStudent,
-            icon: const Icon(Icons.person_search),
-            label: Text(
-              _student == null ? (_halaqa == null ? 'اختر الحلقة أولاً' : 'اختر الطالب') : _student!.name,
-              style: const TextStyle(fontSize: 16),
-            ),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-              alignment: AlignmentDirectional.centerStart,
-              backgroundColor: Colors.white,
-            ),
-          ),
-          if (_student != null) _pathBox(),
-          if (_pathKnown) ...[
-            _label('الاختبار'),
-            if (_options.isEmpty)
-              Text(
-                'لا يوجد اختبار متاح لهذا الطالب الآن: أتمّ المسار، واختبار المراجعة يحتاج إذناً من الإدارة.',
-                style: TextStyle(color: Colors.red.shade700, height: 1.6),
-              )
-            else
-              for (final o in _options)
-                RadioListTile<String>(
-                  value: o.key,
-                  groupValue: (_type == null || _startJuz == null) ? null : '$_type|$_startJuz',
-                  onChanged: (_) => setState(() {
-                    _type = o.type;
-                    _startJuz = o.start;
-                  }),
-                  title: Text(o.label),
-                  subtitle: (_suggested != null && o.key == _suggested!.key)
-                      ? const Text('حسب ترتيب المسار')
-                      : const Text('إعادة اختبار ناجح بإذن الإدارة'),
-                  contentPadding: EdgeInsets.zero,
+          Panel(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            child: Column(children: [
+              NameAvatar(st.name, color: brandBlue, size: 76),
+              const SizedBox(height: 10),
+              Text(st.name,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: context.ink)),
+              Text(_halaqa!.name + (st.pending ? ' · جديد' : ''), style: TextStyle(color: context.sub, fontSize: 14)),
+              const SizedBox(height: 2),
+              InkWell(
+                onTap: _quickSearch,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Text('تغيير الطالب', style: TextStyle(color: context.accent, fontWeight: FontWeight.w700)),
                 ),
-            const SizedBox(height: 6),
-            // نوع الاختبار للعرض فقط (يُحدد تلقائياً حسب المسار)
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final e in examTypes.entries)
-                  ChoiceChip(
-                    label: Text(e.value),
-                    selected: _type == e.key,
-                    onSelected: null,
+              ),
+            ]),
+          ),
+          Panel(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+            child: Column(children: [
+              _info('الاختبار', !_pathKnown ? '…' : (sel == null ? '—' : (examTypes[sel.type] ?? ''))),
+              Divider(height: 1, color: context.line),
+              _info('الأجزاء', sel == null ? '—' : juzLabel(sel.start, sel.end)),
+              Divider(height: 1, color: context.line),
+              _info('المختبر', Repo.I.examinerName ?? ''),
+              Divider(height: 1, color: context.line),
+              _info('التاريخ', '${dayName(now)} ${now.day}/${now.month}/${now.year}'),
+            ]),
+          ),
+          if (_pathKnown && _suggested == null)
+            _note('الطالب حافظ للقرآن الكريم — أتمّ المسار. أي اختبار الآن يكون مراجعة بإذن من الإدارة.', context.soft,
+                context.accent, Icons.workspace_premium_rounded),
+          if (_pathKnown && _options.length > 1) ...[
+            const SectionLabel('اختر الاختبار'),
+            for (final o in _options)
+              Panel(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                borderColor: o.key == sel?.key ? context.accent : null,
+                onTap: () => setState(() {
+                  _type = o.type;
+                  _startJuz = o.start;
+                }),
+                child: Row(children: [
+                  Icon(o.key == sel?.key ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: o.key == sel?.key ? context.accent : context.sub),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(o.label, style: TextStyle(fontWeight: FontWeight.w800, color: context.ink)),
+                      Text(
+                          (_suggested != null && o.key == _suggested!.key)
+                              ? 'حسب ترتيب المسار'
+                              : 'إعادة اختبار ناجح بإذن الإدارة',
+                          style: TextStyle(color: context.sub, fontSize: 12.5)),
+                    ]),
                   ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const Text('الترتيب ثابت حسب مسار الطالب، ولا يمكن اختيار جزء آخر.',
-                style: TextStyle(color: Colors.black54, fontSize: 13)),
+                ]),
+              ),
           ],
-          const SizedBox(height: 12),
+          if (_pathKnown && _options.isEmpty)
+            _note('لا يوجد اختبار متاح لهذا الطالب الآن: أتمّ المسار، واختبار المراجعة يحتاج إذناً من الإدارة.',
+                context.badBg, context.badFg, Icons.block_rounded),
+          if (logBox != null) logBox,
           if (_prev != null) _prevBox(),
           CheckboxListTile(
             value: _isRetest,
             onChanged: _forcedRetest ? null : (v) => setState(() => _retest = v ?? false),
             subtitle: _forcedRetest ? const Text('تلقائي: الطالب راسب سابقاً بنفس الاختبار') : null,
-            title: const Text('اختبار إعادة'),
+            title: Text('اختبار إعادة', style: TextStyle(color: context.ink, fontWeight: FontWeight.w700)),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
           ),
-          const SizedBox(height: 16),
-          BigButton(icon: Icons.play_arrow, text: 'بدء الاختبار', onPressed: _ready ? _start : null),
-          if (!_ready)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                  _blocked
-                      ? 'لا يمكن بدء الاختبار: الطالب ناجح فيه سابقاً، ويحتاج إذن الإدارة.'
-                      : !_logOk
-                          ? 'لا يمكن بدء الاختبار قبل تسميع ${(_suggested?.type ?? 1) == 1 ? 'الجزء كاملاً في جلسة واحدة' : 'كل الأجزاء المطلوبة كاملة'} في السجل اليومي، أو بتصريح من الإدارة.'
-                          : (_student == null ? 'اختر الطالب لبدء الاختبار' : 'لا يوجد اختبار متاح لبدئه'),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: _blocked || !_logOk ? Colors.red.shade700 : Colors.grey)),
-            ),
+          Panel(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('تذكير', style: TextStyle(color: context.ink, fontWeight: FontWeight.w800, fontSize: 15)),
+              const SizedBox(height: 4),
+              Text('5 أسئلة × 15 · خطأ −1 · تنبيه −½\nيُغلق الاختبار إذا وصل خصم سؤال إلى 9',
+                  style: TextStyle(color: context.sub, fontSize: 13.5, height: 1.7)),
+            ]),
+          ),
         ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            if (reason != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(reason,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: _blocked || !_logOk ? context.badFg : context.sub, fontSize: 12.5)),
+              ),
+            GoldButton(text: 'بدء الاختبار ←', height: 58, onPressed: _ready ? _start : null),
+          ]),
+        ),
       ),
     );
   }

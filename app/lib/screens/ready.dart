@@ -7,6 +7,8 @@ import '../daily.dart';
 import '../logic.dart';
 import '../repo.dart';
 import 'new_exam.dart';
+import 'pick_student.dart';
+import 'ui.dart';
 import 'widgets.dart';
 
 class ReadyEntry {
@@ -25,6 +27,10 @@ class ReadyWatcher extends ChangeNotifier {
   bool _started = false;
   bool loaded = false;
   List<ReadyEntry> entries = [];
+  /// معلومات كل طالب: الاختبار التالي، وهل رسب فيه سابقاً
+  Map<String, ({String label, bool retest})> info = {};
+  List<Student> get students => _students;
+  List<Halaqa> get halaqat => _halaqat;
   List<Student> _students = [];
   List<Halaqa> _halaqat = [];
   List<Map<String, dynamic>> _exams = [], _logs = [], _progress = [], _permits = [];
@@ -84,14 +90,19 @@ class ReadyWatcher extends ChangeNotifier {
     final progBy = {for (final p in _progress) (p['id'] ?? '').toString(): p};
     final hById = {for (final h in _halaqat) h.id: h};
     final out = <ReadyEntry>[];
+    final inf = <String, ({String label, bool retest})>{};
     for (final s in _students) {
-      if (s.pending) continue;
       final ex = examsBy[s.id] ?? const [];
       final passed = {
         for (final e in ex)
           if (e['passed'] == true) '${e['type']}|${e['startJuz']}'
       };
       final step = nextPathStep(s.pathDir, s.pathStart, passed, s.pathFrom);
+      inf[s.id] = (
+        label: step?.label ?? 'أتمّ المسار',
+        retest: step != null && ex.any((e) => e['type'] == step.type && e['startJuz'] == step.start && e['passed'] != true),
+      );
+      if (s.pending) continue;
       if (step == null) continue;
       var last = 0;
       for (final e in ex) {
@@ -122,44 +133,9 @@ class ReadyWatcher extends ChangeNotifier {
       return c != 0 ? c : a.student.name.compareTo(b.student.name);
     });
     entries = out;
+    info = inf;
     loaded = _got >= 6;
     notifyListeners();
-  }
-}
-
-/// بطاقة الصفحة الرئيسية للمختبر
-class ReadyCard extends StatelessWidget {
-  const ReadyCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: ReadyWatcher.I,
-      builder: (context, _) {
-        final n = ReadyWatcher.I.entries.length;
-        return Card(
-          color: n > 0 ? const Color(0xFFE6F2FA) : null,
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            title: const Text('جاهزون للاختبار', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-            subtitle: Text(
-              !ReadyWatcher.I.loaded
-                  ? 'جارٍ التحميل…'
-                  : n == 0
-                      ? 'لا يوجد طلاب جاهزون الآن'
-                      : 'سمّعوا المطلوب كاملاً في السجل اليومي',
-            ),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                  color: n > 0 ? brandGreen : Colors.grey.shade400, borderRadius: BorderRadius.circular(14)),
-              child: Text('$n', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-            ),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReadyScreen())),
-          ),
-        );
-      },
-    );
   }
 }
 
@@ -176,54 +152,62 @@ class ReadyScreen extends StatelessWidget {
           final w = ReadyWatcher.I;
           if (!w.loaded) return const Center(child: CircularProgressIndicator());
           if (w.entries.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(28),
-                child: Text(
-                  'لا يوجد طلاب جاهزون للاختبار الآن.\n\nيظهر الطالب هنا بعد أن يُتمّ حفظ الجزء ويُسمّعه كاملاً مراجعةً في جلسة واحدة في السجل اليومي، أو بتصريح من الإدارة.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.black54, fontSize: 15, height: 1.7),
+            return SingleChildScrollView(
+              child: EmptyState(
+                icon: Icons.fact_check_outlined,
+                title: 'لا يوجد جاهزون الآن',
+                text: 'يظهر الطالب هنا بعد أن يُتمّ حفظ الجزء ويُسمّعه كاملاً في جلسة واحدة، أو بتصريح من الإدارة.',
+                action: SizedBox(
+                  width: 220,
+                  child: GoldButton(
+                    text: 'اختبار جديد',
+                    icon: Icons.add_rounded,
+                    onPressed: () => Navigator.of(context)
+                        .pushReplacement(MaterialPageRoute(builder: (_) => const PickStudentScreen())),
+                  ),
                 ),
               ),
             );
           }
           final items = <Widget>[];
           String? lastH;
-          var i = 0;
           for (final e in w.entries) {
             final hn = e.halaqa?.name ?? '';
             if (hn != lastH) {
               lastH = hn;
-              items.add(Padding(
-                padding: const EdgeInsets.fromLTRB(6, 16, 6, 6),
-                child: Text(hn, style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold, fontSize: 15)),
-              ));
+              items.add(SectionLabel(hn, color: context.accent));
             }
-            i++;
-            items.add(Card(
-              color: Colors.white,
-              surfaceTintColor: Colors.white,
-              margin: const EdgeInsets.symmetric(vertical: 3),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: const Color(0xFFE6F2FA),
-                  child: Text('$i', style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold)),
+            items.add(Panel(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              onTap: e.halaqa == null
+                  ? null
+                  : () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => NewExamScreen(initialHalaqa: e.halaqa, initialStudent: e.student))),
+              child: Row(children: [
+                NameAvatar(e.student.name, color: okGreen),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(e.student.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: context.ink)),
+                    Text(e.step.label + (e.byPermit ? ' · بتصريح من الإدارة' : ''),
+                        style: TextStyle(color: e.byPermit ? context.goldFg : context.sub, fontSize: 12.5)),
+                  ]),
                 ),
-                title: Text(e.student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(e.step.label + (e.byPermit ? '\nبتصريح من الإدارة' : ''),
-                    style: TextStyle(color: e.byPermit ? const Color(0xFF9A6700) : Colors.black54)),
-                isThreeLine: e.byPermit,
-                trailing: FilledButton(
-                  onPressed: e.halaqa == null
-                      ? null
-                      : () => Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => NewExamScreen(initialHalaqa: e.halaqa, initialStudent: e.student))),
-                  child: const Text('اختبار'),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFFF2C94C), Color(0xFFDDA915)]),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Text('اختبار',
+                      style: TextStyle(color: Color(0xFF3B2C00), fontWeight: FontWeight.w800, fontSize: 16)),
                 ),
-              ),
+              ]),
             ));
           }
-          return ListView(padding: const EdgeInsets.fromLTRB(12, 4, 12, 24), children: items);
+          return ListView(padding: const EdgeInsets.fromLTRB(14, 4, 14, 24), children: items);
         },
       ),
     );
