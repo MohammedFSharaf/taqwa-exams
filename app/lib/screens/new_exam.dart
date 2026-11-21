@@ -201,18 +201,6 @@ class _NewExamScreenState extends State<NewExamScreen> {
   bool get _ready =>
       _halaqa != null && _student != null && _type != null && _startJuz != null && _selectedAllowed && !_blocked && _logOk;
 
-  Future<void> _pickStudent() async {
-    final res = await showModalBottomSheet<Student>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => StudentPicker(halaqa: _halaqa!),
-    );
-    if (res != null) {
-      setState(() => _student = res);
-      _watchStudent();
-    }
-  }
-
   Future<void> _quickSearch() async {
     final res = await showModalBottomSheet<(Student, Halaqa)>(
       context: context,
@@ -517,6 +505,13 @@ class _StudentPickerState extends State<StudentPicker> {
         child: Column(
           children: [
             Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Container(
+                  width: 42,
+                  height: 5,
+                  decoration: BoxDecoration(color: context.line, borderRadius: BorderRadius.circular(4))),
+            ),
+            Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
                 decoration: const InputDecoration(labelText: 'بحث عن طالب', prefixIcon: Icon(Icons.search)),
@@ -524,9 +519,9 @@ class _StudentPickerState extends State<StudentPicker> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.person_add, color: brandGreen),
-              title: const Text('إضافة طالب جديد (غير موجود بالقائمة)',
-                  style: TextStyle(color: brandGreen, fontWeight: FontWeight.bold)),
+              leading: Icon(Icons.person_add_alt_1_rounded, color: context.accent),
+              title: Text('إضافة طالب جديد (غير موجود بالقائمة)',
+                  style: TextStyle(color: context.accent, fontWeight: FontWeight.bold)),
               onTap: _addNew,
             ),
             const Divider(height: 1),
@@ -536,12 +531,13 @@ class _StudentPickerState extends State<StudentPicker> {
                 builder: (context, snap) {
                   final list = (snap.data ?? []).where((s) => _q.isEmpty || s.name.contains(_q)).toList();
                   if (list.isEmpty) {
-                    return const Center(child: Text('لا يوجد طلاب', style: TextStyle(color: Colors.grey)));
+                    return const EmptyState(icon: Icons.groups_rounded, title: 'لا يوجد طلاب');
                   }
                   return ListView.builder(
                     itemCount: list.length,
                     itemBuilder: (_, i) => ListTile(
-                      title: Text(list[i].name),
+                      leading: NameAvatar(list[i].name, size: 38),
+                      title: Text(list[i].name, style: TextStyle(fontWeight: FontWeight.w700, color: context.ink)),
                       subtitle: list[i].pending ? const Text('جديد — بانتظار اعتماد الإدارة') : null,
                       onTap: () => Navigator.pop(context, list[i]),
                     ),
@@ -576,6 +572,13 @@ class _GlobalStudentPickerState extends State<GlobalStudentPicker> {
         child: Column(
           children: [
             Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Container(
+                  width: 42,
+                  height: 5,
+                  decoration: BoxDecoration(color: context.line, borderRadius: BorderRadius.circular(4))),
+            ),
+            Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
                 autofocus: true,
@@ -592,8 +595,8 @@ class _GlobalStudentPickerState extends State<GlobalStudentPicker> {
                     stream: Repo.I.allStudents(),
                     builder: (context, snap) {
                       if (_q.isEmpty) {
-                        return const Center(
-                            child: Text('اكتب جزءاً من اسم الطالب', style: TextStyle(color: Colors.grey)));
+                        return const SingleChildScrollView(
+                            child: EmptyState(icon: Icons.person_search_rounded, title: 'اكتب جزءاً من اسم الطالب'));
                       }
                       final list = (snap.data ?? []).where((s) => s.name.contains(_q)).toList();
                       if (list.isEmpty) {
@@ -612,8 +615,8 @@ class _GlobalStudentPickerState extends State<GlobalStudentPicker> {
                           final s = list[i];
                           final hName = names[s.halaqaId] ?? '';
                           return ListTile(
-                            leading: const Icon(Icons.person),
-                            title: Text(s.name),
+                            leading: NameAvatar(s.name, size: 38),
+                            title: Text(s.name, style: TextStyle(fontWeight: FontWeight.w700, color: context.ink)),
                             subtitle: Text(hName + (s.pending ? ' — جديد بانتظار الاعتماد' : '')),
                             onTap: () => Navigator.pop(context, (s, Halaqa(s.halaqaId, hName))),
                           );

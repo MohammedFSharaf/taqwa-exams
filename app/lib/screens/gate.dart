@@ -116,7 +116,7 @@ class _GateScreenState extends State<GateScreen> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
-                child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                child: Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: context.badFg, fontWeight: FontWeight.w700)),
               ),
             const SizedBox(height: 18),
             BigButton(icon: Icons.login, text: 'دخول', onPressed: _check, gold: true),

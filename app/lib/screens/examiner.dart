@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'ui.dart';
 import 'widgets.dart';
 
 import '../repo.dart';
@@ -39,31 +40,33 @@ class _ExaminerScreenState extends State<ExaminerScreen> {
         builder: (context, snap) {
           final names = snap.data ?? [];
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
             children: [
-              const Text('اختر اسمك من القائمة:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
+              SectionLabel('اختر اسمك من القائمة', color: context.ink),
               if (snap.connectionState == ConnectionState.waiting && names.isEmpty)
-                const Center(child: CircularProgressIndicator()),
+                const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())),
               for (final n in names)
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.person),
-                    title: Text(n),
-                    trailing: n == current ? const Icon(Icons.check_circle, color: Colors.green) : null,
-                    onTap: () => _choose(n),
-                  ),
+                Panel(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  borderColor: n == current ? context.accent : null,
+                  onTap: () => _choose(n),
+                  child: Row(children: [
+                    NameAvatar(n, color: n == current ? brandBlue : null, size: 40),
+                    const SizedBox(width: 12),
+                    Expanded(
+                        child: Text(n, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: context.ink))),
+                    if (n == current) Icon(Icons.check_circle_rounded, color: context.okFg),
+                  ]),
                 ),
-              const SizedBox(height: 20),
-              const Text('أو اكتب اسمك:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
+              SectionLabel('أو اكتب اسمك', color: context.ink),
               TextField(
                 controller: _name,
-                decoration: const InputDecoration(labelText: 'اسم المختبر'),
+                decoration: const InputDecoration(labelText: 'اسم المختبر', prefixIcon: Icon(Icons.edit_rounded)),
                 onSubmitted: _choose,
               ),
-              const SizedBox(height: 12),
-              FilledButton(onPressed: () => _choose(_name.text), child: const Text('متابعة')),
+              const SizedBox(height: 14),
+              GoldButton(text: 'متابعة', onPressed: () => _choose(_name.text)),
             ],
           );
         },

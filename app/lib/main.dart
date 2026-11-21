@@ -60,8 +60,22 @@ class TaqwaApp extends StatelessWidget {
         shadowColor: const Color(0x220A3C64),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      dialogTheme: DialogTheme(backgroundColor: surface, surfaceTintColor: Colors.transparent),
-      bottomSheetTheme: BottomSheetThemeData(backgroundColor: surface, surfaceTintColor: Colors.transparent),
+      dialogTheme: DialogTheme(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: dark ? const Color(0xFF26394A) : brandNavy,
+        contentTextStyle: const TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 14.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

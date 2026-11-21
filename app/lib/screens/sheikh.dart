@@ -95,7 +95,7 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                    child: Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: context.badFg, fontWeight: FontWeight.w700)),
                   ),
                 const SizedBox(height: 18),
                 BigButton(icon: Icons.login, text: 'دخول', onPressed: () => _login(list), gold: true),
@@ -255,16 +255,6 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         'excused' => 'غائب بعذر',
         _ => '',
       };
-
-  String _summary(Map<String, dynamic> l) {
-    if (l['status'] != 'recited') return statusText(l['status'] as String?);
-    final parts = <String>[];
-    final nm = l['newMem'];
-    if (nm is Map) parts.add('سمّع: ${nm['label'] ?? ''} (${fmtPages(((nm['pages'] ?? 0) as num).toDouble())} ص)');
-    final rp = ((l['reviewPages'] ?? 0) as num).toDouble();
-    if (rp > 0) parts.add('راجع: ${fmtPages(rp)} ص');
-    return parts.isEmpty ? 'سمّع' : parts.join(' · ');
-  }
 
   String? _warning(Map<String, dynamic> l, DailyStatus st) {
     if (l['status'] != 'recited' || l['holiday'] == true) return null;
@@ -966,20 +956,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     ];
   }
 
-  void _addReview(Map<String, dynamic> r) => setState(() {
-        _reviews.add(r);
-        _ensureNewAfterSurahReview();
-      });
-
-  String? get _todayRequired {
-    if (_st.mode == 'memorize' && _st.fromG != null && _st.suggestToG != null) {
-      return 'المطلوب اليوم: ${memRangeLabel(_dir, _st.fromG!, _st.suggestToG!)} '
-          '(${fmtPages(memRangePages(_dir, _st.fromG!, _st.suggestToG!))} صفحة)';
-    }
-    final r = _suggestedReview;
-    if (r != null) return 'المطلوب اليوم: مراجعة ${r['label']} (${fmtPages((r['pages'] as num).toDouble())} صفحة)';
-    return null;
-  }
+);
 
   /// نافذة «إضافة مراجعة»
   Future<void> _addReviewSheet() async {
