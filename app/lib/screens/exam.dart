@@ -188,7 +188,7 @@ class _ExamScreenState extends State<ExamScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 3),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
-                          color: i == _idx ? brandGreen : (i < _idx ? const Color(0xFFDDEBE3) : Colors.white),
+                          color: i == _idx ? brandGreen : (i < _idx ? const Color(0xFFDCEAF4) : Colors.white),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: brandGreen.withOpacity(0.4)),
                         ),

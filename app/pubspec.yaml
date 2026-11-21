@@ -28,3 +28,13 @@ flutter:
   assets:
     - shorebird.yaml
     - assets/logo.png
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo_400Regular.ttf
+        - asset: assets/fonts/Cairo_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Cairo_700Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Cairo_800ExtraBold.ttf
+          weight: 800

@@ -38,17 +38,44 @@ class TaqwaApp extends StatelessWidget {
       ],
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: brandGreen, primary: brandGreen),
-        scaffoldBackgroundColor: const Color(0xFFF7F6F1),
+        fontFamily: 'Cairo',
+        colorScheme: ColorScheme.fromSeed(seedColor: brandBlue, primary: brandGreen, secondary: goldButton),
+        scaffoldBackgroundColor: pageBg,
         appBarTheme: const AppBarTheme(
-          backgroundColor: brandGreen,
-          foregroundColor: Colors.white,
+          backgroundColor: Color(0xFFF3F9FD),
+          foregroundColor: brandNavy,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 1,
           centerTitle: true,
+          titleTextStyle: TextStyle(fontFamily: 'Cairo', color: brandNavy, fontSize: 19, fontWeight: FontWeight.w800),
+          shape: Border(bottom: BorderSide(color: goldButton, width: 3)),
         ),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
+        cardTheme: CardTheme(
+          color: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          elevation: 1.5,
+          shadowColor: const Color(0x220A3C64),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            textStyle: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            side: const BorderSide(color: Color(0xFFD5E0E8)),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFD5E0E8))),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFD5E0E8))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: brandBlue, width: 1.6)),
         ),
       ),
       navigatorKey: appNavigatorKey,

@@ -47,6 +47,69 @@ class StarPatternPainter extends CustomPainter {
   bool shouldRepaint(covariant StarPatternPainter old) => old.color != color;
 }
 
+/// رسمة مسجد بخطوط ذهبية (شاشة الدخول)
+class MosquePainter extends CustomPainter {
+  const MosquePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sx = size.width / 300, sy = size.height / 150;
+    canvas.save();
+    canvas.scale(sx, sy);
+    final p = Paint()
+      ..color = const Color(0x99E3B21B)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6 / ((sx + sy) / 2)
+      ..strokeCap = StrokeCap.round;
+    final path = Path()
+      ..moveTo(40, 150)
+      ..lineTo(40, 95)
+      ..lineTo(260, 95)
+      ..lineTo(260, 150)
+      ..moveTo(95, 95)
+      ..quadraticBezierTo(95, 40, 150, 30)
+      ..quadraticBezierTo(205, 40, 205, 95)
+      ..moveTo(150, 30)
+      ..lineTo(150, 16)
+      // المئذنتان
+      ..moveTo(18, 150)
+      ..lineTo(18, 55)
+      ..moveTo(28, 150)
+      ..lineTo(28, 55)
+      ..moveTo(12, 47)
+      ..lineTo(34, 47)
+      ..lineTo(23, 58)
+      ..close()
+      ..moveTo(272, 150)
+      ..lineTo(272, 55)
+      ..moveTo(282, 150)
+      ..lineTo(282, 55)
+      ..moveTo(266, 47)
+      ..lineTo(288, 47)
+      ..lineTo(277, 58)
+      ..close();
+    // الأبواب
+    void arch(double x, double w, double top) {
+      path
+        ..moveTo(x, 150)
+        ..lineTo(x, top + w / 2)
+        ..arcToPoint(Offset(x + w, top + w / 2), radius: Radius.circular(w / 2))
+        ..lineTo(x + w, 150);
+    }
+
+    arch(120, 30, 104);
+    arch(150, 30, 104);
+    arch(60, 20, 110);
+    arch(220, 20, 110);
+    canvas.drawPath(path, p);
+    canvas.drawCircle(const Offset(150, 12), 3, Paint()..color = const Color(0x99E3B21B));
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 /// قوس المحراب خلف نموذج الدخول
 class MihrabPainter extends CustomPainter {
   const MihrabPainter();
@@ -94,7 +157,7 @@ class DedicationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     const gold = Color(0xFFE9C46A);
     return Scaffold(
-      backgroundColor: const Color(0xFF0B261B),
+      backgroundColor: const Color(0xFF082A43),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -107,7 +170,7 @@ class DedicationScreen extends StatelessWidget {
           gradient: RadialGradient(
             center: Alignment(0.7, -1.0),
             radius: 1.5,
-            colors: [Color(0xFF2A7A5B), Color(0xFF14432F), Color(0xFF0B261B)],
+            colors: [Color(0xFF1C6E9E), Color(0xFF0B3F63), Color(0xFF082A43)],
             stops: [0, 0.45, 1],
           ),
         ),
@@ -138,7 +201,7 @@ class DedicationScreen extends StatelessWidget {
                             Text('إهداء',
                                 style: TextStyle(color: gold, fontSize: 12, letterSpacing: 2, fontWeight: FontWeight.w600)),
                             Text(centerName,
-                                style: TextStyle(color: Color(0xFFD6E6DD), fontSize: 13.5, fontWeight: FontWeight.w600)),
+                                style: TextStyle(color: Color(0xFFD5E6F1), fontSize: 13.5, fontWeight: FontWeight.w600)),
                           ]),
                         ),
                       ]),
@@ -157,7 +220,7 @@ class DedicationScreen extends StatelessWidget {
                         ),
                       ),
                       const Text(dedicationIntro,
-                          style: TextStyle(color: Color(0xFFD9E7DF), fontSize: 14.5, height: 1.9)),
+                          style: TextStyle(color: Color(0xFFD5E6F1), fontSize: 14.5, height: 1.9)),
                       const SizedBox(height: 18),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -173,7 +236,7 @@ class DedicationScreen extends StatelessWidget {
                       const SizedBox(height: 18),
                       const Text(dedicationOutro,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Color(0xFFCFE0D7), fontSize: 13.5, height: 1.85)),
+                          style: TextStyle(color: Color(0xFFC6DAE8), fontSize: 13.5, height: 1.85)),
                     ],
                   ),
                 ),

@@ -107,7 +107,7 @@ class SyncStatus extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: ok ? const Color(0xFFE8F3EC) : const Color(0xFFFFF4DE),
+            color: ok ? const Color(0xFFE6F2FA) : const Color(0xFFFFF4DE),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(

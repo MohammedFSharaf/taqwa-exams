@@ -291,12 +291,12 @@ class _NewExamScreenState extends State<NewExamScreen> {
     final String text;
     final s = _suggested;
     if (s == null) {
-      bg = const Color(0xFFE8F3EC);
+      bg = const Color(0xFFE6F2FA);
       fg = brandGreen;
       text = 'الطالب حافظ للقرآن الكريم — أتمّ المسار.\nأي اختبار الآن يكون مراجعة بإذن من الإدارة.';
     } else {
       final failedBefore = _sExams!.any((e) => e['type'] == s.type && e['startJuz'] == s.start && e['passed'] != true);
-      bg = failedBefore ? Colors.red.shade50 : const Color(0xFFE8F3EC);
+      bg = failedBefore ? Colors.red.shade50 : const Color(0xFFE6F2FA);
       fg = failedBefore ? Colors.red.shade800 : brandGreen;
       text = (failedBefore ? 'إعادة: ' : 'الاختبار التالي حسب المسار: ') + s.label;
     }

@@ -6,8 +6,15 @@ import '../slogan.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dedication.dart';
 
-const Color brandGreen = Color(0xFF1F5F46);
-const Color brandGold = Color(0xFFB8913A);
+// ألوان «سماء الشعار»
+const Color brandGreen = Color(0xFF0A6FA6); // اللون الأساسي (أزرق الشعار) — الاسم قديم
+const Color brandBlue = Color(0xFF0A86C4);
+const Color brandNavy = Color(0xFF0B3F63);
+const Color brandGold = Color(0xFFC99A10);
+const Color goldButton = Color(0xFFE3B21B);
+const Color okGreen = Color(0xFF1E8A4C);
+const Color skyLight = Color(0xFFE6F2FA);
+const Color pageBg = Color(0xFFF6FAFD);
 
 /// الواجهة العلوية: شعار المركز واسمه وشعار «نحو مدرسة قرآنية»
 class AppHeader extends StatelessWidget {
@@ -17,46 +24,51 @@ class AppHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 34, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 8),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF174A36), brandGreen],
+          colors: [Color(0xFFCFEAFB), Color(0xFFEAF6FD), Color(0x00F6FAFD)],
+          stops: [0, 0.55, 1],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Column(
         children: [
           GestureDetector(
             onLongPress: () => showAboutApp(context),
             child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: brandGold, width: 2),
-            ),
-            child: ClipOval(
-              child: Image.asset('assets/logo.png', width: 96, height: 96, fit: BoxFit.contain),
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: brandBlue.withOpacity(0.25), blurRadius: 22, offset: const Offset(0, 8)),
+                  BoxShadow(color: Colors.white.withOpacity(0.7), spreadRadius: 6),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset('assets/logo.png', width: 100, height: 100, fit: BoxFit.contain),
+              ),
             ),
           ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           const Text(
             centerName,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, height: 1.5),
+            style: TextStyle(color: brandNavy, fontSize: 20, fontWeight: FontWeight.w800, height: 1.5),
           ),
-          const SizedBox(height: 6),
-          Image.memory(sloganPng, height: 44, fit: BoxFit.contain, gaplessPlayback: true),
+          const SizedBox(height: 8),
+          Image.memory(sloganDarkPng, height: 40, fit: BoxFit.contain, gaplessPlayback: true),
           if (kBeta)
             Container(
               margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              decoration: BoxDecoration(color: brandGold, borderRadius: BorderRadius.circular(8)),
-              child: const Text('نسخة تجريبية', style: TextStyle(color: Color(0xFF174A36), fontWeight: FontWeight.bold)),
+              decoration: BoxDecoration(color: goldButton, borderRadius: BorderRadius.circular(8)),
+              child: const Text('نسخة تجريبية', style: TextStyle(color: brandNavy, fontWeight: FontWeight.bold)),
             ),
+          const SizedBox(height: 10),
+          const SizedBox(height: 92, width: 240, child: CustomPaint(painter: MosquePainter())),
         ],
       ),
     );
@@ -74,7 +86,7 @@ class AyahLine extends StatelessWidget {
       child: Text(
         '﴿ $ayahText ﴾',
         textAlign: TextAlign.center,
-        style: TextStyle(color: Color(0xFF8A7A4A), fontSize: 15, height: 1.6),
+        style: TextStyle(color: Color(0xFFA2852A), fontSize: 15, height: 1.6, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -93,25 +105,25 @@ class TwoWaySwitch extends StatelessWidget {
     Widget part(String t, bool on, bool isFirst) => Expanded(
           child: InkWell(
             onTap: () => onChanged(isFirst),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              color: on ? brandGreen : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: on ? brandBlue : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
               alignment: Alignment.center,
               child: Text(t,
                   style: TextStyle(
-                      color: on ? Colors.white : Colors.black54, fontSize: 16, fontWeight: FontWeight.bold)),
+                      color: on ? Colors.white : const Color(0xFF5A7486), fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
         );
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFCFD6D2)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(children: [part(first, firstSelected, true), part(second, !firstSelected, false)]),
-      ),
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: const Color(0xFFE8F1F6), borderRadius: BorderRadius.circular(16)),
+      child: Row(children: [part(first, firstSelected, true), part(second, !firstSelected, false)]),
     );
   }
 }
@@ -122,14 +134,18 @@ class BigButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool filled;
-  const BigButton({super.key, required this.icon, required this.text, required this.onPressed, this.filled = true});
+  final bool gold; // زر ذهبي للأفعال المهمة
+  const BigButton(
+      {super.key, required this.icon, required this.text, required this.onPressed, this.filled = true, this.gold = false});
 
   @override
   Widget build(BuildContext context) {
     final style = ButtonStyle(
       minimumSize: WidgetStateProperty.all(const Size.fromHeight(60)),
       textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+      shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+      backgroundColor: gold ? WidgetStateProperty.all(goldButton) : null,
+      foregroundColor: gold ? WidgetStateProperty.all(const Color(0xFF3B2C00)) : null,
     );
     return filled
         ? FilledButton.icon(onPressed: onPressed, icon: Icon(icon), label: Text(text), style: style)

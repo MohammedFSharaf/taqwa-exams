@@ -298,13 +298,13 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         .map((x) => (x['name'] ?? '').toString())
         .where((n) => n.isNotEmpty)
         .join('، ');
-    const white70 = TextStyle(color: Color(0xFFDCEBE3), fontSize: 13);
+    const white70 = TextStyle(color: Color(0xFFDCEAF4), fontSize: 13);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF174A36), brandGreen],
+          colors: [Color(0xFF0B3F63), brandGreen],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -590,7 +590,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
             children: [
               CircleAvatar(
                 radius: 15,
-                backgroundColor: const Color(0xFFE8F3EC),
+                backgroundColor: const Color(0xFFE6F2FA),
                 child: Text('$number', style: const TextStyle(color: brandGreen, fontSize: 13, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 10),
@@ -994,7 +994,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-          color: ok ? const Color(0xFFD7EEDF) : const Color(0xFFFFF4DE), borderRadius: BorderRadius.circular(10)),
+          color: ok ? const Color(0xFFE2F3E9) : const Color(0xFFFFF4DE), borderRadius: BorderRadius.circular(10)),
       child: Text(text,
           style: TextStyle(
               color: ok ? brandGreen : const Color(0xFF8A5A00), fontWeight: FontWeight.bold, fontSize: 13.5, height: 1.5)),
@@ -1080,7 +1080,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
           decoration: BoxDecoration(
             color: doneS ? brandGreen : Colors.white,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: cur ? const Color(0xFFC88A12) : (doneS ? brandGreen : const Color(0xFFB9D3C4)), width: cur ? 2 : 1),
+            border: Border.all(color: cur ? const Color(0xFFC88A12) : (doneS ? brandGreen : const Color(0xFFBCD6E8)), width: cur ? 2 : 1),
           ),
           child: Text(surahName(s),
               style: TextStyle(
@@ -1132,7 +1132,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(color: const Color(0xFFE8F3EC), borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: const Color(0xFFE6F2FA), borderRadius: BorderRadius.circular(14)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1154,7 +1154,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(3),
                 child: LinearProgressIndicator(
-                    value: pct, minHeight: 6, color: brandGreen, backgroundColor: const Color(0xFFCFE3D8)),
+                    value: pct, minHeight: 6, color: brandGreen, backgroundColor: const Color(0xFFCFE2EF)),
               ),
             ),
           if (req != null)
@@ -1166,7 +1166,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
               child: Wrap(spacing: 4, runSpacing: 4, children: chips),
             ),
           if (lastLine != null || rec.isNotEmpty) ...[
-            const Divider(height: 18, color: Color(0xFFB9D3C4)),
+            const Divider(height: 18, color: Color(0xFFBCD6E8)),
             if (lastLine != null) Text(lastLine, style: const TextStyle(color: Color(0xFF5B6B63), fontSize: 12.5)),
             const SizedBox(height: 6),
             Row(children: [
@@ -1255,7 +1255,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 6),
-              backgroundColor: on ? const Color(0xFFE8F3EC) : null,
+              backgroundColor: on ? const Color(0xFFE6F2FA) : null,
               side: BorderSide(color: on ? brandGreen : const Color(0xFFCFD6D2)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             ),
@@ -1343,7 +1343,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
           child: LinearProgressIndicator(
             value: seg.isEmpty ? 0 : segDone / seg.length,
             minHeight: 7,
-            color: const Color(0xFF7FBF9F),
+            color: const Color(0xFF7FB6DA),
             backgroundColor: const Color(0xFFEEEEEE),
           ),
         ),
@@ -1361,7 +1361,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       actions: [
         Padding(
           padding: const EdgeInsetsDirectional.only(end: 14),
-          child: Center(child: Text(counter, style: const TextStyle(color: Color(0xFFCFE3D8), fontSize: 13))),
+          child: Center(child: Text(counter, style: const TextStyle(color: Color(0xFFCFE2EF), fontSize: 13))),
         ),
       ],
     );

@@ -223,7 +223,7 @@ class _FinishScreenState extends State<FinishScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: total == null ? Colors.white : (passed ? const Color(0xFFE8F3EC) : Colors.red.shade50),
+                color: total == null ? Colors.white : (passed ? const Color(0xFFE6F2FA) : Colors.red.shade50),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(

@@ -138,7 +138,7 @@ class ReadyCard extends StatelessWidget {
       builder: (context, _) {
         final n = ReadyWatcher.I.entries.length;
         return Card(
-          color: n > 0 ? const Color(0xFFE8F3EC) : null,
+          color: n > 0 ? const Color(0xFFE6F2FA) : null,
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             title: const Text('جاهزون للاختبار', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
@@ -206,7 +206,7 @@ class ReadyScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(vertical: 3),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: const Color(0xFFE8F3EC),
+                  backgroundColor: const Color(0xFFE6F2FA),
                   child: Text('$i', style: const TextStyle(color: brandGreen, fontWeight: FontWeight.bold)),
                 ),
                 title: Text(e.student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
