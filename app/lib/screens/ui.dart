@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../bio.dart';
 import '../daily.dart';
 import '../repo.dart';
 import '../update_check.dart';
@@ -607,6 +608,24 @@ void showSettingsSheet(BuildContext context) {
                 if (v) HapticFeedback.selectionClick();
               },
               title: Text('اهتزاز خفيف عند الضغط', style: TextStyle(fontWeight: FontWeight.w800, color: ctx.ink)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: Bio.enabled,
+              onChanged: (v) async {
+                if (v) {
+                  await Bio.setDeclined(false);
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                        content: Text('ستُعرض عند الدخول القادم بكلمة السر')));
+                  }
+                } else {
+                  await Bio.disableAll();
+                }
+                setS(() {});
+              },
+              title: Text('الدخول بالبصمة', style: TextStyle(fontWeight: FontWeight.w800, color: ctx.ink)),
+              subtitle: Text('لهذا الجهاز فقط', style: TextStyle(color: ctx.sub, fontSize: 12.5)),
             ),
             const SizedBox(height: 6),
             const DevCredit(),

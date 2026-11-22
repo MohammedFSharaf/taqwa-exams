@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../bio.dart';
 import '../daily.dart';
 import '../logic.dart';
 import '../quran_data.dart';
@@ -26,20 +27,46 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
   final _pin = TextEditingController();
   String? _error;
 
-  void _login(List<Map<String, dynamic>> list) {
+  bool _autoBio = false;
+
+  Future<void> _login(List<Map<String, dynamic>> list) async {
     final sh = list.where((x) => x['id'] == _id).toList();
     if (sh.isEmpty) {
       setState(() => _error = 'اختر اسمك');
       return;
     }
-    if ((sh.first['pin'] ?? '').toString() != _pin.text.trim()) {
+    final pin = (sh.first['pin'] ?? '').toString();
+    if (pin != _pin.text.trim()) {
       setState(() => _error = 'رمز الدخول غير صحيح');
       return;
     }
+    if (Bio.sheikhId != null) {
+      await Bio.setSheikh(_id, pin);
+    } else if (await offerBio(context)) {
+      await Bio.setSheikh(_id, pin);
+    }
+    if (!mounted) return;
+    _enter(sh.first);
+  }
+
+  /// الدخول بالبصمة للشيخ
+  Future<void> _bioLogin(List<Map<String, dynamic>> list) async {
+    if (!await Bio.auth() || !mounted) return;
+    final sh = list.where((x) => x['id'] == Bio.sheikhId).toList();
+    if (sh.isEmpty || (sh.first['pin'] ?? '').toString() != Bio.sheikhPin) {
+      await Bio.setSheikh(null, null);
+      setState(() => _error = 'تغيّر رمز الدخول — أدخله مرة واحدة لإعادة تفعيل البصمة');
+      return;
+    }
+    _id = Bio.sheikhId;
+    _enter(sh.first);
+  }
+
+  void _enter(Map<String, dynamic> sheikh) {
     Repo.I.setSheikhId(_id);
     Repo.I.setLastRole('sheikh');
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => SheikhHomeScreen(sheikh: sh.first)),
+      MaterialPageRoute(builder: (_) => SheikhHomeScreen(sheikh: sheikh)),
       (r) => false,
     );
   }
@@ -68,9 +95,21 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
               );
             }
             final valid = list.any((x) => x['id'] == _id) ? _id : null;
+            final bioOn = Bio.sheikhId != null && list.any((x) => x['id'] == Bio.sheikhId);
+            if (bioOn && !_autoBio) {
+              _autoBio = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) => _bioLogin(list));
+            }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (bioOn) ...[
+                  BioButton(onPressed: () => _bioLogin(list)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text('أو', textAlign: TextAlign.center, style: TextStyle(color: context.sub)),
+                  ),
+                ],
                 DropdownButtonFormField<String>(
                   value: valid,
                   isExpanded: true,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../bio.dart';
 import '../repo.dart';
 import 'examiner.dart';
 import 'home.dart';
@@ -45,6 +46,29 @@ class _GateScreenState extends State<GateScreen> {
     Repo.I.startSync();
     if (Repo.I.appPassword == null) await Repo.I.fetchPasswordOnce();
     if (mounted) setState(() => _loading = false);
+    if (_role != 'sheikh' && Bio.examinerPass != null) _bioLogin();
+  }
+
+  /// الدخول بالبصمة للمختبِر
+  Future<void> _bioLogin() async {
+    if (!await Bio.auth() || !mounted) return;
+    var p = Repo.I.appPassword;
+    if (p == null) {
+      await Repo.I.fetchPasswordOnce();
+      p = Repo.I.appPassword;
+    }
+    if (p == null || p != Bio.examinerPass) {
+      await Bio.setExaminer(null);
+      setState(() => _error = 'تغيّرت كلمة السر — أدخلها مرة واحدة لإعادة تفعيل البصمة');
+      return;
+    }
+    _enter();
+  }
+
+  void _enter() {
+    Repo.I.setLastRole('examiner');
+    final next = Repo.I.examinerName == null ? const ExaminerScreen(first: true) : const HomeScreen();
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => next));
   }
 
   Future<void> _check() async {
@@ -62,9 +86,13 @@ class _GateScreenState extends State<GateScreen> {
       return;
     }
     if (!mounted) return;
-    Repo.I.setLastRole('examiner');
-    final next = Repo.I.examinerName == null ? const ExaminerScreen(first: true) : const HomeScreen();
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => next));
+    if (Bio.examinerPass != null) {
+      await Bio.setExaminer(p);
+    } else if (await offerBio(context)) {
+      await Bio.setExaminer(p);
+    }
+    if (!mounted) return;
+    _enter();
   }
 
   @override
@@ -106,6 +134,13 @@ class _GateScreenState extends State<GateScreen> {
           if (_role == 'sheikh')
             const SheikhLoginForm()
           else ...[
+            if (Bio.examinerPass != null) ...[
+              BioButton(onPressed: _bioLogin),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text('أو', textAlign: TextAlign.center, style: TextStyle(color: context.sub)),
+              ),
+            ],
             TextField(
               controller: _pass,
               obscureText: true,
@@ -152,4 +187,71 @@ class _GateScreenState extends State<GateScreen> {
       ),
     );
   }
+}
+
+
+/// زر الدخول بالبصمة
+class BioButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  const BioButton({super.key, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) => OutlinedButton.icon(
+        onPressed: () {
+          haptic();
+          onPressed();
+        },
+        icon: Icon(Icons.fingerprint, size: 26, color: context.ink),
+        label: Text('الدخول بالبصمة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: context.ink)),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(54),
+          side: BorderSide(color: context.ink, width: 1.6),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      );
+}
+
+/// عرض تفعيل البصمة بعد الدخول بكلمة السر (مرة واحدة إذا رفض)
+Future<bool> offerBio(BuildContext context) async {
+  if (Bio.declined || !await Bio.available() || !context.mounted) return false;
+  final r = await showModalBottomSheet<bool>(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(color: ctx.soft, shape: BoxShape.circle),
+            child: Icon(Icons.fingerprint, size: 42, color: ctx.ink),
+          ),
+          const SizedBox(height: 12),
+          Text('تفعيل الدخول بالبصمة؟', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: ctx.ink)),
+          const SizedBox(height: 6),
+          Text('في المرات القادمة يكفي وضع الإصبع بدل كتابة كلمة السر.',
+              textAlign: TextAlign.center, style: TextStyle(color: ctx.sub, height: 1.6)),
+          const SizedBox(height: 18),
+          Row(children: [
+            Expanded(child: NavyButton(text: 'تفعيل', onPressed: () => Navigator.pop(ctx, true))),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                child: const Text('لاحقًا'),
+              ),
+            ),
+          ]),
+        ]),
+      ),
+    ),
+  );
+  if (r != true) {
+    await Bio.setDeclined(true);
+    return false;
+  }
+  // تأكيد البصمة قبل التفعيل
+  return Bio.auth();
 }
