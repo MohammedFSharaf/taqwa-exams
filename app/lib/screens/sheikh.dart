@@ -128,6 +128,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   bool _showDone = true;
   bool _showLast = Repo.I.prefs.getBool('sheikh_show_last') ?? false;
   String _q = '';
+  /// اختيارات سورة البداية قبل وصولها من قاعدة البيانات
+  final Map<String, Map<String, String>> _ordLocal = {};
 
   String get _halaqaId => (widget.sheikh['halaqaId'] ?? '').toString();
   String get _sheikhName => (widget.sheikh['name'] ?? '').toString();
@@ -190,9 +192,32 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       if (ms > m) m = ms;
     }
     final last = m == 0 ? '' : dayKey(DateTime.fromMillisecondsSinceEpoch(m));
-    final pr = _progress.where((p) => p['id'] == s.id);
-    return examReadiness(s.pathDir, s.pathStart, passed, logs, pr.isEmpty ? null : pr.first, last, fromKey: s.pathFrom);
+    return examReadiness(s.pathDir, s.pathStart, passed, logs, _prOf(s.id), last, fromKey: s.pathFrom);
   }
+
+  /// مستند progress للطالب مع اختيارات سورة البداية المحلية
+  Map<String, dynamic>? _prOf(String sid) {
+    final pr = _progress.where((p) => p['id'] == sid);
+    final base = pr.isEmpty ? null : pr.first;
+    final loc = _ordLocal[sid];
+    if (loc == null) return base;
+    final jo = <String, dynamic>{};
+    final old = base?['juzOrder'];
+    if (old is Map) old.forEach((k, v) => jo['$k'] = v);
+    jo.addAll(loc);
+    return {...?base, 'juzOrder': jo};
+  }
+
+  /// حفظ سورة البداية في جزء
+  void _pickJuzStart(Student s, int j, String v) {
+    final k = juzOrdKey(s.pathDir, j);
+    setState(() => (_ordLocal[s.id] ??= {})['$k'] = v);
+    Repo.I.setJuzStart(s.id, _halaqaId, k, v, _sheikhName);
+  }
+
+  /// يحتاج اختيار سورة البداية قبل الحفظ في الجزء الحالي
+  bool _needsStartChoice(Student s, DailyStatus st) =>
+      st.juzNotStarted && juzHasChoice(s.pathDir, st.juz) && !st.ord.containsKey(juzOrdKey(s.pathDir, st.juz));
 
   List<Map<String, dynamic>> _logsOf(String sid) => _logs.where((l) => l['studentId'] == sid).toList();
 
@@ -217,8 +242,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       for (final e in _exams)
         if (e['studentId'] == s.id && e['passed'] == true) '${e['type']}|${e['startJuz']}'
     };
-    final pr = _progress.where((p) => p['id'] == s.id);
-    return dailyStatus(s.pathDir, s.pathStart, passed, _logsOf(s.id), pr.isEmpty ? null : pr.first, _minNew,
+    return dailyStatus(s.pathDir, s.pathStart, passed, _logsOf(s.id), _prOf(s.id), _minNew,
         fromKey: s.pathFrom);
   }
 
@@ -235,7 +259,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       };
 
   void _quickRecite(Student s, DailyStatus st) {
-    final p = memRangePages(s.pathDir, st.fromG!, st.suggestToG!);
+    final p = memRangePages(s.pathDir, st.fromG!, st.suggestToG!, st.ord);
     Repo.I.saveLog(s.id, _today, prev: _todayLog(s.id), {
       ..._base(s, st),
       'status': 'recited',
@@ -243,7 +267,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         'fromG': st.fromG,
         'toG': st.suggestToG,
         'pages': p,
-        'label': memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!),
+        'label': memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!, st.ord),
       },
       'reviews': <Map<String, dynamic>>[],
       'newPages': p,
@@ -462,7 +486,9 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     final j = st.juz;
     if (j <= 0) return;
     final dir = s.pathDir;
-    final surahs = surahsOfJuz(dir, j);
+    final hasChoice = juzHasChoice(dir, j);
+    var start = juzStartOf(dir, j, st.ord);
+    List<int> surahsNow() => surahsOfJuz(dir, j, {juzOrdKey(dir, j): start});
     List<int> ayahsIn(int x) {
       final r = unitRange(dir, j);
       final lo = r[0] > surahFirst(x) ? r[0] : surahFirst(x);
@@ -471,9 +497,9 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     }
 
     var fresh = true;
-    var sel = surahs.first;
+    var sel = surahsNow().first;
     var ay = ayahsIn(sel).last;
-    final res = await showAppSheet<int?>(
+    final res = await showAppSheet<(int, String)?>(
       context,
       title: 'من وين بيبلش «${s.name}»؟',
       subtitle: 'مرة واحدة فقط — بعدها التطبيق بيكمل لحاله',
@@ -505,11 +531,25 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                 ),
               ),
             );
+        final surahs = surahsNow();
+        if (!surahs.contains(sel)) sel = surahs.first;
         final ayahs = ayahsIn(sel);
         if (!ayahs.contains(ay)) ay = ayahs.last;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (hasChoice) ...[
+              Text('سورة البداية في الجزء ${unitNum(dir, j)}',
+                  style: TextStyle(color: ctx.ink, fontWeight: FontWeight.w800, fontSize: 15)),
+              const SizedBox(height: 8),
+              for (final v in const ['last', 'first'])
+                opt('البدء بسورة ${juzStartSurahName(dir, j, v)}', start == v, () {
+                  start = v;
+                  sel = surahsNow().first;
+                  ay = ayahsIn(sel).last;
+                }),
+              const SizedBox(height: 6),
+            ],
             opt('بيبلش الجزء ${unitNum(dir, j)} من أوله', fresh, () => fresh = true),
             opt('حافظ لحد آية معيّنة', !fresh, () => fresh = false),
             if (!fresh) ...[
@@ -546,13 +586,14 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
               ),
             ],
             const SizedBox(height: 16),
-            NavyButton(text: 'حفظ', onPressed: () => Navigator.pop(ctx, fresh ? 0 : gidOf(sel, ay))),
+            NavyButton(text: 'حفظ', onPressed: () => Navigator.pop(ctx, (fresh ? 0 : gidOf(sel, ay), start))),
           ],
         );
       },
     );
     if (res == null) return;
-    Repo.I.setProgress(s.id, _halaqaId, res == 0 ? null : res, _sheikhName);
+    if (hasChoice) _pickJuzStart(s, j, res.$2);
+    Repo.I.setProgress(s.id, _halaqaId, res.$1 == 0 ? null : res.$1, _sheikhName);
     if (mounted) showSavedTick(context, title: 'تم تحديد البداية', sub: s.name);
   }
 
@@ -704,12 +745,15 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       'norecite' => const Color(0xFFE57373),
       _ => const Color(0xFF9AAAB6),
     };
-    final canQuick = l == null && st.mode == 'memorize' && st.fromG != null && st.suggestToG != null;
+    final needChoice = l == null && _needsStartChoice(s, st);
+    final canQuick = !needChoice && l == null && st.mode == 'memorize' && st.fromG != null && st.suggestToG != null;
     String sub = st.title;
     Color subColor = context.sub;
     String? nextLine;
     if (canQuick) {
-      nextLine = 'التالي: ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!)}';
+      nextLine = 'التالي: ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!, st.ord)}';
+    } else if (needChoice) {
+      nextLine = 'تحديد سورة البداية في الجزء';
     } else if (l != null && status == 'recited') {
       sub = _shortSummary(l);
     } else if (l != null) {
@@ -736,6 +780,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       action = Tag(statusText(status), fg: stFg, bg: stBg);
     } else if (st.mode == 'needs_start') {
       action = FilledButton.tonal(onPressed: () => _startSheet(s, st), child: const Text('تحديد البداية'));
+    } else if (needChoice) {
+      action = FilledButton.tonal(onPressed: () => _open(s, st, l), child: const Text('سورة البداية'));
     } else if (canQuick) {
       action = FilledButton(
         style: FilledButton.styleFrom(
@@ -822,8 +868,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       for (final e in _exams)
         if (e['studentId'] == s.id && e['passed'] == true) '${e['type']}|${e['startJuz']}'
     };
-    final pr = _progress.where((p) => p['id'] == s.id);
-    final st = dailyStatus(s.pathDir, s.pathStart, passed, before, pr.isEmpty ? null : pr.first, _minNew,
+    final st = dailyStatus(s.pathDir, s.pathStart, passed, before, _prOf(s.id), _minNew,
         fromKey: s.pathFrom);
     return DayCtx(st, _todayLog(s.id), _base(s, st), before.take(5).toList(),
         ready: st.mode == 'review_exam' ? _readiness(s, before) : null,
@@ -844,6 +889,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         minReview: _minReview,
         date: _today,
         builder: _dayScreen,
+        onPickStart: _pickJuzStart,
       );
 }
 
@@ -866,6 +912,7 @@ class StudentDayScreen extends StatefulWidget {
   final String halaqaId, sheikhName, date;
   final double minNew, minReview;
   final Widget Function(Student) builder;
+  final void Function(Student, int, String) onPickStart;
   const StudentDayScreen({
     super.key,
     required this.student,
@@ -877,6 +924,7 @@ class StudentDayScreen extends StatefulWidget {
     required this.minReview,
     required this.date,
     required this.builder,
+    required this.onPickStart,
   });
 
   @override
@@ -894,10 +942,92 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
 
   // نقطة البداية
   int? _startSurah, _startAyah;
+  // سورة البداية في الجزء
+  String? _startSel;
+  bool _editStart = false;
 
   String get _dir => widget.student.pathDir;
   DailyStatus get _st => _c.st;
-  MemOrder get _o => memOrder(_dir);
+  MemOrder get _o => memOrder(_dir, _st.ord);
+  JuzOrd get _ord => _st.ord;
+
+  bool get _juzChoice => _st.juz > 0 && juzHasChoice(_dir, _st.juz) && _st.step?.type == 1;
+  bool get _startChosen => _ord.containsKey(juzOrdKey(_dir, _st.juz));
+  bool get _startLocked => !_st.juzNotStarted || _c.todayLog?['newMem'] is Map;
+  /// يظهر اختيار سورة البداية بدل بطاقة التسميع
+  bool get _askStart => _juzChoice && !_startLocked && (!_startChosen || _editStart);
+
+  /// خيارا سورة البداية (للجزء j)
+  Widget _startTiles(int j, String cur, ValueChanged<String> on) {
+    Widget tile(String v) {
+      final sel = cur == v;
+      final ss = surahsOfJuz(_dir, j, {juzOrdKey(_dir, j): v});
+      final seq = ss.length <= 4
+          ? ss.map(surahName).join(' ← ')
+          : '${ss.take(3).map(surahName).join(' ← ')} … ← ${surahName(ss.last)}';
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Material(
+          color: sel ? context.soft : context.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: sel ? context.chosen : context.line, width: sel ? 2 : 1),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              haptic();
+              on(v);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(children: [
+                Icon(sel ? Icons.radio_button_checked : Icons.radio_button_off,
+                    color: sel ? context.chosen : context.sub, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('البدء بسورة ${juzStartSurahName(_dir, j, v)}',
+                        style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: context.ink)),
+                    const SizedBox(height: 2),
+                    Text(seq, style: TextStyle(fontSize: 12.5, color: context.sub, height: 1.5)),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(children: [tile('last'), tile('first')]);
+  }
+
+  /// بطاقة تحديد سورة البداية عند الانتقال إلى جزء جديد
+  Widget _startChoiceCard() {
+    final j = _st.juz;
+    final cur = _startSel ?? juzStartOf(_dir, j, _ord);
+    return Panel(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _box('انتقل إلى الجزء ${unitNum(_dir, j)} (${unitDesc(_dir, j)})', context.goldBg, context.goldFg),
+        const SizedBox(height: 4),
+        Text('تحديد سورة البداية في الجزء ${unitNum(_dir, j)}',
+            style: TextStyle(color: context.ink, fontWeight: FontWeight.w800, fontSize: 16)),
+        const SizedBox(height: 10),
+        _startTiles(j, cur, (v) => setState(() => _startSel = v)),
+        Text('يمكن تعديل الاختيار حتى تسجيل أول حفظ في الجزء.', style: TextStyle(color: context.sub, fontSize: 12.5)),
+        const SizedBox(height: 14),
+        GoldButton(
+          text: 'اعتماد',
+          onPressed: () {
+            widget.onPickStart(widget.student, j, cur);
+            showSavedTick(context, title: 'تم اعتماد سورة البداية', sub: 'سورة ${juzStartSurahName(_dir, j, cur)}');
+            Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => widget.builder(widget.student)));
+          },
+        ),
+      ]),
+    );
+  }
 
   @override
   void initState() {
@@ -960,7 +1090,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     return _o.order[toPos];
   }
 
-  double get _newPages => (_hasNew && _from != null && _to != null) ? memRangePages(_dir, _from!, _to!) : 0;
+  double get _newPages => (_hasNew && _from != null && _to != null) ? memRangePages(_dir, _from!, _to!, _ord) : 0;
   double get _reviewPages => _reviews.fold(0.0, (a, r) => a + ((r['pages'] ?? 0) as num).toDouble());
 
   List<int> _ayahsIn(int s, int j) {
@@ -1187,7 +1317,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       ..._c.base,
       'status': _att,
       'newMem': withNew
-          ? {'fromG': _from, 'toG': _to, 'pages': np, 'label': memRangeLabel(_dir, _from!, _to!)}
+          ? {'fromG': _from, 'toG': _to, 'pages': np, 'label': memRangeLabel(_dir, _from!, _to!, _ord)}
           : null,
       'reviews': recited ? _reviews : <Map<String, dynamic>>[],
       'newPages': np,
@@ -1348,6 +1478,15 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
                 color: _st.mode == 'review_surah' ? context.badFg : context.sub,
                 fontSize: 13.5,
                 fontWeight: _st.mode == 'review_surah' ? FontWeight.w800 : FontWeight.w500)),
+        if (_juzChoice && _startChosen && !_askStart && (_st.mode == 'memorize' || _st.mode == 'review_surah'))
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Wrap(alignment: WrapAlignment.center, crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
+              Tag('البداية: سورة ${juzStartSurahName(_dir, _st.juz, juzStartOf(_dir, _st.juz, _ord))}',
+                  fg: context.ink, bg: context.soft),
+              if (!_startLocked) _link('تغيير', () => setState(() => _editStart = true)),
+            ]),
+          ),
         if (pct != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(40, 8, 40, 0),
@@ -1367,7 +1506,12 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   // ---------- تحديد نقطة البداية ----------
   Widget _startPointView() {
     final j = _st.juz;
-    final surahs = surahsOfJuz(_dir, j);
+    final hasChoice = juzHasChoice(_dir, j);
+    final start = _startSel ?? juzStartOf(_dir, j, _ord);
+    final surahs = surahsOfJuz(_dir, j, {juzOrdKey(_dir, j): start});
+    void saveStart() {
+      if (hasChoice) widget.onPickStart(widget.student, j, start);
+    }
     final s = _startSurah ?? surahs.first;
     final ayahs = _ayahsIn(s, j).map(ayahNo).toList();
     final a = (_startAyah != null && ayahs.contains(_startAyah)) ? _startAyah! : ayahs.last;
@@ -1376,10 +1520,22 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       children: [
         _box('أول مرة للطالب في السجل اليومي.\nحدّد آخر آية حفظها في الجزء ${unitNum(_dir, j)} (${unitDesc(_dir, j)})، وبعدها يكمل التطبيق تلقائياً.',
             context.goldBg, context.goldFg),
+        if (hasChoice) ...[
+          const SizedBox(height: 6),
+          Text('سورة البداية في الجزء ${unitNum(_dir, j)}',
+              style: TextStyle(color: context.ink, fontWeight: FontWeight.w800, fontSize: 16)),
+          const SizedBox(height: 10),
+          _startTiles(j, start, (v) => setState(() {
+                _startSel = v;
+                _startSurah = null;
+                _startAyah = null;
+              })),
+        ],
         const SizedBox(height: 8),
         NavyButton(
           text: 'بيبلش الجزء ${unitNum(_dir, j)} من أوله',
           onPressed: () {
+            saveStart();
             Repo.I.setProgress(widget.student.id, widget.halaqaId, null, widget.sheikhName);
             Navigator.of(context).pop();
             showSavedTick(context, title: 'تم تحديد البداية', sub: widget.student.name);
@@ -1412,6 +1568,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
         GoldButton(
           text: 'حفظ نقطة البداية',
           onPressed: () {
+            saveStart();
             Repo.I.setProgress(widget.student.id, widget.halaqaId, gidOf(s, a), widget.sheikhName);
             Navigator.of(context).pop();
             showSavedTick(context, title: 'تم تحديد البداية', sub: widget.student.name);
@@ -1439,7 +1596,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
         final o = _o;
         final j = _juz;
         final fromPos = o.pos[_from!];
-        final surahs = surahsOfJuz(_dir, j).where((s) => _ayahsIn(s, j).any((x) => o.pos[x] >= fromPos)).toList();
+        final surahs = surahsOfJuz(_dir, j, _ord).where((s) => _ayahsIn(s, j).any((x) => o.pos[x] >= fromPos)).toList();
         final toS = surahOf(_to!);
         final toAyahs = _ayahsIn(toS, j).where((g) => o.pos[g] >= fromPos).toList();
         final pages = _newPages;
@@ -1508,7 +1665,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: BoxDecoration(color: ctx.soft, borderRadius: BorderRadius.circular(14)),
               child: Text(
-                '${memRangeLabel(_dir, _from!, _to!)} · ${fmtPages(pages)} صفحة  (ص ${p1 == p2 ? '$p1' : '$p1–$p2'})',
+                '${memRangeLabel(_dir, _from!, _to!, _ord)} · ${fmtPages(pages)} صفحة  (ص ${p1 == p2 ? '$p1' : '$p1–$p2'})',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: ctx.accent, fontWeight: FontWeight.w800, fontSize: 15.5),
               ),
@@ -1550,7 +1707,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       if (_hasNew && _to != null) {
         final pages = _newPages;
         newBody = Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, runSpacing: 4, children: [
-          Text(memRangeLabel(_dir, _from!, _to!),
+          Text(memRangeLabel(_dir, _from!, _to!, _ord),
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.ink)),
           _tagPages(pages, warn: pages < widget.minNew - 1e-9),
         ]);
@@ -1688,6 +1845,12 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     if (_st.mode == 'needs_start') {
       return Scaffold(appBar: appBar, body: _startPointView());
     }
+    if (_askStart) {
+      return Scaffold(
+        appBar: appBar,
+        body: ListView(padding: const EdgeInsets.fromLTRB(14, 12, 14, 20), children: [_topLine(), _startChoiceCard()]),
+      );
+    }
     const atts = ['recited', 'norecite', 'absent', 'excused'];
     final ai = atts.indexOf(_att);
     final recited = _att == 'recited';
@@ -1767,7 +1930,7 @@ double? juzProgress(String dir, DailyStatus st) {
   if (st.mode == 'review_exam') return st.juzFrom == st.juzTo ? 1.0 : null;
   final j = st.juz;
   if (j <= 0) return null;
-  final o = memOrder(dir);
+  final o = memOrder(dir, st.ord);
   int? cp;
   if (st.mode == 'memorize' && st.fromG != null) cp = o.pos[st.fromG!] - 1;
   if (st.mode == 'review_surah' && st.segTo != null) cp = o.pos[st.segTo!];

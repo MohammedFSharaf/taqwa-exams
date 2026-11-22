@@ -91,26 +91,64 @@ class MemOrder {
 
 final Map<String, MemOrder> _orders = {};
 
-/// ترتيب الحفظ: من البقرة = ترتيب المصحف، من الناس = الوحدات تنازلياً، وداخل كل وحدة السور تنازلياً وكل سورة من أولها
-MemOrder memOrder(String dir) {
+/// سورة البداية في كل جزء: 'first' = أول سورة فيه بترتيب المصحف، 'last' = آخر سورة
+typedef JuzOrd = Map<int, String>;
+
+String juzStartDefault(String dir) => dir == 'asc' ? 'first' : 'last';
+
+/// المفتاح: رقم أول جزء في الوحدة
+int juzOrdKey(String dir, int j) => unitOf(dir, j).n1;
+
+String juzStartOf(String dir, int j, JuzOrd ord) => ord[juzOrdKey(dir, j)] ?? juzStartDefault(dir);
+
+/// اختيارات سورة البداية المحفوظة في مستند progress
+JuzOrd juzOrdOf(Map<String, dynamic>? progress) {
+  final m = progress?['juzOrder'];
+  if (m is! Map) return const {};
+  final r = <int, String>{};
+  m.forEach((k, v) {
+    final n = int.tryParse('$k');
+    if (n != null && (v == 'first' || v == 'last')) r[n] = v as String;
+  });
+  return r;
+}
+
+/// هل للجزء أكثر من سورة (يظهر خيار سورة البداية)
+bool juzHasChoice(String dir, int j) {
+  final u = unitOf(dir, j);
+  return surahOf(u.a) != surahOf(u.b);
+}
+
+/// اسم سورة البداية لاختيار معيّن
+String juzStartSurahName(String dir, int j, String start) {
+  final u = unitOf(dir, j);
+  return surahName(start == 'first' ? surahOf(u.a) : surahOf(u.b));
+}
+
+/// ترتيب الحفظ: من البقرة = الوحدات بترتيب المصحف، من الناس = الوحدات تنازلياً.
+/// داخل كل وحدة السور حسب سورة البداية (الافتراضي: تنازلياً لمن الناس، تصاعدياً لمن البقرة)، وكل سورة من أولها
+MemOrder memOrder(String dir, [JuzOrd ord = const {}]) {
   final d = dir == 'asc' ? 'asc' : 'desc';
-  final cached = _orders[d];
+  final units = unitsOf(d);
+  final over = <int, String>{};
+  for (final u in units) {
+    final v = ord[u.n1];
+    if (v != null && v != juzStartDefault(d)) over[u.n1] = v;
+  }
+  final key = over.isEmpty ? d : '$d|${(over.keys.toList()..sort()).map((k) => '$k${over[k]![0]}').join(',')}';
+  final cached = _orders[key];
   if (cached != null) return cached;
   final order = <int>[];
-  final units = unitsOf(d);
-  if (d == 'asc') {
-    for (var g = 1; g <= nAyah; g++) {
-      order.add(g);
-    }
-  } else {
-    for (final u in units.reversed) {
-      final sa = surahOf(u.a), sb = surahOf(u.b);
-      for (var s = sb; s >= sa; s--) {
-        final lo = u.a > surahFirst(s) ? u.a : surahFirst(s);
-        final hi = u.b < surahEnd(s) ? u.b : surahEnd(s);
-        for (var g = lo; g <= hi; g++) {
-          order.add(g);
-        }
+  final seq = d == 'asc' ? units : units.reversed;
+  for (final u in seq) {
+    final sa = surahOf(u.a), sb = surahOf(u.b);
+    final first = (over[u.n1] ?? juzStartDefault(d)) == 'first';
+    for (var k = 0; k <= sb - sa; k++) {
+      final s = first ? sa + k : sb - k;
+      final lo = u.a > surahFirst(s) ? u.a : surahFirst(s);
+      final hi = u.b < surahEnd(s) ? u.b : surahEnd(s);
+      for (var g = lo; g <= hi; g++) {
+        order.add(g);
       }
     }
   }
@@ -131,12 +169,12 @@ MemOrder memOrder(String dir) {
     }
   }
   final o = MemOrder(order, pos, jStart, jEnd);
-  _orders[d] = o;
+  _orders[key] = o;
   return o;
 }
 
-double memRangePages(String dir, int fromG, int toG) {
-  final o = memOrder(dir);
+double memRangePages(String dir, int fromG, int toG, [JuzOrd ord = const {}]) {
+  final o = memOrder(dir, ord);
   var t = 0.0;
   for (var i = o.pos[fromG]; i <= o.pos[toG]; i++) {
     t += ayahFrac(o.order[i]);
@@ -144,10 +182,11 @@ double memRangePages(String dir, int fromG, int toG) {
   return t;
 }
 
-String memRangeLabel(String dir, int fromG, int toG) {
-  if (dir == 'asc') return rangeLabel(fromG, toG);
-  final o = memOrder(dir);
+String memRangeLabel(String dir, int fromG, int toG, [JuzOrd ord = const {}]) {
+  final o = memOrder(dir, ord);
   final a = o.pos[fromG], b = o.pos[toG];
+  // متصل بترتيب المصحف (مثل من البقرة) ← صيغة المدى المعتادة
+  if (dir == 'asc' && toG - fromG == b - a) return rangeLabel(fromG, toG);
   final parts = <String>[];
   var i = a;
   while (i <= b) {
@@ -163,10 +202,10 @@ String memRangeLabel(String dir, int fromG, int toG) {
 }
 
 /// السور الموجودة في وحدة الحفظ بترتيب الحفظ
-List<int> surahsOfJuz(String dir, int j) {
+List<int> surahsOfJuz(String dir, int j, [JuzOrd ord = const {}]) {
   final u = unitOf(dir, j);
   final list = <int>[for (var s = surahOf(u.a); s <= surahOf(u.b); s++) s];
-  return dir == 'asc' ? list : list.reversed.toList();
+  return juzStartOf(dir, j, ord) == 'first' ? list : list.reversed.toList();
 }
 
 /// مدى الوحدة [a, b]
@@ -182,8 +221,10 @@ class DailyStatus {
   final int juz, juzFrom, juzTo;
   final int? fromG, suggestToG, juzEndG, segFrom, segTo;
   final bool ready;
+  final JuzOrd ord;
   DailyStatus(this.mode,
-      {this.step,
+      {this.ord = const {},
+      this.step,
       this.juz = 0,
       this.juzFrom = 0,
       this.juzTo = 0,
@@ -212,23 +253,30 @@ class DailyStatus {
     }
   }
 
+  /// لم يُحفظ شيء من الجزء الحالي بعد (يمكن اختيار سورة البداية)
+  bool get juzNotStarted => mode == 'memorize' && fromG != null && step != null && fromG == memOrder(step!.dir, ord).order[memOrder(step!.dir, ord).jStart[juz]];
+
   bool get isReview => mode == 'review_exam' || mode == 'review_surah' || mode == 'hafiz';
 }
 
 int? _int(dynamic v) => v is num ? v.toInt() : null;
 
+/// مستند progress فيه نقطة بداية فعلية (وليس اختيار سورة البداية فقط)
+bool _hasStart(Map<String, dynamic>? p) => p != null && (p.containsKey('lastG') || p.containsKey('fresh'));
+
 DailyStatus dailyStatus(String dir, int start, Set<String> passedKeys, List<Map<String, dynamic>> logs,
     Map<String, dynamic>? progress, double minNew, {String? fromKey}) {
-  final o = memOrder(dir);
+  final ord = juzOrdOf(progress);
+  final o = memOrder(dir, ord);
   final step = nextPathStep(dir, start, passedKeys, fromKey);
-  if (step == null) return DailyStatus('hafiz');
-  if (step.type > 1) return DailyStatus('review_exam', step: step, juzFrom: step.start, juzTo: step.end);
+  if (step == null) return DailyStatus('hafiz', ord: ord);
+  if (step.type > 1) return DailyStatus('review_exam', ord: ord, step: step, juzFrom: step.start, juzTo: step.end);
   final j = step.start;
   int? cursor;
   var hasData = false;
-  if (progress != null) {
+  if (_hasStart(progress)) {
     hasData = true;
-    final lg = _int(progress['lastG']);
+    final lg = _int(progress!['lastG']);
     if (lg != null && lg >= 1 && lg <= nAyah) cursor = o.pos[lg];
   }
   for (final l in logs) {
@@ -239,9 +287,9 @@ DailyStatus dailyStatus(String dir, int start, Set<String> passedKeys, List<Map<
       if (cursor == null || c > cursor) cursor = c;
     }
   }
-  if (!hasData) return DailyStatus('needs_start', step: step, juz: j);
+  if (!hasData) return DailyStatus('needs_start', ord: ord, step: step, juz: j);
   if (cursor != null && cursor >= o.jEnd[j]) {
-    return DailyStatus('review_exam', step: step, juz: j, juzFrom: j, juzTo: j, ready: true);
+    return DailyStatus('review_exam', ord: ord, step: step, juz: j, juzFrom: j, juzTo: j, ready: true);
   }
   if (cursor == null || cursor < o.jStart[j] - 1) cursor = o.jStart[j] - 1;
   if (cursor >= o.jStart[j]) {
@@ -263,7 +311,7 @@ DailyStatus dailyStatus(String dir, int start, Set<String> passedKeys, List<Map<
         // كاملة في جلسة واحدة: مراجعات نفس الجلسة مجتمعةً تغطي السورة
         final reviewed = logs.any((l) =>
             (l['date'] ?? '').toString().compareTo(doneDate) >= 0 && reviewsCoverRange(l['reviews'], sa, sb));
-        if (!reviewed) return DailyStatus('review_surah', step: step, juz: j, segFrom: sa, segTo: sb);
+        if (!reviewed) return DailyStatus('review_surah', ord: ord, step: step, juz: j, segFrom: sa, segTo: sb);
       }
     }
   }
@@ -276,7 +324,7 @@ DailyStatus dailyStatus(String dir, int start, Set<String> passedKeys, List<Map<
     if (t >= minNew - 1e-9) break;
   }
   return DailyStatus('memorize',
-      step: step, juz: j, fromG: o.order[fromPos], suggestToG: o.order[toPos], juzEndG: o.order[o.jEnd[j]]);
+      ord: ord, step: step, juz: j, fromG: o.order[fromPos], suggestToG: o.order[toPos], juzEndG: o.order[o.jEnd[j]]);
 }
 
 /// التاريخ بصيغة yyyy-MM-dd
@@ -333,14 +381,14 @@ ExamReady examReadiness(String dir, int start, Set<String> passedKeys, List<Map<
     Map<String, dynamic>? progress, String lastExamDate, {String? fromKey}) {
   final step = nextPathStep(dir, start, passedKeys, fromKey);
   if (step == null) return const ExamReady(true, 'ok');
-  final o = memOrder(dir);
+  final o = memOrder(dir, juzOrdOf(progress));
   var since = lastExamDate;
   if (step.type == 1) {
     final j = step.start;
     int? cursor;
-    var hasData = progress != null;
-    if (progress != null) {
-      final lg = _int(progress['lastG']);
+    var hasData = _hasStart(progress);
+    if (hasData) {
+      final lg = _int(progress!['lastG']);
       if (lg != null && lg >= 1 && lg <= nAyah) cursor = o.pos[lg];
     }
     var doneDate = '';
@@ -379,7 +427,7 @@ String? reviewSince(String dir, DailyStatus st, List<Map<String, dynamic>> logs,
   if (st.mode != 'review_exam' || st.step == null) return null;
   final step = st.step!;
   if (step.type > 1) return lastPassDate.isEmpty ? null : lastPassDate;
-  final o = memOrder(dir);
+  final o = memOrder(dir, st.ord);
   final end = o.jEnd[step.start];
   final sorted = [...logs]..sort((a, b) => (a['date'] ?? '').toString().compareTo((b['date'] ?? '').toString()));
   for (final l in sorted) {

@@ -260,6 +260,16 @@ class Repo {
     }, SetOptions(merge: true)));
   }
 
+  /// سورة البداية في جزء ('first' أول سورة بترتيب المصحف، 'last' آخر سورة)
+  void setJuzStart(String studentId, String halaqaId, int juz, String start, String by) {
+    _fire(db.collection('progress').doc(studentId).set({
+      'halaqaId': halaqaId,
+      'juzOrder': {'$juz': start},
+      'juzOrderBy': by,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)));
+  }
+
   void setHalaqaHoliday(String halaqaId, String date, bool on, String by) {
     final ref = db.collection('holidays').doc('${halaqaId}_$date');
     if (on) {

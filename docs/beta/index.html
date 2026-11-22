@@ -77,6 +77,8 @@
   .side .brand .lg{width:66px;height:66px;border-radius:50%;background:#fff;border:2px solid var(--gold);padding:3px;object-fit:contain}
   .side .brand b{display:block;color:#fff;font-size:13.5px;line-height:1.6;margin-top:6px}
   .side .brand .slogan{height:26px;margin-top:2px}
+  .opt-r{display:flex !important;flex-direction:row !important;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:6px;cursor:pointer;font-weight:400}
+  .opt-r:has(input:checked){border-color:#0B3F63;background:var(--zebra)}
   .betatag{display:inline-block;background:#E9C46A;color:#174A36;border-radius:6px;padding:0 8px;font-size:12px;font-weight:700;margin-top:4px}
   #tabs{padding:6px 0 10px;flex:1}
   #tabs .grp{font-size:11.5px;color:#9fb8ad;padding:12px 20px 3px;font-weight:700}
@@ -973,35 +975,43 @@ function rangeLabel(a, b){
   return `${posLabel(a)} ← ${posLabel(b)}`;
 }
 const _ORDER = {};
-function memOrder(dir){
-  const d = dir === "asc" ? "asc" : "desc";
-  if (_ORDER[d]) return _ORDER[d];
-  const order = [], units = unitsOf(d);
-  if (d === "asc"){ for (let g = 1; g <= N_AYAH; g++) order.push(g); }
-  else {
-    for (const u of [...units].reverse()){
-      const sa = surahOf(u.a), sb = surahOf(u.b);
-      for (let s = sb; s >= sa; s--){ const lo = Math.max(u.a, SURAH_START[s]), hi = Math.min(u.b, surahEnd(s)); for (let g = lo; g <= hi; g++) order.push(g); }
-    }
+// سورة البداية في كل جزء: "first" أول سورة فيه بترتيب المصحف، "last" آخر سورة
+function juzStartDefault(dir){ return dir === "asc" ? "first" : "last"; }
+function juzOrdKey(dir, j){ return unitOf(dir, j).n1; }
+function juzStartOf(dir, j, ord){ return (ord && ord[juzOrdKey(dir, j)]) || juzStartDefault(dir); }
+function ordOf(pr){ const m = pr && pr.juzOrder, r = {}; if (m && typeof m === "object") for (const k in m) if (m[k] === "first" || m[k] === "last") r[+k] = m[k]; return r; }
+function juzHasChoice(dir, j){ const u = unitOf(dir, j); return surahOf(u.a) !== surahOf(u.b); }
+function juzStartSurah(dir, j, v){ const u = unitOf(dir, j); return Q.names[(v === "first" ? surahOf(u.a) : surahOf(u.b)) - 1]; }
+function surahsOfJuz(dir, j, ord){ const u = unitOf(dir, j), l = []; for (let x = surahOf(u.a); x <= surahOf(u.b); x++) l.push(x); return juzStartOf(dir, j, ord) === "first" ? l : l.reverse(); }
+function memOrder(dir, ord){
+  const d = dir === "asc" ? "asc" : "desc", units = unitsOf(d), over = {};
+  for (const u of units){ const v = ord && ord[u.n1]; if (v && v !== juzStartDefault(d)) over[u.n1] = v; }
+  const ks = Object.keys(over).map(Number).sort((a,b)=>a-b), key = ks.length ? d + "|" + ks.map(k => k + over[k][0]).join(",") : d;
+  if (_ORDER[key]) return _ORDER[key];
+  const order = [];
+  for (const u of (d === "asc" ? units : [...units].reverse())){
+    const sa = surahOf(u.a), sb = surahOf(u.b), first = (over[u.n1] || juzStartDefault(d)) === "first";
+    for (let k = 0; k <= sb - sa; k++){ const s = first ? sa + k : sb - k; const lo = Math.max(u.a, SURAH_START[s]), hi = Math.min(u.b, surahEnd(s)); for (let g = lo; g <= hi; g++) order.push(g); }
   }
   const pos = new Int32Array(N_AYAH + 1); order.forEach((g, i) => pos[g] = i);
   const jStart = [], jEnd = [];
   for (const u of units){ let mn = 1e9, mx = -1; for (let g = u.a; g <= u.b; g++){ mn = Math.min(mn, pos[g]); mx = Math.max(mx, pos[g]); } for (let n = u.n1; n <= u.n2; n++){ jStart[n] = mn; jEnd[n] = mx; } }
-  return (_ORDER[d] = { order, pos, jStart, jEnd });
+  return (_ORDER[key] = { order, pos, jStart, jEnd });
 }
+function hasStart(pr){ return !!pr && ("lastG" in pr || "fresh" in pr); }
 // حالة الطالب في السجل اليومي
 function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
-  const O = memOrder(dir);
+  const ord = ordOf(progress), O = memOrder(dir, ord);
   const p = pathStatus(dir, start, passedKeys, fromKey);
-  if (p.hafiz) return { mode: "hafiz" };
+  if (p.hafiz) return { mode: "hafiz", ord };
   const step = p.steps[p.next];
-  if (step.type > 1) return { mode: "review_exam", step, juzFrom: step.start, juzTo: step.end };
+  if (step.type > 1) return { mode: "review_exam", ord, step, juzFrom: step.start, juzTo: step.end };
   const J = step.start;
   let cursor = null, hasData = false;
-  if (progress){ hasData = true; if (progress.lastG) cursor = O.pos[progress.lastG]; }
+  if (hasStart(progress)){ hasData = true; if (progress.lastG) cursor = O.pos[progress.lastG]; }
   for (const l of logs) if (l.newMem && l.newMem.toG){ hasData = true; const c = O.pos[l.newMem.toG]; if (cursor === null || c > cursor) cursor = c; }
-  if (!hasData) return { mode: "needs_start", step, juz: J };
-  if (cursor !== null && cursor >= O.jEnd[J]) return { mode: "review_exam", step, juzFrom: J, juzTo: J, ready: true };
+  if (!hasData) return { mode: "needs_start", ord, step, juz: J };
+  if (cursor !== null && cursor >= O.jEnd[J]) return { mode: "review_exam", ord, step, juzFrom: J, juzTo: J, ready: true };
   if (cursor === null || cursor < O.jStart[J] - 1) cursor = O.jStart[J] - 1;
   if (cursor >= O.jStart[J]){
     const [sa, sb] = segmentOf(dir, O.order[cursor]);
@@ -1012,20 +1022,20 @@ function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
       if (touching.length >= 2 || pre){
         const doneDate = touching.map(l => l.date).sort().pop() || "";
         const reviewed = logs.some(l => (l.date||"") >= doneDate && reviewsCover(l.reviews, sa, sb));
-        if (!reviewed) return { mode: "review_surah", step, juz: J, segFrom: sa, segTo: sb };
+        if (!reviewed) return { mode: "review_surah", ord, step, juz: J, segFrom: sa, segTo: sb };
       }
     }
   }
   const fromPos = cursor + 1;
   let t = 0, toPos = fromPos;
   for (let i = fromPos; i <= O.jEnd[J]; i++){ t += ayahFrac(O.order[i]); toPos = i; if (t >= (minNew || 1) - 1e-9) break; }
-  return { mode: "memorize", step, juz: J, fromG: O.order[fromPos], suggestToG: O.order[toPos], juzEndG: O.order[O.jEnd[J]] };
+  return { mode: "memorize", ord, step, juz: J, fromG: O.order[fromPos], suggestToG: O.order[toPos], juzEndG: O.order[O.jEnd[J]], notStarted: fromPos === O.jStart[J] };
 }
 // صفحات مدى في ترتيب الحفظ (للحفظ الجديد)
-function memRangePages(dir, fromG, toG){ const O = memOrder(dir); let t = 0; for (let i = O.pos[fromG]; i <= O.pos[toG]; i++) t += ayahFrac(O.order[i]); return t; }
-function memRangeLabel(dir, fromG, toG){
-  const O = memOrder(dir), a = O.pos[fromG], b = O.pos[toG];
-  if (dir === "asc") return rangeLabel(fromG, toG);
+function memRangePages(dir, fromG, toG, ord){ const O = memOrder(dir, ord); let t = 0; for (let i = O.pos[fromG]; i <= O.pos[toG]; i++) t += ayahFrac(O.order[i]); return t; }
+function memRangeLabel(dir, fromG, toG, ord){
+  const O = memOrder(dir, ord), a = O.pos[fromG], b = O.pos[toG];
+  if (dir === "asc" && toG - fromG === b - a) return rangeLabel(fromG, toG);
   // من الناس: قد يشمل عدة سور تنازلياً
   const parts = []; let i = a;
   while (i <= b){ const s = surahOf(O.order[i]); let j = i; while (j + 1 <= b && surahOf(O.order[j+1]) === s) j++; parts.push(rangeLabel(O.order[i], O.order[j])); i = j + 1; }
@@ -2003,11 +2013,11 @@ function reviewsCover(reviews, a, b){
 function examReady(s){
   const passed = passedKeys(s.id), p = pathStatus(sDir(s), sStart(s), passed, s.pathFrom);
   if (p.hafiz) return { ok:true, hafiz:true, reason:"hafiz", missing:[] };
-  const step = p.steps[p.next], O = memOrder(sDir(s)), logs = logsOf(s.id), pr = progressOf(s.id);
+  const step = p.steps[p.next], pr = progressOf(s.id), O = memOrder(sDir(s), ordOf(pr)), logs = logsOf(s.id);
   const ms = S.exams.filter(e => e.studentId === s.id).map(examMs).filter(Boolean);
   let since = ms.length ? dayKey(gz(new Date(Math.max(...ms)))) : "";
   if (step.type === 1){
-    const J = step.start; let cursor = null, hasData = !!pr, doneDate = "";
+    const J = step.start; let cursor = null, hasData = hasStart(pr), doneDate = "";
     if (pr && pr.lastG) cursor = O.pos[pr.lastG];
     for (const l of logs){ const tg = l.newMem && l.newMem.toG; if (!tg) continue; hasData = true; const c = O.pos[tg];
       if (cursor === null || c > cursor) cursor = c; if (c >= O.jStart[J] && c <= O.jEnd[J] && (l.date||"") > doneDate) doneDate = l.date; }
@@ -2042,7 +2052,7 @@ function reviewLeft(st){
   const lp = lastPass.length ? dayKey(gz(new Date(Math.max(...lastPass)))) : "";
   let since = "";
   if (step.type === 1){
-    const O = memOrder(dir), end = O.jEnd[step.start];
+    const O = memOrder(dir, ordOf(progressOf(st.id))), end = O.jEnd[step.start];
     const logs = [...logsOf(st.id)].sort((a,b) => (a.date||"").localeCompare(b.date||""));
     const hit = logs.find(l => l.newMem && l.newMem.toG && O.pos[l.newMem.toG] >= end);
     since = hit ? hit.date : lp;
@@ -2234,7 +2244,7 @@ function examsTableHtml(sid){
 function surahOpts(sel){ return Q.names.map((n,i) => `<option value="${i+1}" ${i+1 === sel ? "selected" : ""}>${i+1}. ${n}</option>`).join(""); }
 function logEditor(sid, lg){
   const st = stuById(sid); if (!st) return;
-  const dir = sDir(st), O = memOrder(dir);
+  const dir = sDir(st), ORD = ordOf(progressOf(sid)), O = memOrder(dir, ORD);
   const isNew = !lg;
   let date = lg ? lg.date : dayKey(nowG());
   let reviews = lg ? JSON.parse(JSON.stringify(lg.reviews || [])) : [];
@@ -2284,7 +2294,7 @@ function logEditor(sid, lg){
     if (v("lgStatus") !== "recited" || !$("lgHasNew").checked) return null;
     const a = clampG(v("lgFs"), n("lgFa")), b = clampG(v("lgTs"), n("lgTa"));
     if (O.pos[a] > O.pos[b]) return { err: "«من» يجب أن تكون قبل «إلى» في ترتيب الحفظ" };
-    return { fromG: a, toG: b, pages: memRangePages(dir, a, b), label: memRangeLabel(dir, a, b) };
+    return { fromG: a, toG: b, pages: memRangePages(dir, a, b, ORD), label: memRangeLabel(dir, a, b, ORD) };
   }
   function buildLog(){
     const nr = newRange(); if (nr && nr.err){ toast(nr.err); return null; }
@@ -2331,9 +2341,77 @@ function logEditor(sid, lg){
   refresh();
 }
 
+// ===== تحديد آخر ما حفظه الطالب (وسورة البداية في الجزء) =====
+function lastMemDialog(sid){
+  const st = S.students.find(x => x.id === sid); if (!st) return;
+  const dir = sDir(st), pr = progressOf(sid), ord0 = ordOf(pr);
+  const p = studentPath(st);
+  if (p.hafiz){ toast("الطالب حافظ للقرآن"); return; }
+  const step = p.steps[p.next];
+  if (step.type !== 1){ toast(`الطالب في مرحلة المراجعة لاختبار ${stepLabel(step)} — لا يوجد حفظ جديد`); return; }
+  const J = step.start, key = juzOrdKey(dir, J), choice = juzHasChoice(dir, J);
+  const passedEx = S.exams.filter(e => e.studentId === sid && e.passed).sort((a,b) => examMs(b) - examMs(a))[0];
+  let start = juzStartOf(dir, J, ord0);
+  const d = dailyOf(st);
+  const cur0 = d.mode === "memorize" ? (d.notStarted ? null : prevInOrder(st, d.fromG)) : (d.mode === "review_surah" ? d.segTo : null);
+  const radio = (name, v, on, t) => `<label class="opt-r"><input type="radio" name="${name}" value="${v}" ${on ? "checked" : ""}> ${t}</label>`;
+  openDialog("تحديد آخر ما حفظه الطالب", `
+    <p class="muted">يُستخدم للطالب الذي حفظ خارج السجل بعد آخر اختبار، ويكمل التطبيق الخطة بعده تلقائيًا.</p>
+    <label>الجزء الحالي حسب الخطة<input disabled value="الجزء ${unitNum(dir, J)} (${esc(unitDesc(dir, J))})${passedEx ? ` — بعد اجتياز ${esc(juzLabel(passedEx).split(":")[0])}` : ""}" style="width:100%"></label>
+    ${choice ? `<div style="margin-top:12px"><b>سورة البداية في الجزء</b><div id="lmStart" style="margin-top:6px">${radio("lmS","last",start==="last",`البدء بسورة ${esc(juzStartSurah(dir, J, "last"))}`)}${radio("lmS","first",start==="first",`البدء بسورة ${esc(juzStartSurah(dir, J, "first"))}`)}</div></div>` : ""}
+    <div style="margin-top:12px"><b>آخر ما حفظه</b>
+      <div style="margin-top:6px">${radio("lmM","none",!cur0,"لم يبدأ الحفظ في هذا الجزء بعد")}${radio("lmM","ayah",!!cur0,"حفظ حتى:")}</div>
+      <div class="grid2" id="lmAyahBox"><label>السورة<select id="lmSu"></select></label><label>الآية<input type="number" id="lmAy" min="1"></label></div>
+    </div>
+    <div id="lmPrev" style="margin-top:14px;padding:10px 12px;border-radius:8px;background:var(--zebra);line-height:1.9"></div>
+    <div class="err" id="lmErr"></div>`, [
+    { text:"حفظ", cls:"primary", onClick: async () => {
+      const r = calc(); if (r.err){ $("lmErr").textContent = r.err; return false; }
+      const data = { halaqaId: st.halaqaId, lastG: r.lastG, fresh: r.lastG === null, setBy: "الإدارة" };
+      if (choice) data.juzOrder = { [key]: start };
+      await setDoc(doc(db,"progress",sid), data, { merge:true });
+      audit("تحديد آخر ما حفظه الطالب", st.name, "", null, `${choice ? `البداية: سورة ${juzStartSurah(dir, J, start)} · ` : ""}${r.lastG ? `آخر ما حفظه: ${posLabel(r.lastG)}` : `لم يبدأ الجزء ${unitNum(dir, J)}`}`);
+      toast("تم الحفظ"); setTimeout(() => studentRecord(sid), 300);
+    }}, { text:"إلغاء" }]);
+  const ordNow = () => ({ ...ord0, [key]: start });
+  const ayahsOf = su => { const [a, b] = unitRange(dir, J); const out = []; for (let g = Math.max(a, SURAH_START[su]); g <= Math.min(b, surahEnd(su)); g++) out.push(g); return out; };
+  function fillSurahs(){
+    const list = surahsOfJuz(dir, J, ordNow()), sel = cur0 && list.includes(surahOf(cur0)) ? surahOf(cur0) : list[0];
+    $("lmSu").innerHTML = list.map(x => `<option value="${x}" ${x === sel ? "selected" : ""}>سورة ${Q.names[x-1]}</option>`).join("");
+    const ay = ayahsOf(sel); $("lmAy").value = cur0 && surahOf(cur0) === sel ? ayahNo(cur0) : ayahNo(ay[ay.length - 1]);
+  }
+  function calc(){
+    const O = memOrder(dir, ordNow());
+    if (document.querySelector('input[name="lmM"]:checked').value === "none") return { lastG: null, O };
+    const su = +$("lmSu").value, ay = +$("lmAy").value, gs = ayahsOf(su);
+    const g = ay >= 1 && ay <= Q.counts[su-1] ? gidOf(su, ay) : -1;
+    if (!gs.includes(g)) return { err: `الآية من ${ayahNo(gs[0])} إلى ${ayahNo(gs[gs.length - 1])}` };
+    return { lastG: g, O };
+  }
+  function refresh(){
+    $("lmAyahBox").style.display = document.querySelector('input[name="lmM"]:checked').value === "ayah" ? "" : "none";
+    $("lmErr").textContent = "";
+    const r = calc();
+    if (r.err){ $("lmPrev").innerHTML = `<span class="closed">${esc(r.err)}</span>`; return; }
+    const O = r.O, js = O.jStart[J];
+    if (r.lastG === null){ $("lmPrev").innerHTML = `يبدأ الجزء ${unitNum(dir, J)} بسورة ${esc(Q.names[surahOf(O.order[js]) - 1])}<br><b>الموضع التالي: ${esc(posLabel(O.order[js]))}</b>`; return; }
+    const pages = memRangePages(dir, O.order[js], r.lastG, ordNow());
+    let after = null; try { after = dailyStatus(dir, sStart(st), passedKeys(sid), logsOf(sid), { ...(pr || {}), lastG: r.lastG, fresh: false, juzOrder: ordNow() }, minNewPages(), st.pathFrom); } catch(_){}
+    $("lmPrev").innerHTML = `المحفوظ من الجزء: ${esc(memRangeLabel(dir, O.order[js], r.lastG, ordNow()))} (${fp(pages)} صفحة)<br><b>المرحلة بعد الحفظ: ${esc(after ? dailyTitle(after) : "")}</b>`;
+  }
+  fillSurahs();
+  if ($("lmStart")) $("lmStart").addEventListener("change", e => { start = e.target.value; fillSurahs(); refresh(); });
+  document.querySelectorAll('input[name="lmM"]').forEach(x => x.addEventListener("change", refresh));
+  $("lmSu").addEventListener("change", () => { const ay = ayahsOf(+$("lmSu").value); $("lmAy").value = ayahNo(ay[ay.length - 1]); refresh(); });
+  $("lmAy").addEventListener("input", refresh);
+  refresh();
+}
+
 // ===== نقل طالب / انقطاع =====
+// الآية التي قبل g في ترتيب حفظ الطالب
+function prevInOrder(s, g){ const O = memOrder(sDir(s), ordOf(progressOf(s.id))); const p = O.pos[g]; return p > 0 ? O.order[p - 1] : g; }
 function cursorG(s){
-  const O = memOrder(sDir(s)), pr = progressOf(s.id);
+  const pr = progressOf(s.id), O = memOrder(sDir(s), ordOf(pr));
   let c = pr && pr.lastG ? O.pos[pr.lastG] : null;
   for (const l of logsOf(s.id)) if (l.newMem && l.newMem.toG){ const k = O.pos[l.newMem.toG]; if (c === null || k > c) c = k; }
   return c === null ? null : O.order[c];
@@ -3017,11 +3095,23 @@ function dailyRecordHtml(sid){
   const now = nowG(), wkStart = new Date(now); wkStart.setDate(now.getDate() - ((now.getDay() + 1) % 7));
   const mStart = dayKey(new Date(now.getFullYear(), now.getMonth(), 1)), wKey = dayKey(wkStart);
   const wk = aggLogs(ls.filter(l => l.date >= wKey)), mo = aggLogs(ls.filter(l => l.date >= mStart));
-  const start = pr ? (pr.lastG ? `آخر آية محفوظة عند البداية: ${posLabel(pr.lastG)}` : "بدأ الجزء من أوله") : "لم تُحدَّد";
+  const lastEx = S.exams.filter(e => e.studentId === sid).sort((a,b) => examMs(b) - examMs(a))[0];
+  const exD = lastEx && examDate(lastEx);
+  const exTxt = lastEx ? `${juzLabel(lastEx)} — ${resultText(lastEx)}${exD ? ` (${dayKey(exD)})` : ""}` : "لا يوجد";
+  const J = d.step && d.step.type === 1 ? (d.juz || d.step.start) : 0;
+  const inJuz = J && ["memorize","review_surah","needs_start"].includes(d.mode);
+  const choice = inJuz && juzHasChoice(sDir(st), J);
+  const memTxt = d.mode === "needs_start" ? "لم تُحدَّد"
+    : (d.mode === "memorize" && d.notStarted) ? `لم يبدأ الحفظ في الجزء ${unitNum(sDir(st), J)} بعد`
+    : d.mode === "memorize" ? posLabel(prevInOrder(st, d.fromG))
+    : d.mode === "review_surah" ? posLabel(d.segTo)
+    : (() => { const g = cursorG(st); return g ? posLabel(g) : "—"; })();
   return `<h2>السجل اليومي</h2>
     <table class="detail">
       <tr><td>الحالة الآن</td><td><b>${esc(dailyTitle(d))}</b></td></tr>
-      <tr><td>نقطة البداية</td><td>${esc(start)} <button class="small" data-setstart="${sid}">تعديل</button></td></tr>
+      <tr><td>آخر اختبار</td><td>${esc(exTxt)}</td></tr>
+      ${choice ? `<tr><td>بداية الجزء ${unitNum(sDir(st), J)}</td><td>سورة ${esc(juzStartSurah(sDir(st), J, juzStartOf(sDir(st), J, d.ord)))}${(d.ord || {})[juzOrdKey(sDir(st), J)] ? "" : ' <span class="muted">(افتراضي)</span>'} <button class="small" data-setstart="${sid}">تغيير</button></td></tr>` : ""}
+      <tr><td>آخر ما حفظه</td><td>${esc(memTxt)} <button class="small" data-setstart="${sid}">تحديد</button></td></tr>
       <tr><td>هذا الأسبوع</td><td>حفظ ${fp(wk.newPages)} ص · مراجعة ${fp(wk.reviewPages)} ص · حضور ${wk.attendance}% (${wk.sessions} جلسة)</td></tr>
       <tr><td>هذا الشهر</td><td>حفظ ${fp(mo.newPages)} ص · مراجعة ${fp(mo.reviewPages)} ص · حضور ${mo.attendance}% (${mo.sessions} جلسة)</td></tr>
     </table>
@@ -3052,24 +3142,7 @@ $("stuPage").addEventListener("click", async ev => {
     const lg = S.logs.find(x => x.id === b.dataset.dellog) || {};
     await deleteDoc(doc(db,"logs",b.dataset.dellog)); audit("حذف جلسة تسميع", lg.studentName, lg.date, logBrief(lg), null); toast("تم الحذف"); setTimeout(()=>studentRecord(sid), 300);
   }
-  if (b.dataset.setstart){
-    const st = S.students.find(x => x.id === b.dataset.setstart);
-    const opts = Array.from({length:114},(_,i)=>i+1).map(i=>`<option value="${i}">${i}. ${Q.names[i-1]}</option>`).join("");
-    openDialog("نقطة البداية في السجل اليومي", `
-      <p class="muted">آخر آية حفظها الطالب قبل بدء السجل اليومي. يكمل التطبيق بعدها تلقائياً.</p>
-      <label style="display:block;margin-bottom:8px"><input type="radio" name="spm" value="fresh" checked> بدأ الجزء الحالي من أوله</label>
-      <label style="display:block;margin-bottom:8px"><input type="radio" name="spm" value="ayah"> آخر آية حفظها:</label>
-      <div class="grid2"><label>السورة<select id="spS">${opts}</select></label><label>الآية<input type="number" id="spA" min="1" value="1"></label></div>
-      <div class="err" id="spErr"></div>`, [
-      { text:"حفظ", cls:"primary", onClick: async () => {
-        const mode = document.querySelector('input[name="spm"]:checked').value;
-        let lastG = null;
-        if (mode === "ayah"){ const s = +$("spS").value, a = +$("spA").value; if (!(a >= 1 && a <= Q.counts[s-1])){ $("spErr").textContent = `الآية من 1 إلى ${Q.counts[s-1]}`; return false; } lastG = gidOf(s, a); }
-        await setDoc(doc(db,"progress",st.id), { halaqaId: st.halaqaId, lastG, fresh: lastG === null, setBy: "الإدارة" }, { merge:true });
-        audit("تعديل نقطة البداية", st.name, lastG ? `آخر آية: ${posLabel(lastG)}` : "من أول الجزء");
-        toast("تم الحفظ"); setTimeout(()=>studentRecord(st.id), 300);
-      }}, { text:"إلغاء" }]);
-  }
+  if (b.dataset.setstart) lastMemDialog(b.dataset.setstart);
 });
 
 $("saveStallBtn").onclick = async () => {
