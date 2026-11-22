@@ -88,6 +88,12 @@ void main() {
   print(juzLabel(11, 12, type: 1));
 
   // ===== الجلسة القادمة =====
+  final k29 = juzOrdKey('desc', 29);
+  final sA = dailyStatus('desc', 30, {'1|30'}, [], {'lastG': null, 'fresh': true, 'juzOrder': {'$k29': 'first'}}, 1);
+  final sC = dailyStatus('desc', 30, {'1|30'}, [
+    {'date': '2026-11-21', 'status': 'recited', 'newMem': {'fromG': gidOf(67, 1), 'toG': gidOf(67, 30)}}
+  ], {'lastG': null, 'fresh': true, 'juzOrder': {'$k29': 'first'}}, 1);
+  expect(posLabel(sA.fromG!) == 'الملك 1' && posLabel(sC.fromG!) == 'القلم 1', 'start surah الملك works');
   final np = nextPlan('desc', sA, 7);
   print('next: ${np?.mem} | ${np?.review} | ${np?.short}');
   final np2 = nextPlan('desc', sC, 3);
