@@ -305,6 +305,17 @@
   .betatag{background:var(--goldb);color:#3B2C00}
   #tabs{padding:8px 10px 10px}
   #tabs .grp{color:#8DB4CF;padding:14px 12px 4px;font-size:11.5px;letter-spacing:.3px}
+  /* مجموعات القائمة القابلة للطي */
+  #tabs .grp.fold{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;user-select:none;border-radius:10px;padding:10px 12px 8px;margin-top:2px;font-size:13px;font-weight:800}
+  #tabs .grp.fold:hover{background:rgba(255,255,255,.06);color:#fff}
+  #tabs .grp .gend{display:flex;align-items:center;gap:8px}
+  #tabs .grp .gch{width:14px;height:14px;transition:transform .2s;opacity:.8}
+  #tabs .grp.open .gch{transform:rotate(-90deg)}
+  #tabs .grp.open .gsum{display:none}
+  #tabs .gbody{display:none;border-right:1px solid rgba(255,255,255,.13);margin-right:20px;padding-right:2px}
+  #tabs .gbody.open{display:block}
+  body.side-mini #tabs .gbody{display:block;border:0;margin:0;padding:0}
+  body.side-mini #tabs .grp .gend{display:none}
   #tabs button{border:0;border-radius:12px;padding:8px 12px;margin:1px 0;color:#DCEBF5;gap:10px;justify-content:flex-start}
   #tabs button .t{flex:1;text-align:right}
   #tabs button svg{width:19px;height:19px;flex:none;opacity:.85}
@@ -1234,6 +1245,7 @@ function go(tab, push = true){
   curTab = tab;
   const navTab = tab === "student" ? "students" : tab;
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x.dataset.tab === navTab));
+  if (typeof navGroupOf === "function"){ const gi = navGroupOf(navTab); if (gi >= 0) openNavGroup(gi, true); }
   document.querySelectorAll("main section").forEach(x => x.classList.add("hidden"));
   $("tab-"+tab).classList.remove("hidden");
   $("pageTitle").textContent = TAB_TITLE[tab] || "";
@@ -1262,6 +1274,40 @@ $("themeBtn").onclick = () => setTheme(!document.body.classList.contains("dark")
 function setMini(on){ document.body.classList.toggle("side-mini", on); try { localStorage.setItem("taqwaSideMini", on ? "1" : ""); } catch(_){} }
 try { if (localStorage.getItem("taqwaSideMini") === "1") setMini(true); } catch(_){}
 document.querySelectorAll("#tabs button").forEach(b => b.title = (b.querySelector(".t") || b).textContent.trim());
+// ===== مجموعات القائمة: تنطوي وتنفتح (واحدة مفتوحة في كل مرة) =====
+const NAV_GROUPS = [];
+(() => {
+  const chev = `<svg class="gch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>`;
+  document.querySelectorAll("#tabs .grp").forEach((g, i) => {
+    const body = document.createElement("div"); body.className = "gbody";
+    let n = g.nextElementSibling;
+    while (n && !n.classList.contains("grp")){ const nx = n.nextElementSibling; body.appendChild(n); n = nx; }
+    g.after(body);
+    const title = g.textContent.trim();
+    g.classList.add("fold"); g.innerHTML = `<span>${title}</span><span class="gend"><span class="badge gsum hidden"></span>${chev}</span>`;
+    g.onclick = () => openNavGroup(g.classList.contains("open") ? -1 : i, true);
+    NAV_GROUPS.push({ g, body });
+  });
+})();
+function openNavGroup(i, save){
+  NAV_GROUPS.forEach((x, k) => { x.g.classList.toggle("open", k === i); x.body.classList.toggle("open", k === i); });
+  if (save) try { localStorage.setItem("taqwaNavOpen", String(i)); } catch(_){}
+}
+function navGroupOf(tab){ return NAV_GROUPS.findIndex(x => x.body.querySelector(`button[data-tab="${tab}"]`)); }
+// مجموع التنبيهات على عنوان المجموعة المطوية
+function updateNavSums(){
+  for (const x of NAV_GROUPS){
+    let t = 0, red = false;
+    x.body.querySelectorAll(".badge:not(.hidden)").forEach(b => { const v = parseInt(b.textContent) || 0; t += v; if (v && b.classList.contains("red")) red = true; });
+    const sum = x.g.querySelector(".gsum");
+    if (sum.textContent !== String(t)) sum.textContent = t;
+    if (sum.classList.contains("hidden") !== !t) sum.classList.toggle("hidden", !t);
+    if (sum.classList.contains("red") !== red) sum.classList.toggle("red", red);
+  }
+}
+new MutationObserver(ms => { if (ms.some(m => !(m.target.closest && m.target.closest(".grp")) && !(m.target.parentElement && m.target.parentElement.closest(".grp")))) updateNavSums(); })
+  .observe($("tabs"), { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class"] });
+(() => { let i = -1; try { const v = localStorage.getItem("taqwaNavOpen"); if (v !== null) i = +v; } catch(_){} openNavGroup(i, false); updateNavSums(); })();
 $("menuBtn").onclick = () => { if (window.innerWidth > 900) setMini(!document.body.classList.contains("side-mini")); else document.body.classList.toggle("nav-open"); };
 $("shade").onclick = () => document.body.classList.remove("nav-open");
 document.addEventListener("click", ev => {
