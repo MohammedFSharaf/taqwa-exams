@@ -305,6 +305,8 @@
   .betatag{background:var(--goldb);color:#3B2C00}
   #tabs{padding:8px 10px 10px}
   #tabs .grp{color:#8DB4CF;padding:14px 12px 4px;font-size:11.5px;letter-spacing:.3px}
+  .note-warn{background:#FFF4DE;color:#8A5A00;border-radius:10px;padding:10px 14px;line-height:1.8}
+  body.dark .note-warn{background:#3A3115;color:#F0C64A}
   /* بطاقات الحلقات */
   .hq-card{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:var(--card);transition:box-shadow .15s,border-color .15s}
   .hq-card:hover{border-color:#9cc3df;box-shadow:0 6px 18px rgba(10,60,100,.08)}
@@ -478,6 +480,7 @@
       <button data-tab="path"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h8.5a1 1 0 010 7h-11a1 1 0 000 7H15" /><circle cx="18" cy="19" r="3" /><circle cx="6" cy="5" r="3" /></svg><span class="t">خطة المركز ومسار الطلاب</span></button>
       <div class="grp">الكادر والإعدادات</div>
       <button data-tab="sheikhs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v16" /><path d="m16 12 2 2 4-4" /><path d="M22 6V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2h4.001A2 2 0 0022 17v-1.344" /></svg><span class="t">المشايخ</span></button>
+      <button data-tab="sheikhstats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><polyline points="16 11 18 13 22 9" /></svg><span class="t">متابعة المشايخ</span></button>
       <button data-tab="examiners"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /><path d="M2 6h4" /><path d="M2 10h4" /><path d="M2 14h4" /><path d="M2 18h4" /><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /></svg><span class="t">المختبرين</span></button>
       <button data-tab="audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></svg><span class="t">سجل التعديلات</span></button>
       <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></svg><span class="t">الإعدادات</span></button>
@@ -723,6 +726,22 @@
     </section>
 
     <!-- المشايخ -->
+    <section id="tab-sheikhstats" class="hidden">
+      <div class="card">
+        <h2>متابعة المشايخ</h2>
+        <div class="row">
+          <label>الشهر<input type="month" id="skMonth"></label>
+          <button class="primary" id="skExcel">تصدير Excel</button>
+        </div>
+        <div id="skAlert" style="margin-top:10px"></div>
+        <table style="margin-top:10px">
+          <thead><tr><th>الشيخ</th><th>الحلقة</th><th>أيام التسجيل</th><th>طلاب سمّعوا</th><th>التسجيلات</th><th>صفحات الحفظ</th><th>صفحات المراجعة</th><th>حضور الحلقة</th><th>آخر تسجيل</th></tr></thead>
+          <tbody id="skBody"></tbody>
+        </table>
+        <p class="muted" style="font-size:12.5px;margin-top:8px">أيام التسجيل: الأيام التي سجّل فيها الشيخ من أيام الجلسات في الشهر حتى اليوم (بدون الإجازات). التسجيلات التي أدخلتها الإدارة لا تُحسب للشيخ.</p>
+      </div>
+    </section>
+
     <section id="tab-sheikhs" class="hidden">
       <div class="card">
         <h2>حسابات المشايخ</h2>
@@ -1273,6 +1292,7 @@ function go(tab, push = true){
   if (tab === "weekly") renderWeekly();
   if (tab === "ready") renderReadyPage();
   if (tab === "path") renderPathPage();
+  if (tab === "sheikhstats") renderSheikhStats();
   if (tab === "halaqat"){ renderHalaqat(); if (curHalaqa) $("pageTitle").textContent = halaqaName(curHalaqa) || TAB_TITLE.halaqat; }
   window.scrollTo(0, 0);
 }
@@ -1621,6 +1641,7 @@ function confirmDlg(msg, onYes){
 function renderAll(){
   fillSelects();
   renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers(); renderRetests(); renderStats(); renderDaily(); renderSheikhs();
+  if (curTab === "sheikhstats") renderSheikhStats();
   renderPermits(); renderBadges();
   if (curTab === "home") renderHome();
   if (curTab === "student") renderStudentPage();
@@ -2919,6 +2940,61 @@ $("importBtn").onclick = async () => {
 };
 
 // ===== الحلقات =====
+// ===== متابعة المشايخ: نشاط كل شيخ في الشهر =====
+function sessionDatesOfMonth(mk, halaqaId){
+  // أيام الجلسات في الشهر حتى اليوم (بدون الإجازات)
+  const [y, m] = mk.split("-").map(Number), tk = dayKey(nowG()), out = [], days = sessionDays();
+  for (let d = 1; d <= 31; d++){
+    const dt = new Date(y, m - 1, d, 12); if (dt.getMonth() !== m - 1) break;
+    const k = dayKey(dt); if (k > tk) break;
+    if (days.includes(dt.getDay()) && !isHoliday(k, halaqaId)) out.push(k);
+  }
+  return out;
+}
+function sheikhStats(mk){
+  const tk = dayKey(nowG());
+  return sortAr([...S.sheikhs]).map(sh => {
+    const L = S.logs.filter(l => l.sheikhId === sh.id && (l.date || "").startsWith(mk));
+    const dates = [...new Set(L.map(l => l.date))].sort();
+    const sess = sessionDatesOfMonth(mk, sh.halaqaId);
+    const missed = sess.filter(d => !dates.includes(d));
+    const rec = L.filter(l => l.status === "recited");
+    const studs = new Set(rec.map(l => l.studentId));
+    // حضور الحلقة في الشهر (كل التسجيلات، من أي شيخ)
+    const H = aggLogs(S.logs.filter(l => l.halaqaId === sh.halaqaId && (l.date || "").startsWith(mk)));
+    const allSh = S.logs.filter(l => l.sheikhId === sh.id).map(l => l.date).sort();
+    const last = allSh.length ? allSh[allSh.length - 1] : "";
+    const idle = last ? Math.round((new Date(tk + "T12:00:00") - new Date(last + "T12:00:00")) / 86400000) : null;
+    // جلسات فاتته منذ آخر تسجيل (آخر أسبوعين، قبل اليوم)
+    let gap = 0;
+    for (let k = 1; k <= 14; k++){ const dt = nowG(); dt.setHours(12,0,0,0); dt.setDate(dt.getDate() - k); const dk = dayKey(dt);
+      if (last && dk <= last) break; if (sessionDays().includes(dt.getDay()) && !isHoliday(dk, sh.halaqaId)) gap++; }
+    return { sh, hq: halaqaName(sh.halaqaId), days: dates.length, sess: sess.length, missed, logs: L.length, studs: studs.size,
+      np: rec.reduce((t, l) => t + (l.newPages || 0), 0), rp: rec.reduce((t, l) => t + (l.reviewPages || 0), 0),
+      att: H.sessions ? H.attendance : null, last, idle, gap };
+  });
+}
+function renderSheikhStats(){
+  if (!$("skMonth").value) $("skMonth").value = dayKey(nowG()).slice(0, 7);
+  const mk = $("skMonth").value, R = sheikhStats(mk), cur = mk === dayKey(nowG()).slice(0, 7);
+  const lateList = cur ? R.filter(r => r.gap >= 2) : [];
+  $("skAlert").innerHTML = lateList.length ? `<div class="note-warn">فاتهم التسجيل في جلستين أو أكثر: ${lateList.map(r => `<b>${esc(r.sh.name)}</b> (${r.last ? `${r.gap} جلسات منذ ${esc(r.last)}` : "لم يسجّل أبدًا"})`).join("، ")}</div>` : "";
+  $("skBody").innerHTML = R.length ? R.map(r => {
+    const pct = r.sess ? Math.round(r.days * 100 / r.sess) : null;
+    const cls = pct === null ? "" : pct >= 90 ? "p-ok" : pct >= 70 ? "p-wa" : "p-no";
+    return `<tr><td><b>${esc(r.sh.name)}</b></td><td>${esc(r.hq) || "—"}</td>
+      <td>${r.days} من ${r.sess} ${pct === null ? "" : pill(cls, pct + "%")}${r.missed.length && r.missed.length <= 4 ? `<div class="muted" style="font-size:12px">فاته: ${r.missed.map(d => d.slice(5)).join("، ")}</div>` : ""}</td>
+      <td>${r.studs}</td><td>${r.logs}</td><td>${fp(r.np)}</td><td>${fp(r.rp)}</td><td>${r.att === null ? "—" : r.att + "%"}</td>
+      <td>${r.last ? esc(r.last) + (r.idle ? ` <span class="muted">(قبل ${r.idle} ${r.idle === 1 ? "يوم" : r.idle === 2 ? "يومين" : "أيام"})</span>` : ' <span class="muted">(اليوم)</span>') : '<span class="muted">لم يسجّل</span>'}</td></tr>`;
+  }).join("") : `<tr><td colspan="9" class="empty">لا توجد حسابات مشايخ</td></tr>`;
+}
+$("skMonth").addEventListener("input", renderSheikhStats);
+$("skExcel").onclick = () => {
+  const mk = $("skMonth").value, wb = newBook();
+  addSheet(wb, sheikhStats(mk).map(r => ({ "الشيخ": r.sh.name, "الحلقة": r.hq, "أيام التسجيل": r.days, "أيام الجلسات": r.sess, "طلاب سمّعوا": r.studs, "التسجيلات": r.logs,
+    "صفحات الحفظ": +fp(r.np), "صفحات المراجعة": +fp(r.rp), "حضور الحلقة %": r.att === null ? "" : r.att, "آخر تسجيل": r.last })), "متابعة المشايخ");
+  XLSX.writeFile(wb, `متابعة-المشايخ-${mk}.xlsx`);
+};
 // ===== الحلقات: بطاقة لكل حلقة، وصفحة لكل حلقة بطلابها =====
 let curHalaqa = null;
 function openHalaqa(id){ curHalaqa = id; go("halaqat"); }
