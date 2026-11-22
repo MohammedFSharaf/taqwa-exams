@@ -22,7 +22,7 @@ class _GateScreenState extends State<GateScreen> {
   bool _noNet = false;
   String? _error;
   String _role = Repo.I.lastRole ?? 'examiner';
-  bool _bioAvail = false, _bioWant = true, _showPass = false;
+  bool _bioAvail = false, _bioWant = false, _showPass = false;
 
   @override
   void initState() {

@@ -27,7 +27,7 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
   final _pin = TextEditingController();
   String? _error;
 
-  bool _autoBio = false, _bioAvail = false, _bioWant = true, _showPin = false;
+  bool _autoBio = false, _bioAvail = false, _bioWant = false, _showPin = false;
 
   @override
   void initState() {
