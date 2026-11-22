@@ -463,42 +463,27 @@ String reviewDeadlineText(int left, int total) {
 // ===================== المطلوب للجلسة القادمة =====================
 class NextPlan {
   final String mem; // الحفظ
-  final String review; // المراجعة
+  final String review; // المراجعة ('' = لا مراجعة مطلوبة)
   final String short; // سطر مختصر للقائمة
   const NextPlan(this.mem, this.review, this.short);
 }
 
 /// المطلوب للجلسة القادمة من حالة الطالب بعد تسجيل اليوم
 NextPlan? nextPlan(String dir, DailyStatus n, double minReview) {
-  final o = memOrder(dir, n.ord);
-  String lastMem(int cursor) {
-    if (cursor < 0) return '';
-    final want = minReview > 0 ? minReview : 2.0;
-    var t = 0.0, i = cursor;
-    for (; i >= 0; i--) {
-      t += ayahFrac(o.order[i]);
-      if (t >= want - 1e-9) break;
-    }
-    if (i < 0) i = 0;
-    final lab = memRangeLabel(dir, o.order[i], o.order[cursor], n.ord);
-    final txt = lab.split('، ').length > 2 ? 'من ${posLabel(o.order[i])} إلى ${posLabel(o.order[cursor])}' : lab;
-    return 'آخر ما حفظه — $txt (${fmtPages(t)} ص)';
-  }
-
   switch (n.mode) {
     case 'memorize':
       if (n.fromG == null || n.suggestToG == null) return null;
       final m = '${memRangeLabel(dir, n.fromG!, n.suggestToG!, n.ord)} '
           '(${fmtPages(memRangePages(dir, n.fromG!, n.suggestToG!, n.ord))} ص)';
-      final r = lastMem(o.pos[n.fromG!] - 1);
-      return NextPlan(m, r.isEmpty ? '—' : r, 'القادم: ${memRangeLabel(dir, n.fromG!, n.suggestToG!, n.ord)}');
+      // مرحلة الحفظ: لا مراجعة مطلوبة حسب الخطة
+      return NextPlan(m, '', 'القادم: ${memRangeLabel(dir, n.fromG!, n.suggestToG!, n.ord)}');
     case 'review_surah':
       final sur = rangeLabel(n.segFrom!, n.segTo!);
       return NextPlan('بعد مراجعة السورة كاملة', '$sur كاملة (إجباري)', 'القادم: مراجعة $sur كاملة');
     case 'review_exam':
       return NextPlan('لا حفظ جديد — مرحلة المراجعة للاختبار', n.title, 'القادم: ${n.title}');
     case 'hafiz':
-      return const NextPlan('—', 'مراجعة', 'حافظ — مراجعة');
+      return const NextPlan('', 'مراجعة', 'حافظ — مراجعة');
     default:
       return null;
   }
@@ -512,6 +497,6 @@ List<int>? splitQuestionSeg(String dir, int fromG, int toG, double minNew, [JuzO
   final sa = seg[0], sb = seg[1];
   if (toG != sb) return null; // لا يُكمل السورة
   if (o.pos[fromG] > o.pos[sa]) return null; // جزء منها قبل اليوم (يُعالَج تلقائياً)
-  if (pagesOfRange(sa, sb) <= minNew + 1e-9) return null; // سورة قصيرة
+  if (pagesOfRange(sa, sb) <= 1 + 1e-9) return null; // سورة قصيرة (صفحة أو أقل)
   return seg;
 }
