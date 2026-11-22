@@ -1002,11 +1002,20 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   // سورة البداية في الجزء
   String? _startSel;
   bool _editStart = false;
+  // كيف سمّع السورة: true على دفعات، false متصلة، null لم يُحدَّد
+  bool? _split;
 
   String get _dir => widget.student.pathDir;
   DailyStatus get _st => _c.st;
   MemOrder get _o => memOrder(_dir, _st.ord);
   JuzOrd get _ord => _st.ord;
+
+  /// السورة التي يُسأل عنها «كيف سمّعها؟» (إن وُجدت)
+  List<int>? get _splitSeg {
+    final withNew = _att == 'recited' && _hasNew && _canNew && _from != null && _to != null;
+    if (!withNew) return null;
+    return splitQuestionSeg(_dir, _from!, _to!, widget.minNew, _ord);
+  }
 
   bool get _juzChoice => _st.juz > 0 && juzHasChoice(_dir, _st.juz) && _st.step?.type == 1;
   bool get _startChosen => _ord.containsKey(juzOrdKey(_dir, _st.juz));
@@ -1101,6 +1110,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
         _hasNew = true;
         _from = (nm['fromG'] as num).toInt();
         _to = (nm['toG'] as num).toInt();
+        if (nm['split'] is bool) _split = nm['split'] as bool;
       }
     }
     if (_from == null && _st.mode == 'memorize' && _st.fromG != null) {
@@ -1370,11 +1380,24 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     final recited = _att == 'recited';
     final withNew = recited && _hasNew && _canNew && _from != null && _to != null;
     final np = withNew ? _newPages : 0.0;
+    final sq = _splitSeg;
+    if (sq != null && _split == null) {
+      haptic();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('حدّد كيف سمّع ${rangeLabel(sq[0], sq[1])}: متصلة أو على دفعات')));
+      return;
+    }
     Repo.I.saveLog(widget.student.id, widget.date, prev: _c.todayLog, {
       ..._c.base,
       'status': _att,
       'newMem': withNew
-          ? {'fromG': _from, 'toG': _to, 'pages': np, 'label': memRangeLabel(_dir, _from!, _to!, _ord)}
+          ? {
+              'fromG': _from,
+              'toG': _to,
+              'pages': np,
+              'label': memRangeLabel(_dir, _from!, _to!, _ord),
+              if (sq != null) 'split': _split,
+            }
           : null,
       'reviews': recited ? _reviews : <Map<String, dynamic>>[],
       'newPages': np,
@@ -1518,6 +1541,50 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     );
   }
 
+  /// سؤال «كيف سمّع السورة؟»
+  Widget _splitQuestion(List<int> seg) {
+    final fg = context.goldFg;
+    Widget opt(String t, bool v) {
+      final on = _split == v;
+      return Expanded(
+        child: Material(
+          color: on ? fg : context.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(color: on ? fg : fg.withOpacity(0.35)),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () {
+              haptic();
+              setState(() => _split = v);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              child: Text(t,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: on ? context.surface : fg, fontWeight: FontWeight.w800, fontSize: 13.5)),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: context.goldBg, borderRadius: BorderRadius.circular(12)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('كيف سمّع ${rangeLabel(seg[0], seg[1])}؟', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 14.5)),
+        const SizedBox(height: 8),
+        Row(children: [opt('متصلة في جلسة واحدة', false), const SizedBox(width: 6), opt('على دفعات', true)]),
+        const SizedBox(height: 6),
+        Text('على دفعات ← يُطلب تسميعها كاملة في الجلسة القادمة قبل الانتقال',
+            style: TextStyle(color: fg, fontSize: 12, height: 1.5)),
+      ]),
+    );
+  }
+
   // ---------- المطلوب للجلسة القادمة ----------
   Widget _nextCard() {
     final fn = _c.next;
@@ -1527,7 +1594,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     final n = fn({
       'date': widget.date,
       'status': _att,
-      'newMem': withNew ? {'fromG': _from, 'toG': _to} : null,
+      'newMem': withNew ? {'fromG': _from, 'toG': _to, 'split': _split == true} : null,
       'reviews': recited ? _reviews : <Map<String, dynamic>>[],
     });
     final p = nextPlan(_dir, n, widget.minReview);
@@ -1832,6 +1899,8 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       ),
       if (newAction != null) newAction,
     ]));
+    final sq = _splitSeg;
+    if (sq != null) rows.add(_splitQuestion(sq));
     rows.add(Divider(height: 26, color: context.line));
     // المراجعة
     final sugg = _suggestedReview;
