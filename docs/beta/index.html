@@ -305,6 +305,22 @@
   .betatag{background:var(--goldb);color:#3B2C00}
   #tabs{padding:8px 10px 10px}
   #tabs .grp{color:#8DB4CF;padding:14px 12px 4px;font-size:11.5px;letter-spacing:.3px}
+  /* بطاقات الحلقات */
+  .hq-card{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:var(--card);transition:box-shadow .15s,border-color .15s}
+  .hq-card:hover{border-color:#9cc3df;box-shadow:0 6px 18px rgba(10,60,100,.08)}
+  .hq-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .hq-name{font-size:16px;color:var(--navy, #0B3F63)}
+  body.dark .hq-name{color:#e6f0f7}
+  .hq-cnt{display:inline-block;background:#E6F2FA;color:#0B3F63;border-radius:10px;padding:0 10px;font-size:12.5px;font-weight:700;margin-inline-start:6px}
+  .hq-go{color:#0A86C4;font-weight:700;font-size:13px;white-space:nowrap}
+  .hq-people{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:10px}
+  .hq-people .av{margin-left:0}
+  .hq-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+  .hq-kpis div{background:var(--zebra);border-radius:12px;padding:10px;text-align:center}
+  .hq-kpis b{display:block;font-size:20px;color:#0B3F63}
+  body.dark .hq-kpis b{color:#e6f0f7}
+  .hq-kpis span{color:var(--muted);font-size:12.5px}
+  @media (max-width:700px){ .hq-kpis{grid-template-columns:repeat(2,1fr)} }
   /* مجموعات القائمة القابلة للطي */
   #tabs .grp.fold{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;user-select:none;border-radius:10px;padding:10px 12px 8px;margin-top:2px;font-size:13px;font-weight:800}
   #tabs .grp.fold:hover{background:rgba(255,255,255,.06);color:#fff}
@@ -774,16 +790,14 @@
 
     <!-- الحلقات -->
     <section id="tab-halaqat" class="hidden">
-      <div class="card">
+      <div id="halaqaView" class="hidden"></div>
+      <div class="card" id="halaqatList">
         <h2>الحلقات</h2>
         <div class="row" style="margin-bottom:12px">
           <label>اسم الحلقة<input id="newHalaqaName" style="min-width:260px"></label>
           <button class="primary" id="addHalaqaBtn">إضافة</button>
         </div>
-        <table>
-          <thead><tr><th>الحلقة</th><th>عدد الطلاب</th><th>عدد الاختبارات</th><th></th></tr></thead>
-          <tbody id="halaqatBody"></tbody>
-        </table>
+        <div id="halaqatCards"></div>
       </div>
     </section>
 
@@ -1237,7 +1251,7 @@ let curTab = "home", curStudent = null;
 const TAB_TITLE = {};
 document.querySelectorAll("#tabs button").forEach(b => {
   TAB_TITLE[b.dataset.tab] = (b.querySelector('.t') || b).textContent.trim();
-  b.onclick = () => go(b.dataset.tab);
+  b.onclick = () => { if (b.dataset.tab === "halaqat") curHalaqa = null; go(b.dataset.tab); };
 });
 TAB_TITLE.student = "ملف الطالب";
 function go(tab, push = true){
@@ -1250,7 +1264,7 @@ function go(tab, push = true){
   $("tab-"+tab).classList.remove("hidden");
   $("pageTitle").textContent = TAB_TITLE[tab] || "";
   document.body.classList.remove("nav-open");
-  const hash = tab === "student" ? "#student/" + curStudent : "#" + tab;
+  const hash = tab === "student" ? "#student/" + curStudent : (tab === "halaqat" && curHalaqa ? "#halaqa/" + curHalaqa : "#" + tab);
   if (push && location.hash !== hash) history.pushState(null, "", hash);
   if (tab === "home") renderHome();
   if (tab === "student") renderStudentPage();
@@ -1259,12 +1273,14 @@ function go(tab, push = true){
   if (tab === "weekly") renderWeekly();
   if (tab === "ready") renderReadyPage();
   if (tab === "path") renderPathPage();
+  if (tab === "halaqat"){ renderHalaqat(); if (curHalaqa) $("pageTitle").textContent = halaqaName(curHalaqa) || TAB_TITLE.halaqat; }
   window.scrollTo(0, 0);
 }
 function route(){
   const h = decodeURIComponent(location.hash.slice(1));
   if (h.startsWith("student/")){ curStudent = h.slice(8); go("student", false); }
-  else go(h || "home", false);
+  else if (h.startsWith("halaqa/")){ curHalaqa = h.slice(7); go("halaqat", false); }
+  else { if (h === "halaqat") curHalaqa = null; go(h || "home", false); }
 }
 window.addEventListener("popstate", route);
 const ICON_SUN = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>`, ICON_MOON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg>`;
@@ -2903,13 +2919,51 @@ $("importBtn").onclick = async () => {
 };
 
 // ===== الحلقات =====
+// ===== الحلقات: بطاقة لكل حلقة، وصفحة لكل حلقة بطلابها =====
+let curHalaqa = null;
+function openHalaqa(id){ curHalaqa = id; go("halaqat"); }
+function halaqaSheikhs(id){ return S.sheikhs.filter(x => x.halaqaId === id).map(x => x.name); }
 function renderHalaqat(){
-  $("halaqatBody").innerHTML = sortAr([...S.halaqat]).map(h => `
-    <tr><td>${esc(h.name)}</td>
-    <td>${S.students.filter(s=>s.halaqaId===h.id && isActive(s)).length}</td>
-    <td>${S.exams.filter(e=>e.halaqaId===h.id).length}</td>
-    <td class="actions"><button class="small" data-edit="${h.id}">تعديل الاسم</button>
-    <button class="small danger" data-del="${h.id}">حذف</button></td></tr>`).join("");
+  const h = curHalaqa && S.halaqat.find(x => x.id === curHalaqa);
+  $("halaqatList").classList.toggle("hidden", !!h);
+  $("halaqaView").classList.toggle("hidden", !h);
+  if (h){ $("halaqaView").innerHTML = halaqaViewHtml(h); return; }
+  const list = sortAr([...S.halaqat]);
+  $("halaqatCards").innerHTML = list.length ? list.map(h => {
+    const studs = sortAr(S.students.filter(s => s.halaqaId === h.id && isActive(s)));
+    const sh = halaqaSheikhs(h.id);
+    const shown = studs.slice(0, 5);
+    return `<div class="hq-card" data-hqopen="${h.id}">
+      <div class="hq-top"><div><b class="hq-name">${esc(h.name)}</b> <span class="hq-cnt">${studs.length === 2 ? "طالبان" : `${studs.length} ${studs.length >= 3 && studs.length <= 10 ? "طلاب" : "طالب"}`}</span></div><a class="hq-go">عرض الطلاب ←</a></div>
+      <div class="muted" style="margin-top:4px">${sh.length ? "المشايخ: " + esc(sh.join("، ")) : "لا يوجد شيخ مسجّل"}</div>
+      ${studs.length ? `<div class="hq-people">${shown.map(s => avatarOf(s.id, s.name)).join("")}<span class="muted">${esc(shown.map(s => s.name.split(" ")[0]).join("، "))}${studs.length > 5 ? ` و${studs.length - 5} آخرين` : ""}</span></div>` : ""}
+    </div>`; }).join("") : `<div class="empty">لا توجد حلقات بعد</div>`;
+}
+function halaqaViewHtml(h){
+  const studs = sortAr(S.students.filter(s => s.halaqaId === h.id && isActive(s)));
+  const sh = halaqaSheikhs(h.id), tk = dayKey(nowG());
+  const [from, to] = wkRange(0);
+  const wl = S.logs.filter(l => l.halaqaId === h.id && l.date >= from && l.date <= to);
+  const todayLogs = S.logs.filter(l => l.halaqaId === h.id && l.date === tk);
+  const recited = todayLogs.filter(l => l.status === "recited").length;
+  const ready = studs.filter(s => { try { const r = examReady(s); return r.ok && !r.hafiz; } catch(_){ return false; } }).length;
+  const rows = studs.map((s, i) => {
+    let d = null; try { d = dailyOf(s); } catch(_){}
+    const l = todayLogs.find(x => x.studentId === s.id);
+    const st = l ? (l.status === "recited" ? pill("p-ok", "سمّع") : l.status === "excused" ? pill("p-wa", ST_TEXT[l.status]) : pill("p-no", ST_TEXT[l.status] || "")) : pill("p-wa", "لم يُسجَّل");
+    const ex = S.exams.filter(e => e.studentId === s.id).sort((a,b) => examMs(b) - examMs(a))[0];
+    return `<tr><td>${i + 1}</td><td>${nameLink(s.id, s.name, true)}</td><td>${d ? esc(dailyTitle(d)) : ""}</td><td>${st}</td>
+      <td>${ex ? `${esc(juzLabel(ex).split(":")[0])} ${ex.passed ? "✓" : `<span class="closed">(${esc(resultText(ex))})</span>`}` : '<span class="muted">—</span>'}</td></tr>`;
+  }).join("");
+  return `<div class="card">
+    <div class="crumb"><a data-hqback="1">→ كل الحلقات</a></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div><h2 style="margin:4px 0">${esc(h.name)}</h2><div class="muted">${sh.length ? "المشايخ: " + esc(sh.join("، ")) : "لا يوجد شيخ مسجّل"}</div></div>
+      <div class="row"><button class="small" data-hqrep="${h.id}">التقرير الأسبوعي</button> <button class="small" data-edit="${h.id}">تعديل الاسم</button> <button class="small danger" data-del="${h.id}">حذف</button></div>
+    </div>
+    <div class="hq-kpis"><div><b>${studs.length}</b><span>طالب</span></div><div><b>${recited}</b><span>سمّعوا اليوم</span></div><div><b>${fp(wl.reduce((t, l) => t + (l.status === "recited" ? l.newPages || 0 : 0), 0))} ص</b><span>حفظ هذا الأسبوع</span></div><div><b>${ready}</b><span>جاهزون للاختبار</span></div></div>
+    ${studs.length ? `<table><thead><tr><th>#</th><th>الطالب</th><th>المرحلة الآن</th><th>اليوم</th><th>آخر اختبار</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty">لا يوجد طلاب في هذه الحلقة</div>`}
+  </div>`;
 }
 $("addHalaqaBtn").onclick = async () => {
   const name = $("newHalaqaName").value.trim(); if (!name) return;
@@ -2918,8 +2972,12 @@ $("addHalaqaBtn").onclick = async () => {
   $("newHalaqaName").value = ""; toast("تمت الإضافة");
 };
 $("newHalaqaName").addEventListener("keydown", e => { if (e.key==="Enter") $("addHalaqaBtn").click(); });
-$("halaqatBody").addEventListener("click", ev => {
-  const b = ev.target.closest("button"); if (!b) return;
+$("tab-halaqat").addEventListener("click", ev => {
+  if (ev.target.closest("[data-rec]")) return;
+  const c = ev.target.closest("[data-hqopen]"); if (c){ openHalaqa(c.dataset.hqopen); return; }
+  if (ev.target.closest("[data-hqback]")){ ev.preventDefault(); curHalaqa = null; go("halaqat"); return; }
+  const rp = ev.target.closest("[data-hqrep]"); if (rp){ printDoc(`التقرير الأسبوعي للحلقة — ${wkLabel(0)}`, wkHalaqaHtml(rp.dataset.hqrep, 0)); return; }
+  const b = ev.target.closest("button[data-edit],button[data-del]"); if (!b) return;
   const h = S.halaqat.find(x=>x.id===(b.dataset.edit||b.dataset.del));
   if (b.dataset.edit){
     openDialog("تعديل اسم الحلقة", `<input id="ehName" style="width:100%" value="${esc(h.name)}">`, [
@@ -2933,7 +2991,7 @@ $("halaqatBody").addEventListener("click", ev => {
   }
   if (b.dataset.del){
     if (S.students.some(s=>s.halaqaId===h.id)){ toast("لا يمكن حذف حلقة فيها طلاب"); return; }
-    confirmDlg(`حذف حلقة ${h.name}؟`, async () => { await deleteDoc(doc(db,"halaqat",h.id)); audit("حذف حلقة", h.name); toast("تم الحذف"); });
+    confirmDlg(`حذف حلقة ${h.name}؟`, async () => { await deleteDoc(doc(db,"halaqat",h.id)); audit("حذف حلقة", h.name); toast("تم الحذف"); curHalaqa = null; go("halaqat"); });
   }
 });
 
