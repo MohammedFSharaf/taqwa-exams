@@ -998,6 +998,12 @@ function memOrder(dir, ord){
   for (const u of units){ let mn = 1e9, mx = -1; for (let g = u.a; g <= u.b; g++){ mn = Math.min(mn, pos[g]); mx = Math.max(mx, pos[g]); } for (let n = u.n1; n <= u.n2; n++){ jStart[n] = mn; jEnd[n] = mx; } }
   return (_ORDER[key] = { order, pos, jStart, jEnd });
 }
+// هل يُسأل «كيف سمّع السورة؟»: الحفظ يُكمل سورة كاملة أكبر من حد الحفظ اليومي
+function splitQuestionSeg(dir, fromG, toG, minNew, ord){
+  const O = memOrder(dir, ord), [sa, sb] = segmentOf(dir, toG);
+  if (toG !== sb || O.pos[fromG] > O.pos[sa] || pagesOfRange(sa, sb) <= minNew + 1e-9) return null;
+  return [sa, sb];
+}
 function hasStart(pr){ return !!pr && ("lastG" in pr || "fresh" in pr); }
 // حالة الطالب في السجل اليومي
 function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
@@ -1019,7 +1025,8 @@ function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
       const ps = O.pos[sa], pe = O.pos[sb];
       const touching = logs.filter(l => l.newMem && O.pos[l.newMem.fromG] <= pe && O.pos[l.newMem.toG] >= ps);
       const lg = progress && progress.lastG, pre = !!lg && O.pos[lg] >= ps && O.pos[lg] <= pe;
-      if (touching.length >= 2 || pre){
+      const split = touching.some(l => l.newMem && l.newMem.split === true);
+      if (touching.length >= 2 || pre || split){
         const doneDate = touching.map(l => l.date).sort().pop() || "";
         const reviewed = logs.some(l => (l.date||"") >= doneDate && reviewsCover(l.reviews, sa, sb));
         if (!reviewed) return { mode: "review_surah", ord, step, juz: J, segFrom: sa, segTo: sb };
@@ -2265,6 +2272,12 @@ function logEditor(sid, lg){
         <label>إلى سورة<select id="lgTs">${surahOpts(ts)}</select></label><label>آية<input type="number" min="1" id="lgTa" value="${ta}"></label>
       </div>
       <div class="muted" id="lgNewInfo" style="margin-top:4px"></div>
+      <div id="lgSplitBox" style="display:none;margin-top:8px;padding:10px;border-radius:8px;background:#FFF4DE;color:#8A5A00">
+        <b id="lgSplitQ"></b>
+        <div style="display:flex;gap:14px;margin-top:6px"><label style="flex-direction:row;gap:6px;font-weight:400"><input type="radio" name="lgSplit" value="0" ${nm && nm.split === false ? "checked" : ""}> متصلة في جلسة واحدة</label>
+        <label style="flex-direction:row;gap:6px;font-weight:400"><input type="radio" name="lgSplit" value="1" ${nm && nm.split === true ? "checked" : ""}> على دفعات</label></div>
+        <div style="font-size:12px;margin-top:4px">على دفعات ← يُطلب تسميعها كاملة في الجلسة القادمة قبل الانتقال</div>
+      </div>
       <h3 style="margin:16px 0 6px">المراجعة</h3>
       <div id="lgRevList"></div>
       <div class="row" style="margin-top:8px;align-items:flex-end">
@@ -2294,16 +2307,19 @@ function logEditor(sid, lg){
     if (v("lgStatus") !== "recited" || !$("lgHasNew").checked) return null;
     const a = clampG(v("lgFs"), n("lgFa")), b = clampG(v("lgTs"), n("lgTa"));
     if (O.pos[a] > O.pos[b]) return { err: "«من» يجب أن تكون قبل «إلى» في ترتيب الحفظ" };
-    return { fromG: a, toG: b, pages: memRangePages(dir, a, b, ORD), label: memRangeLabel(dir, a, b, ORD) };
+    const sq = splitQuestionSeg(dir, a, b, minNewPages(), ORD);
+    const ch = document.querySelector('input[name="lgSplit"]:checked');
+    return { fromG: a, toG: b, pages: memRangePages(dir, a, b, ORD), label: memRangeLabel(dir, a, b, ORD), sq, split: sq && ch ? ch.value === "1" : null };
   }
   function buildLog(){
     const nr = newRange(); if (nr && nr.err){ toast(nr.err); return null; }
+    if (nr && nr.sq && nr.split === null){ toast(`حدّد كيف سمّع ${rangeLabel(nr.sq[0], nr.sq[1])}: متصلة أو على دفعات`); return null; }
     const status = v("lgStatus"), rec = status === "recited";
     const rv = rec ? reviews : [];
     const base = lg ? { ...lg } : { studentId: sid, studentName: st.name, halaqaId: st.halaqaId, date, sheikhId: null, sheikhName: "الإدارة",
       extraDay: !sessionDays().includes(new Date(date + "T12:00:00").getDay()), holiday: isHoliday(date, st.halaqaId), dir };
     delete base.id;
-    return { ...base, status, newMem: nr ? { fromG: nr.fromG, toG: nr.toG, pages: nr.pages, label: nr.label } : null,
+    return { ...base, status, newMem: nr ? { fromG: nr.fromG, toG: nr.toG, pages: nr.pages, label: nr.label, ...(nr.sq ? { split: nr.split } : {}) } : null,
       reviews: rv, newPages: nr ? nr.pages : 0, reviewPages: rv.reduce((t, r) => t + (r.pages || 0), 0),
       notes: v("lgNotes").trim(), mode: s0.mode || base.mode || "", editedBy: "الإدارة", editedAtMs: Date.now(), clientAt: Date.now(), updatedAt: serverTimestamp() };
   }
@@ -2313,6 +2329,8 @@ function logEditor(sid, lg){
     $("lgNewBox").style.display = $("lgHasNew").checked ? "" : "none";
     const nr = newRange();
     $("lgNewInfo").textContent = !nr ? "" : nr.err ? nr.err : `${nr.label} — ${fp(nr.pages)} صفحة`;
+    $("lgSplitBox").style.display = nr && !nr.err && nr.sq ? "" : "none";
+    if (nr && nr.sq) $("lgSplitQ").textContent = `كيف سمّع ${rangeLabel(nr.sq[0], nr.sq[1])}؟`;
     $("lgRevList").innerHTML = reviews.length ? reviews.map((r,i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)"><span>${esc(r.label)} <span class="muted">(${fp(r.pages)} ص)</span></span><button class="small danger" data-rdel="${i}">حذف</button></div>`).join("")
       + `<div class="muted" style="margin-top:4px">المجموع: ${fp(reviews.reduce((t,r)=>t+(r.pages||0),0))} صفحة</div>` : `<div class="muted">لا توجد مراجعة</div>`;
     const k = v("lgRk");
@@ -2327,7 +2345,7 @@ function logEditor(sid, lg){
     }
   }
   function buildLogQuiet(){ const nr = newRange(); if (nr && nr.err) return null; const rec = v("lgStatus") === "recited";
-    return { date, status: v("lgStatus"), newMem: nr ? { fromG: nr.fromG, toG: nr.toG } : null, reviews: rec ? reviews : [] }; }
+    return { date, status: v("lgStatus"), newMem: nr ? { fromG: nr.fromG, toG: nr.toG, split: nr.split === true } : null, reviews: rec ? reviews : [] }; }
   $("lgRadd").onclick = () => {
     const k = v("lgRk"); let a, b, label;
     if (k === "juz"){ const j = n("lgRj"); [a, b] = unitRange(dir, j); label = `الجزء ${unitNum(dir, j)}`; }
@@ -2337,6 +2355,7 @@ function logEditor(sid, lg){
   $("lgRevList").onclick = e => { const x = e.target.closest("[data-rdel]"); if (x){ reviews.splice(+x.dataset.rdel, 1); refresh(); } };
   $("lgRs").onchange = () => { $("lgRb").value = Q.counts[n("lgRs") - 1]; $("lgRa").value = 1; };
   ["lgStatus","lgHasNew","lgFs","lgFa","lgTs","lgTa","lgRk"].forEach(id => $(id).addEventListener("input", refresh));
+  document.querySelectorAll('input[name="lgSplit"]').forEach(x => x.addEventListener("change", refresh));
   if (isNew) $("lgDate").addEventListener("input", () => { date = v("lgDate") || date; refresh(); });
   refresh();
 }

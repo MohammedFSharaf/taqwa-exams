@@ -305,7 +305,9 @@ DailyStatus dailyStatus(String dir, int start, Set<String> passedKeys, List<Map<
       // جزء من السورة حُفظ قبل السجل (نقطة البداية داخلها أو عند آخرها) ← تُعدّ مقطّعة
       final lg = progress == null ? null : _int(progress['lastG']);
       final pre = lg != null && lg >= 1 && lg <= nAyah && o.pos[lg] >= ps && o.pos[lg] <= pe;
-      if (touching.length >= 2 || pre) {
+      // سُمّعت على دفعات بنفس الجلسة (يحددها الشيخ)
+      final split = touching.any((l) => l['newMem'] is Map && (l['newMem'] as Map)['split'] == true);
+      if (touching.length >= 2 || pre || split) {
         final dates = touching.map((l) => (l['date'] ?? '').toString()).toList()..sort();
         final doneDate = dates.isEmpty ? '' : dates.last;
         // كاملة في جلسة واحدة: مراجعات نفس الجلسة مجتمعةً تغطي السورة
@@ -500,4 +502,16 @@ NextPlan? nextPlan(String dir, DailyStatus n, double minReview) {
     default:
       return null;
   }
+}
+
+
+/// هل يُسأل الشيخ «كيف سمّع السورة؟»: الحفظ يُكمل سورة كاملة (أو جزءها في الوحدة) أكبر من حد الحفظ اليومي
+List<int>? splitQuestionSeg(String dir, int fromG, int toG, double minNew, [JuzOrd ord = const {}]) {
+  final o = memOrder(dir, ord);
+  final seg = segmentOf(dir, toG);
+  final sa = seg[0], sb = seg[1];
+  if (toG != sb) return null; // لا يُكمل السورة
+  if (o.pos[fromG] > o.pos[sa]) return null; // جزء منها قبل اليوم (يُعالَج تلقائياً)
+  if (pagesOfRange(sa, sb) <= minNew + 1e-9) return null; // سورة قصيرة
+  return seg;
 }

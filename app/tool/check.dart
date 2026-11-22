@@ -98,4 +98,18 @@ void main() {
   print('next: ${np?.mem} | ${np?.review} | ${np?.short}');
   final np2 = nextPlan('desc', sC, 3);
   print('next2: ${np2?.mem} | ${np2?.review}');
+
+  // ===== على دفعات =====
+  final mur = [gidOf(77, 1), gidOf(77, 50)];
+  final q = splitQuestionSeg('desc', mur[0], mur[1], 1);
+  expect(q != null, 'split question for المرسلات');
+  final sp1 = dailyStatus('desc', 30, {'1|30'}, [
+    {'date': '2026-11-22', 'status': 'recited', 'newMem': {'fromG': mur[0], 'toG': mur[1], 'split': true}}
+  ], {'lastG': null, 'fresh': true}, 1);
+  expect(sp1.mode == 'review_surah', 'split -> review_surah (${sp1.mode})');
+  final sp0 = dailyStatus('desc', 30, {'1|30'}, [
+    {'date': '2026-11-22', 'status': 'recited', 'newMem': {'fromG': mur[0], 'toG': mur[1], 'split': false}}
+  ], {'lastG': null, 'fresh': true}, 1);
+  expect(sp0.mode == 'memorize' && posLabel(sp0.fromG!) == 'الإنسان 1', 'continuous -> next surah');
+  expect(splitQuestionSeg('desc', gidOf(78, 1), gidOf(78, 40), 5) == null, 'no question when surah <= daily min');
 }
