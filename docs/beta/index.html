@@ -1001,7 +1001,7 @@ function memOrder(dir, ord){
 // هل يُسأل «كيف سمّع السورة؟»: الحفظ يُكمل سورة كاملة أكبر من حد الحفظ اليومي
 function splitQuestionSeg(dir, fromG, toG, minNew, ord){
   const O = memOrder(dir, ord), [sa, sb] = segmentOf(dir, toG);
-  if (toG !== sb || O.pos[fromG] > O.pos[sa] || pagesOfRange(sa, sb) <= minNew + 1e-9) return null;
+  if (toG !== sb || O.pos[fromG] > O.pos[sa] || pagesOfRange(sa, sb) <= 1 + 1e-9) return null;
   return [sa, sb];
 }
 function hasStart(pr){ return !!pr && ("lastG" in pr || "fresh" in pr); }
@@ -2431,16 +2431,12 @@ function lastMemDialog(sid){
 function prevInOrder(s, g){ const O = memOrder(sDir(s), ordOf(progressOf(s.id))); const p = O.pos[g]; return p > 0 ? O.order[p - 1] : g; }
 // المطلوب للجلسة القادمة (من حالة الطالب بعد آخر تسجيل)
 function nextPlan(st, d){
-  const dir = sDir(st), ord = d.ord || {}, O = memOrder(dir, ord);
-  const lastMem = cursor => { if (cursor < 0) return "—"; const want = minReviewPages() > 0 ? minReviewPages() : 2; let t = 0, i = cursor;
-    for (; i >= 0; i--){ t += ayahFrac(O.order[i]); if (t >= want - 1e-9) break; } if (i < 0) i = 0;
-    const lab = memRangeLabel(dir, O.order[i], O.order[cursor], ord);
-    return `آخر ما حفظه — ${lab.split("، ").length > 2 ? `من ${posLabel(O.order[i])} إلى ${posLabel(O.order[cursor])}` : lab} (${fp(t)} ص)`; };
+  const dir = sDir(st), ord = d.ord || {};
   switch (d.mode){
-    case "memorize": return { mem: `${memRangeLabel(dir, d.fromG, d.suggestToG, ord)} (${fp(memRangePages(dir, d.fromG, d.suggestToG, ord))} ص)`, review: lastMem(O.pos[d.fromG] - 1) };
+    case "memorize": return { mem: `${memRangeLabel(dir, d.fromG, d.suggestToG, ord)} (${fp(memRangePages(dir, d.fromG, d.suggestToG, ord))} ص)`, review: "" };
     case "review_surah": return { mem: "بعد مراجعة السورة كاملة", review: `${rangeLabel(d.segFrom, d.segTo)} كاملة (إجباري)` };
     case "review_exam": return { mem: "لا حفظ جديد — مرحلة المراجعة للاختبار", review: dailyTitle(d) };
-    case "hafiz": return { mem: "—", review: "مراجعة" };
+    case "hafiz": return { mem: "", review: "مراجعة" };
     default: return null;
   }
 }
@@ -3146,7 +3142,7 @@ function dailyRecordHtml(sid){
       <tr><td>آخر اختبار</td><td>${esc(exTxt)}</td></tr>
       ${choice ? `<tr><td>بداية الجزء ${unitNum(sDir(st), J)}</td><td>سورة ${esc(juzStartSurah(sDir(st), J, juzStartOf(sDir(st), J, d.ord)))}${(d.ord || {})[juzOrdKey(sDir(st), J)] ? "" : ' <span class="muted">(افتراضي)</span>'} <button class="small" data-setstart="${sid}">تغيير</button></td></tr>` : ""}
       <tr><td>آخر ما حفظه</td><td>${esc(memTxt)} <button class="small" data-setstart="${sid}">تحديد</button></td></tr>
-      ${(() => { const np = nextPlan(st, d); return np ? `<tr><td>الجلسة القادمة</td><td style="background:var(--zebra)">حفظ: ${esc(np.mem)}<br>مراجعة: ${esc(np.review)} <span class="muted">(حسب الخطة)</span></td></tr>` : ""; })()}
+      ${(() => { const np = nextPlan(st, d); return np ? `<tr><td>الجلسة القادمة</td><td style="background:var(--zebra)">${[np.mem ? `حفظ: ${esc(np.mem)}` : "", np.review ? `مراجعة: ${esc(np.review)}` : ""].filter(Boolean).join("<br>")} <span class="muted">(حسب الخطة)</span></td></tr>` : ""; })()}
       <tr><td>هذا الأسبوع</td><td>حفظ ${fp(wk.newPages)} ص · مراجعة ${fp(wk.reviewPages)} ص · حضور ${wk.attendance}% (${wk.sessions} جلسة)</td></tr>
       <tr><td>هذا الشهر</td><td>حفظ ${fp(mo.newPages)} ص · مراجعة ${fp(mo.reviewPages)} ص · حضور ${mo.attendance}% (${mo.sessions} جلسة)</td></tr>
     </table>
