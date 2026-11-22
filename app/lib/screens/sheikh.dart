@@ -27,7 +27,15 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
   final _pin = TextEditingController();
   String? _error;
 
-  bool _autoBio = false;
+  bool _autoBio = false, _bioAvail = false, _bioWant = true, _showPin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Bio.available().then((v) {
+      if (mounted) setState(() => _bioAvail = v);
+    });
+  }
 
   Future<void> _login(List<Map<String, dynamic>> list) async {
     final sh = list.where((x) => x['id'] == _id).toList();
@@ -40,11 +48,7 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
       setState(() => _error = 'رمز الدخول غير صحيح');
       return;
     }
-    if (Bio.sheikhId != null) {
-      await Bio.setSheikh(_id, pin);
-    } else if (await offerBio(context)) {
-      await Bio.setSheikh(_id, pin);
-    }
+    if (Bio.sheikhId != null || (_bioAvail && _bioWant)) await Bio.setSheikh(_id, pin);
     if (!mounted) return;
     _enter(sh.first);
   }
@@ -55,7 +59,10 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
     final sh = list.where((x) => x['id'] == Bio.sheikhId).toList();
     if (sh.isEmpty || (sh.first['pin'] ?? '').toString() != Bio.sheikhPin) {
       await Bio.setSheikh(null, null);
-      setState(() => _error = 'تغيّر رمز الدخول — أدخله مرة واحدة لإعادة تفعيل البصمة');
+      setState(() {
+        _showPin = true;
+        _error = 'تغيّر رمز الدخول — أدخله مرة واحدة لإعادة تفعيل البصمة';
+      });
       return;
     }
     _id = Bio.sheikhId;
@@ -100,16 +107,20 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
               _autoBio = true;
               WidgetsBinding.instance.addPostFrameCallback((_) => _bioLogin(list));
             }
+            if (bioOn && !_showPin) {
+              final me = list.firstWhere((x) => x['id'] == Bio.sheikhId);
+              return Column(children: [
+                Text('${me['name'] ?? ''}', style: TextStyle(color: context.sub, fontWeight: FontWeight.w700)),
+                BioPad(
+                  onTap: () => _bioLogin(list),
+                  passText: 'الدخول برمز الدخول',
+                  onPassword: () => setState(() => _showPin = true),
+                ),
+              ]);
+            }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (bioOn) ...[
-                  BioButton(onPressed: () => _bioLogin(list)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text('أو', textAlign: TextAlign.center, style: TextStyle(color: context.sub)),
-                  ),
-                ],
                 DropdownButtonFormField<String>(
                   value: valid,
                   isExpanded: true,
@@ -132,6 +143,8 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
                   decoration: const InputDecoration(labelText: 'رمز الدخول', prefixIcon: Icon(Icons.lock_outline)),
                   onSubmitted: (_) => _login(list),
                 ),
+                if (_bioAvail && Bio.sheikhId == null)
+                  BioCheck(value: _bioWant, onChanged: (v) => setState(() => _bioWant = v)),
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
@@ -795,6 +808,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       nextLine = 'تحديد سورة البداية في الجزء';
     } else if (l != null && status == 'recited') {
       sub = _shortSummary(l);
+      final np = nextPlan(s.pathDir, st, _minReview);
+      if (np != null) nextLine = np.short;
     } else if (l != null) {
       sub = statusText(status);
     }
@@ -911,7 +926,9 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         fromKey: s.pathFrom);
     return DayCtx(st, _todayLog(s.id), _base(s, st), before.take(5).toList(),
         ready: st.mode == 'review_exam' ? _readiness(s, before) : null,
-        deadline: st.mode == 'review_exam' ? reviewDaysLeft(s.pathDir, st, before, _lastPassDate(s.id)) : null);
+        deadline: st.mode == 'review_exam' ? reviewDaysLeft(s.pathDir, st, before, _lastPassDate(s.id)) : null,
+        next: (draft) => dailyStatus(s.pathDir, s.pathStart, passed, [...before, draft], _prOf(s.id), _minNew,
+            fromKey: s.pathFrom));
   }
 
   void _open(Student s, DailyStatus st, Map<String, dynamic>? l) {
@@ -940,7 +957,8 @@ class DayCtx {
   final List<Map<String, dynamic>> recent; // آخر الجلسات قبل اليوم (الأحدث أولاً)
   final ExamReady? ready; // شرط الاختبار (قبل تسجيل اليوم)
   final int? deadline; // الأيام المتبقية من مهلة المراجعة
-  DayCtx(this.st, this.todayLog, this.base, this.recent, {this.ready, this.deadline});
+  final DailyStatus Function(Map<String, dynamic> draft)? next; // الحالة بعد تسجيل اليوم
+  DayCtx(this.st, this.todayLog, this.base, this.recent, {this.ready, this.deadline, this.next});
 }
 
 // ===================== تسجيل طالب لليوم =====================
@@ -1500,6 +1518,46 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     );
   }
 
+  // ---------- المطلوب للجلسة القادمة ----------
+  Widget _nextCard() {
+    final fn = _c.next;
+    if (fn == null) return const SizedBox.shrink();
+    final recited = _att == 'recited';
+    final withNew = recited && _hasNew && _canNew && _from != null && _to != null;
+    final n = fn({
+      'date': widget.date,
+      'status': _att,
+      'newMem': withNew ? {'fromG': _from, 'toG': _to} : null,
+      'reviews': recited ? _reviews : <Map<String, dynamic>>[],
+    });
+    final p = nextPlan(_dir, n, widget.minReview);
+    if (p == null) return const SizedBox.shrink();
+    final fg = context.okFg;
+    Widget row(String k, String v) => Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(width: 62, child: Text(k, style: TextStyle(color: fg, fontWeight: FontWeight.w800))),
+            Expanded(child: Text(v, style: TextStyle(color: context.txt, height: 1.55, fontSize: 14.5))),
+          ]),
+        );
+    return Panel(
+      color: context.okBg,
+      margin: const EdgeInsets.only(top: 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Expanded(
+            child: Text('المطلوب للجلسة القادمة', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 15.5)),
+          ),
+          Tag('حسب الخطة', fg: fg, bg: context.surface),
+        ]),
+        row('حفظ:', p.mem),
+        row('مراجعة:', p.review),
+        const SizedBox(height: 6),
+        Text('يتحدّث تلقائيًا حسب ما تسجّله اليوم.', style: TextStyle(color: context.sub, fontSize: 12)),
+      ]),
+    );
+  }
+
   // ---------- السطر العلوي ----------
   Widget _topLine() {
     final pct = juzProgress(_dir, _st);
@@ -1915,9 +1973,8 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
             onChanged: (i) => setState(() => _att = atts[i]),
           ),
           const SizedBox(height: 12),
-          if (recited)
-            _mainCard()
-          else
+          if (recited) _mainCard() else const SizedBox.shrink(),
+          if (!recited)
             Panel(
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Text('سيُسجَّل: ${SheikhHomeScreenStateText.of(_att)}',
@@ -1930,6 +1987,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
               ]),
             ),
           for (final w in warns) _box(w, context.goldBg, context.goldFg),
+          _nextCard(),
         ],
       ),
       bottomNavigationBar: SafeArea(

@@ -614,10 +614,9 @@ void showSettingsSheet(BuildContext context) {
               value: Bio.enabled,
               onChanged: (v) async {
                 if (v) {
-                  await Bio.setDeclined(false);
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                        content: Text('ستُعرض عند الدخول القادم بكلمة السر')));
+                        content: Text('تتفعّل عند الدخول القادم بكلمة السر (خيار «الدخول بالبصمة» تحت كلمة السر)')));
                   }
                 } else {
                   await Bio.disableAll();

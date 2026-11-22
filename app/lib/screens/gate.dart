@@ -22,11 +22,15 @@ class _GateScreenState extends State<GateScreen> {
   bool _noNet = false;
   String? _error;
   String _role = Repo.I.lastRole ?? 'examiner';
+  bool _bioAvail = false, _bioWant = true, _showPass = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
+    Bio.available().then((v) {
+      if (mounted) setState(() => _bioAvail = v);
+    });
   }
 
   Future<void> _start() async {
@@ -59,7 +63,10 @@ class _GateScreenState extends State<GateScreen> {
     }
     if (p == null || p != Bio.examinerPass) {
       await Bio.setExaminer(null);
-      setState(() => _error = 'تغيّرت كلمة السر — أدخلها مرة واحدة لإعادة تفعيل البصمة');
+      setState(() {
+        _showPass = true;
+        _error = 'تغيّرت كلمة السر — أدخلها مرة واحدة لإعادة تفعيل البصمة';
+      });
       return;
     }
     _enter();
@@ -86,11 +93,7 @@ class _GateScreenState extends State<GateScreen> {
       return;
     }
     if (!mounted) return;
-    if (Bio.examinerPass != null) {
-      await Bio.setExaminer(p);
-    } else if (await offerBio(context)) {
-      await Bio.setExaminer(p);
-    }
+    if (Bio.examinerPass != null || (_bioAvail && _bioWant)) await Bio.setExaminer(p);
     if (!mounted) return;
     _enter();
   }
@@ -133,14 +136,9 @@ class _GateScreenState extends State<GateScreen> {
           const SizedBox(height: 22),
           if (_role == 'sheikh')
             const SheikhLoginForm()
+          else if (Bio.examinerPass != null && !_showPass)
+            BioPad(onTap: _bioLogin, passText: 'الدخول بكلمة السر', onPassword: () => setState(() => _showPass = true))
           else ...[
-            if (Bio.examinerPass != null) ...[
-              BioButton(onPressed: _bioLogin),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('أو', textAlign: TextAlign.center, style: TextStyle(color: context.sub)),
-              ),
-            ],
             TextField(
               controller: _pass,
               obscureText: true,
@@ -148,6 +146,7 @@ class _GateScreenState extends State<GateScreen> {
               decoration: const InputDecoration(labelText: 'كلمة السر', prefixIcon: Icon(Icons.lock_outline)),
               onSubmitted: (_) => _check(),
             ),
+            if (_bioAvail && Bio.examinerPass == null) BioCheck(value: _bioWant, onChanged: (v) => setState(() => _bioWant = v)),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
@@ -190,68 +189,55 @@ class _GateScreenState extends State<GateScreen> {
 }
 
 
-/// زر الدخول بالبصمة
-class BioButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  const BioButton({super.key, required this.onPressed});
+/// شاشة البصمة: رمز كبير للمس، ورابط للدخول بكلمة السر
+class BioPad extends StatelessWidget {
+  final VoidCallback onTap, onPassword;
+  final String passText;
+  const BioPad({super.key, required this.onTap, required this.onPassword, required this.passText});
 
   @override
-  Widget build(BuildContext context) => OutlinedButton.icon(
-        onPressed: () {
-          haptic();
-          onPressed();
-        },
-        icon: Icon(Icons.fingerprint, size: 26, color: context.ink),
-        label: Text('الدخول بالبصمة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: context.ink)),
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(54),
-          side: BorderSide(color: context.ink, width: 1.6),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  Widget build(BuildContext context) => Column(children: [
+        const SizedBox(height: 18),
+        Material(
+          color: context.soft,
+          shape: CircleBorder(side: BorderSide(color: context.line, width: 2)),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () {
+              haptic();
+              onTap();
+            },
+            child: SizedBox(width: 118, height: 118, child: Icon(Icons.fingerprint, size: 70, color: context.ink)),
+          ),
         ),
-      );
+        const SizedBox(height: 14),
+        Text('المس للدخول', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.ink)),
+        const SizedBox(height: 2),
+        Text('ضع إصبعك على مستشعر الجوال', style: TextStyle(color: context.sub, fontSize: 13)),
+        const SizedBox(height: 30),
+        TextButton(
+          onPressed: onPassword,
+          child: Text(passText, style: TextStyle(color: context.accent, fontWeight: FontWeight.w700, fontSize: 15)),
+        ),
+      ]);
 }
 
-/// عرض تفعيل البصمة بعد الدخول بكلمة السر (مرة واحدة إذا رفض)
-Future<bool> offerBio(BuildContext context) async {
-  if (Bio.declined || !await Bio.available() || !context.mounted) return false;
-  final r = await showModalBottomSheet<bool>(
-    context: context,
-    showDragHandle: true,
-    builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(color: ctx.soft, shape: BoxShape.circle),
-            child: Icon(Icons.fingerprint, size: 42, color: ctx.ink),
-          ),
-          const SizedBox(height: 12),
-          Text('تفعيل الدخول بالبصمة؟', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: ctx.ink)),
-          const SizedBox(height: 6),
-          Text('في المرات القادمة يكفي وضع الإصبع بدل كتابة كلمة السر.',
-              textAlign: TextAlign.center, style: TextStyle(color: ctx.sub, height: 1.6)),
-          const SizedBox(height: 18),
-          Row(children: [
-            Expanded(child: NavyButton(text: 'تفعيل', onPressed: () => Navigator.pop(ctx, true))),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-                child: const Text('لاحقًا'),
-              ),
-            ),
+/// خيار «الدخول بالبصمة في المرات القادمة» تحت كلمة السر
+class BioCheck extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const BioCheck({super.key, required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => onChanged(!value),
+          child: Row(children: [
+            Checkbox(value: value, onChanged: (v) => onChanged(v ?? false), activeColor: context.chosen),
+            Expanded(child: Text('الدخول بالبصمة في المرات القادمة', style: TextStyle(color: context.txt, fontSize: 14))),
           ]),
-        ]),
-      ),
-    ),
-  );
-  if (r != true) {
-    await Bio.setDeclined(true);
-    return false;
-  }
-  // تأكيد البصمة قبل التفعيل
-  return Bio.auth();
+        ),
+      );
 }
