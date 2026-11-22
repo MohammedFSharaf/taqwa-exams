@@ -111,5 +111,6 @@ void main() {
     {'date': '2026-11-22', 'status': 'recited', 'newMem': {'fromG': mur[0], 'toG': mur[1], 'split': false}}
   ], {'lastG': null, 'fresh': true}, 1);
   expect(sp0.mode == 'memorize' && posLabel(sp0.fromG!) == 'الإنسان 1', 'continuous -> next surah');
-  expect(splitQuestionSeg('desc', gidOf(78, 1), gidOf(78, 40), 5) == null, 'no question when surah <= daily min');
+  expect(splitQuestionSeg('desc', gidOf(87, 1), gidOf(87, 19), 1) == null, 'no question for short surah (الأعلى)');
+  expect(splitQuestionSeg('desc', gidOf(67, 1), gidOf(67, 30), 3) != null, 'الملك asks even if daily min is 3');
 }
