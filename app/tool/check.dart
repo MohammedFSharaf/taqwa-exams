@@ -86,4 +86,10 @@ void main() {
   print(juzLabel(3, 5, type: 3, dir: 'desc'));
   print(juzLabel(27, 27));
   print(juzLabel(11, 12, type: 1));
+
+  // ===== الجلسة القادمة =====
+  final np = nextPlan('desc', sA, 7);
+  print('next: ${np?.mem} | ${np?.review} | ${np?.short}');
+  final np2 = nextPlan('desc', sC, 3);
+  print('next2: ${np2?.mem} | ${np2?.review}');
 }

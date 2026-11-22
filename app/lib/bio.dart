@@ -63,10 +63,5 @@ class Bio {
   static Future<void> disableAll() async {
     await setExaminer(null);
     await setSheikh(null, null);
-    await Repo.I.prefs.remove('bio_declined');
   }
-
-  /// رفض العرض (لا نسأله كل مرة)
-  static bool get declined => Repo.I.prefs.getBool('bio_declined') ?? false;
-  static Future<void> setDeclined(bool v) => Repo.I.prefs.setBool('bio_declined', v);
 }
