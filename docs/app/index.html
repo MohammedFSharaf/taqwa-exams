@@ -63,7 +63,7 @@
   <div class="card">
     <div class="app">
       <img src="../logo.png" alt="">
-      <div><b>تطبيق مركز التقوى</b><span>الاختبارات والتسميع اليومي — للمختبرين والمشايخ</span><br><span class="ver">الإصدار الأول 1.0</span></div>
+      <div><b>تطبيق مركز التقوى</b><span>الاختبارات والتسميع اليومي — للمختبرين والمشايخ</span><br><span class="ver" id="ver">الإصدار 1.1</span></div>
     </div>
     <a class="dl" href="https://github.com/MohammedFSharaf/taqwa-exams/releases/latest/download/app-release.apk">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
@@ -91,5 +91,17 @@
   <div class="ded">صدقة جارية عن أرواح مؤسسي مركز التقوى<small>رحمهم الله وجعل هذا العمل في ميزان حسناتهم</small></div>
 </main>
 <footer>تصميم وتطوير: <b dir="ltr">Eng. Mohammed F Sharaf</b></footer>
+<script>
+// رقم آخر إصدار وحجمه تلقائياً من GitHub
+fetch("https://api.github.com/repos/MohammedFSharaf/taqwa-exams/releases/latest")
+  .then(r => r.ok ? r.json() : null)
+  .then(d => {
+    if (!d) return;
+    const m = /الإصدار\s*([\d.]+)/.exec(d.name || "");
+    const a = (d.assets || []).find(x => /\.apk$/.test(x.name));
+    if (!m) return;
+    document.getElementById("ver").textContent = `الإصدار ${m[1]}${a ? ` — ${Math.round(a.size / 1e6)} ميغا` : ""}`;
+  }).catch(() => {});
+</script>
 </body>
 </html>
