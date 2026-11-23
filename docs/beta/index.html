@@ -869,6 +869,12 @@
           <button class="primary" id="saveAppPassBtn">حفظ</button>
         </div>
       </div>
+      <div class="card">
+        <h2>فحص البيانات</h2>
+        <p class="muted">يبحث عن بقايا طلاب محذوفين، وطلاب معلّقين قدامى، وأسماء مكرّرة. لا يحذف شيئًا إلا بعد تأكيدك.</p>
+        <button class="primary" id="dcRun">فحص الآن</button>
+        <div id="dcResult"></div>
+      </div>
     </section>
   </main>
   </div>
@@ -1007,7 +1013,6 @@ function surahEnd(s){ return SURAH_START[s] + Q.counts[s-1] - 1; }
 function pageOf(g){ let lo = 1, hi = 604; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (Q.pageStart[m-1] <= g) lo = m; else hi = m - 1; } return lo; }
 function ayahFrac(g){ const p = pageOf(g); return 1 / (Q.pageStart[p] - Q.pageStart[p-1]); }
 function pagesOfRange(a, b){ let t = 0; for (let g = a; g <= b; g++) t += ayahFrac(g); return t; }
-function juzOfG(dir, g){ return unitAt(dir, g).n1; }
 function segmentOf(dir, g){ const u = unitAt(dir, g), s = surahOf(g); return [Math.max(u.a, SURAH_START[s]), Math.min(u.b, surahEnd(s))]; }
 function posLabel(g){ return `${Q.names[surahOf(g)-1]} ${ayahNo(g)}`; }
 function rangeLabel(a, b){
@@ -1372,7 +1377,6 @@ function splitName(n){
   }
   return out;
 }
-function nameParts(n){ return splitName(n).length; }
 function namePartsOf(st, i){
   if (i && i.n1) return [i.n1, i.n2 || "", i.n3 || "", i.n4 || ""];
   const p = splitName(st.name);
@@ -2943,6 +2947,53 @@ $("importBtn").onclick = async () => {
 };
 
 // ===== الحلقات =====
+// ===== فحص البيانات: بقايا طلاب محذوفين، معلّقون قدامى، مكرّرون =====
+let DC = null;
+function dataCheck(){
+  const ids = new Set(S.students.map(s => s.id)), hq = new Set(S.halaqat.map(h => h.id));
+  const now = Date.now(), month = 30 * 86400000;
+  const nk = n => (n || "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/\s+/g, " ").trim();
+  const byName = {};
+  for (const s of S.students) if (s.status !== "inactive"){ (byName[nk(s.name)] ||= []).push(s); }
+  return {
+    logs: S.logs.filter(l => !ids.has(l.studentId)),
+    progress: S.progress.filter(p => !ids.has(p.id)),
+    info: Object.keys(S.info || {}).filter(id => !ids.has(id)),
+    permits: S.permits.filter(p => !ids.has(p.studentId)),
+    exams: S.exams.filter(e => e.studentId && !ids.has(e.studentId)),
+    pendingOld: S.students.filter(s => s.status === "pending" && s.createdAt && s.createdAt.toMillis && now - s.createdAt.toMillis() > month),
+    noHalaqa: S.students.filter(s => isActive(s) && !hq.has(s.halaqaId)),
+    dups: Object.values(byName).filter(l => l.length > 1),
+  };
+}
+function renderDataCheck(){
+  const r = DC = dataCheck(), box = $("dcResult");
+  const orphan = r.logs.length + r.progress.length + r.info.length + r.permits.length;
+  const row = (t, n, extra) => `<tr><td>${t}</td><td><b class="${n ? "closed" : ""}">${n}</b></td><td>${extra || ""}</td></tr>`;
+  box.innerHTML = `<table style="margin-top:10px"><thead><tr><th>الفحص</th><th>العدد</th><th></th></tr></thead><tbody>
+    ${row("تسجيلات تسميع لطلاب محذوفين", r.logs.length)}
+    ${row("تقدّم (نقطة بداية) لطلاب محذوفين", r.progress.length)}
+    ${row("بيانات شخصية لطلاب محذوفين", r.info.length)}
+    ${row("أذونات إعادة لطلاب محذوفين", r.permits.length)}
+    ${row("اختبارات لطلاب محذوفين", r.exams.length, r.exams.length ? '<span class="muted">تبقى للأرشيف ولا تُحذف</span>' : "")}
+    ${row("طلاب جدد بانتظار الموافقة منذ أكثر من شهر", r.pendingOld.length, r.pendingOld.map(s => nameLink(s.id, s.name)).join("، "))}
+    ${row("طلاب بدون حلقة", r.noHalaqa.length, r.noHalaqa.map(s => nameLink(s.id, s.name)).join("، "))}
+    ${row("أسماء مكرّرة", r.dups.length, r.dups.map(l => l.map(s => nameLink(s.id, s.name) + ` <span class="muted">(${esc(halaqaName(s.halaqaId) || "—")})</span>`).join(" / ")).join("<br>"))}
+  </tbody></table>
+  ${orphan ? `<div class="row" style="margin-top:10px"><button class="danger" id="dcClean">حذف بقايا الطلاب المحذوفين (${orphan})</button></div>` : `<p class="muted" style="margin-top:10px">لا توجد بقايا تحتاج حذفاً.</p>`}
+  <p class="muted" style="font-size:12.5px">الطلاب المعلّقون والمكرّرون وبدون حلقة لا تُحذف تلقائيًا: افتح كل طالب وقرّر بنفسك.</p>`;
+}
+$("dcRun").onclick = renderDataCheck;
+document.addEventListener("click", ev => {
+  if (!ev.target.closest("#dcClean") || !DC) return;
+  const r = DC, ops = [...r.logs.map(l => doc(db, "logs", l.id)), ...r.progress.map(p => doc(db, "progress", p.id)),
+    ...r.info.map(id => doc(db, "studentInfo", id)), ...r.permits.map(p => doc(db, "permits", p.id))];
+  confirmDlg(`حذف ${ops.length} من بقايا الطلاب المحذوفين؟ لا يمكن التراجع.`, async () => {
+    for (let i = 0; i < ops.length; i += 400){ const b = writeBatch(db); ops.slice(i, i + 400).forEach(d => b.delete(d)); await b.commit(); }
+    audit("تنظيف البيانات", "", "", null, `حُذف ${ops.length}: تسجيلات ${r.logs.length}، تقدّم ${r.progress.length}، بيانات شخصية ${r.info.length}، أذونات ${r.permits.length}`);
+    toast("تم التنظيف"); setTimeout(renderDataCheck, 600);
+  });
+});
 // ===== متابعة المشايخ: نشاط كل شيخ في الشهر =====
 function sessionDatesOfMonth(mk, halaqaId){
   // أيام الجلسات في الشهر حتى اليوم (بدون الإجازات)

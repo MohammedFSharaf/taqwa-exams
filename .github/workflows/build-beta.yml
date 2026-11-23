@@ -1,10 +1,8 @@
 name: Build BETA APK
 
 # نسخة تجريبية منفصلة: تُثبَّت بجانب التطبيق الأصلي ولا تؤثر عليه
+# تُبنى عند الطلب فقط (Actions ← Build BETA APK ← Run workflow) لتجربة شيء جديد
 on:
-  push:
-    branches: [daily-log]
-    paths: ['app/**', '.github/workflows/build-beta.yml']
   workflow_dispatch:
 
 permissions:
