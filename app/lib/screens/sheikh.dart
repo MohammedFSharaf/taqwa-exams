@@ -27,7 +27,7 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
   final _pin = TextEditingController();
   String? _error;
 
-  bool _autoBio = false, _bioAvail = false, _bioWant = false, _showPin = false;
+  bool _autoBio = false, _bioAvail = false, _bioWant = false, _showPin = false, _busy = false;
 
   @override
   void initState() {
@@ -43,9 +43,17 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
       setState(() => _error = 'اختر اسمك');
       return;
     }
-    final pin = (sh.first['pin'] ?? '').toString();
-    if (pin != _pin.text.trim()) {
-      setState(() => _error = 'رمز الدخول غير صحيح');
+    final pin = _pin.text.trim();
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final err = await sheikhLogin(_id!, pin, legacyPin: sh.first['pin']?.toString(), name: sh.first['name']?.toString());
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (err != null) {
+      setState(() => _error = err);
       return;
     }
     if (Bio.sheikhId != null || (_bioAvail && _bioWant)) await Bio.setSheikh(_id, pin);
@@ -57,7 +65,22 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
   Future<void> _bioLogin(List<Map<String, dynamic>> list) async {
     if (!await Bio.auth() || !mounted) return;
     final sh = list.where((x) => x['id'] == Bio.sheikhId).toList();
-    if (sh.isEmpty || (sh.first['pin'] ?? '').toString() != Bio.sheikhPin) {
+    String? err = sh.isEmpty ? 'x' : null;
+    if (sh.isNotEmpty) {
+      setState(() => _busy = true);
+      err = await sheikhLogin(Bio.sheikhId!, Bio.sheikhPin ?? '',
+          legacyPin: sh.first['pin']?.toString(), name: sh.first['name']?.toString());
+      if (!mounted) return;
+      setState(() => _busy = false);
+    }
+    if (err != null && err.startsWith('لا يوجد اتصال')) {
+      setState(() {
+        _showPin = true;
+        _error = err;
+      });
+      return;
+    }
+    if (err != null) {
       await Bio.setSheikh(null, null);
       setState(() {
         _showPin = true;
@@ -151,7 +174,9 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
                     child: Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: context.badFg, fontWeight: FontWeight.w700)),
                   ),
                 const SizedBox(height: 18),
-                BigButton(icon: Icons.login, text: 'دخول', onPressed: () => _login(list), gold: true),
+                _busy
+                    ? const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()))
+                    : BigButton(icon: Icons.login, text: 'دخول', onPressed: () => _login(list), gold: true),
               ],
             );
           },

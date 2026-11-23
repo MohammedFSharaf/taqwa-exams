@@ -22,7 +22,7 @@ class _GateScreenState extends State<GateScreen> {
   bool _noNet = false;
   String? _error;
   String _role = Repo.I.lastRole ?? 'examiner';
-  bool _bioAvail = false, _bioWant = false, _showPass = false;
+  bool _bioAvail = false, _bioWant = false, _showPass = false, _busy = false;
 
   @override
   void initState() {
@@ -48,7 +48,8 @@ class _GateScreenState extends State<GateScreen> {
       return;
     }
     Repo.I.startSync();
-    if (Repo.I.appPassword == null) await Repo.I.fetchPasswordOnce();
+    if (Repo.I.appPassword == null && !Repo.I.secReady) await Repo.I.fetchPasswordOnce();
+    await Repo.I.verifyDevice();
     if (mounted) setState(() => _loading = false);
     if (_role != 'sheikh' && Bio.examinerPass != null) _bioLogin();
   }
@@ -56,16 +57,15 @@ class _GateScreenState extends State<GateScreen> {
   /// الدخول بالبصمة للمختبِر
   Future<void> _bioLogin() async {
     if (!await Bio.auth() || !mounted) return;
-    var p = Repo.I.appPassword;
-    if (p == null) {
-      await Repo.I.fetchPasswordOnce();
-      p = Repo.I.appPassword;
-    }
-    if (p == null || p != Bio.examinerPass) {
-      await Bio.setExaminer(null);
+    setState(() => _busy = true);
+    final err = await examinerLogin(Bio.examinerPass ?? '');
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (err != null) {
+      if (err != offlineFirstMsg) await Bio.setExaminer(null);
       setState(() {
         _showPass = true;
-        _error = 'تغيّرت كلمة السر — أدخلها مرة واحدة لإعادة تفعيل البصمة';
+        _error = err == offlineFirstMsg ? err : 'تغيّرت كلمة السر — أدخلها مرة واحدة لإعادة تفعيل البصمة';
       });
       return;
     }
@@ -79,20 +79,23 @@ class _GateScreenState extends State<GateScreen> {
   }
 
   Future<void> _check() async {
-    var p = Repo.I.appPassword;
-    if (p == null) {
-      await Repo.I.fetchPasswordOnce();
-      p = Repo.I.appPassword;
-    }
-    if (p == null) {
-      setState(() => _error = 'لم تُحدَّد كلمة سر التطبيق من الإدارة بعد، أو الجهاز غير متصل. اتصل بالإنترنت وحاول مرة أخرى.');
+    final p = _pass.text.trim();
+    if (p.isEmpty) {
+      setState(() => _error = 'أدخل كلمة السر');
       return;
     }
-    if (_pass.text.trim() != p) {
-      setState(() => _error = 'كلمة السر غير صحيحة');
-      return;
-    }
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final err = await examinerLogin(p);
     if (!mounted) return;
+    setState(() => _busy = false);
+    if (err != null) {
+      setState(() => _error = err);
+      return;
+    }
     if (Bio.examinerPass != null || (_bioAvail && _bioWant)) await Bio.setExaminer(p);
     if (!mounted) return;
     _enter();
@@ -153,7 +156,9 @@ class _GateScreenState extends State<GateScreen> {
                 child: Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: context.badFg, fontWeight: FontWeight.w700)),
               ),
             const SizedBox(height: 18),
-            BigButton(icon: Icons.login, text: 'دخول', onPressed: _check, gold: true),
+            _busy
+                ? const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()))
+                : BigButton(icon: Icons.login, text: 'دخول', onPressed: _check, gold: true),
           ],
         ],
       );
@@ -240,4 +245,33 @@ class BioCheck extends StatelessWidget {
           ]),
         ),
       );
+}
+
+
+const offlineFirstMsg = 'لا يوجد اتصال بالإنترنت — أول دخول على هذا الجوال يحتاج اتصالًا';
+
+/// دخول المختبر: يعيد null عند النجاح أو رسالة الخطأ
+Future<String?> examinerLogin(String p) async {
+  if (p.isEmpty) return 'كلمة السر غير صحيحة';
+  // جهاز معتمد بنفس كلمة السر ← دخول فوري (يعمل بدون إنترنت)
+  if (Repo.I.deviceOk && p == Repo.I.verifiedPass) return null;
+  final r = await Repo.I.registerDevice(pass: p, name: Repo.I.examinerName);
+  if (r == 'ok') return null;
+  // قبل تفعيل الحماية: كلمة السر القديمة المحفوظة على الجهاز
+  final legacy = Repo.I.appPassword;
+  if (legacy != null && p == legacy && (r == 'offline' || !Repo.I.secReady)) return null;
+  if (r == 'offline') return (Repo.I.deviceOk || legacy != null) ? 'كلمة السر غير صحيحة' : offlineFirstMsg;
+  return 'كلمة السر غير صحيحة';
+}
+
+/// دخول الشيخ: يعيد null عند النجاح أو رسالة الخطأ
+Future<String?> sheikhLogin(String sheikhId, String pin, {String? legacyPin, String? name}) async {
+  if (pin.isEmpty) return 'رمز الدخول غير صحيح';
+  if (Repo.I.deviceOk && Repo.I.verifiedSheikh == sheikhId && Repo.I.verifiedPin == pin) return null;
+  final r = await Repo.I.registerDevice(sheikhId: sheikhId, pin: pin, name: name);
+  if (r == 'ok') return null;
+  final hasLegacy = legacyPin != null && legacyPin.isNotEmpty;
+  if (hasLegacy && pin == legacyPin && (r == 'offline' || !Repo.I.secReady)) return null;
+  if (r == 'offline' && !hasLegacy) return 'لا يوجد اتصال بالإنترنت — أول دخول لهذا الحساب على هذا الجوال يحتاج اتصالًا';
+  return 'رمز الدخول غير صحيح';
 }

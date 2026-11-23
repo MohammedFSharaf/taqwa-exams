@@ -305,6 +305,10 @@
   .betatag{background:var(--goldb);color:#3B2C00}
   #tabs{padding:8px 10px 10px}
   #tabs .grp{color:#8DB4CF;padding:14px 12px 4px;font-size:11.5px;letter-spacing:.3px}
+  .sec-steps{display:grid;gap:6px;margin-top:6px}
+  .sec-steps div{display:flex;align-items:center;gap:10px;color:var(--muted)}
+  .sec-steps b{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;background:var(--zebra);font-size:12.5px}
+  .sec-steps .done{color:inherit}.sec-steps .done b{background:#E2F3E9;color:#1E8A4C}
   .note-warn{background:#FFF4DE;color:#8A5A00;border-radius:10px;padding:10px 14px;line-height:1.8}
   body.dark .note-warn{background:#3A3115;color:#F0C64A}
   /* بطاقات الحلقات */
@@ -870,6 +874,11 @@
         </div>
       </div>
       <div class="card">
+        <h2>حماية التطبيق</h2>
+        <p class="muted">بعد التفعيل لا يستطيع أحد قراءة البيانات أو كتابتها إلا من جهاز دخل بكلمة سر التطبيق أو رمز شيخ صحيح، ويتحقق من ذلك السيرفر نفسه.</p>
+        <div id="secBox"></div>
+      </div>
+      <div class="card">
         <h2>فحص البيانات</h2>
         <p class="muted">يبحث عن بقايا طلاب محذوفين، وطلاب معلّقين قدامى، وأسماء مكرّرة. لا يحذف شيئًا إلا بعد تأكيدك.</p>
         <button class="primary" id="dcRun">فحص الآن</button>
@@ -895,7 +904,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc,
-  writeBatch, serverTimestamp, query, orderBy, limit }
+  writeBatch, serverTimestamp, query, orderBy, limit, deleteField }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1258,6 +1267,7 @@ function listen(name, cb){
 function startListeners(){
   listen("halaqat"); listen("students"); listen("examiners"); listen("exams"); listen("permits");
   listen("sheikhs"); listen("logs"); listen("progress"); listen("holidays");
+  startSecListeners();
   // البيانات الشخصية: للإدارة فقط (مجموعة منفصلة لا يقرؤها التطبيق)
   unsubs.push(onSnapshot(collection(db, "studentInfo"), snap => {
     S.info = {}; snap.docs.forEach(d => S.info[d.id] = d.data()); S.infoErr = false; renderAll();
@@ -1268,7 +1278,7 @@ function startListeners(){
   }, err => console.error(err)));
   unsubs.push(onSnapshot(doc(db, "settings", "app"), d => {
     S.settings = d.exists() ? d.data() : {};
-    $("curAppPass").value = S.settings.password || "(لم تُحدد بعد)";
+    $("curAppPass").value = curPassword() || "(لم تُحدد بعد)";
     $("stallDays").value = stallDays();
     renderDailySettings();
     renderStats();
@@ -3302,30 +3312,37 @@ $("hBody").addEventListener("click", ev => {
 // ----- المشايخ
 function renderSheikhs(){
   $("shBody").innerHTML = sortAr([...S.sheikhs]).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(halaqaName(x.halaqaId))}</td>
-    <td><code>${esc(x.pin)}</code></td><td class="actions"><button class="small" data-edsh="${x.id}">تعديل</button>
+    <td><code>${esc(pinOf(x))}</code></td><td class="actions"><button class="small" data-edsh="${x.id}">تعديل</button>
     <button class="small danger" data-delsh="${x.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="4" class="muted" style="text-align:center">لا يوجد مشايخ</td></tr>`;
+  if (S.sec) renderSecurity();
 }
 const pinOk = p => /^\d{4,6}$/.test(p);
 $("addShBtn").onclick = async () => {
   const name = $("newShName").value.trim(), halaqaId = $("newShHalaqa").value, pin = $("newShPin").value.trim();
   if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة"); return; }
   if (!pinOk(pin)){ toast("الرمز 4 إلى 6 أرقام"); return; }
-  await addDoc(collection(db,"sheikhs"), { name, halaqaId, pin }); audit("إضافة شيخ", name, halaqaName(halaqaId));
+  const ref = await addDoc(collection(db,"sheikhs"), secOn() ? { name, halaqaId } : { name, halaqaId, pin });
+  if (secReady()) await setDoc(doc(db,"secrets","pins"), { [ref.id]: pin }, { merge:true });
+  audit("إضافة شيخ", name, halaqaName(halaqaId));
   $("newShName").value = ""; $("newShPin").value = ""; toast("تمت الإضافة");
 };
 $("shBody").addEventListener("click", ev => {
   const b = ev.target.closest("button"); if (!b) return;
   const x = S.sheikhs.find(y => y.id === (b.dataset.edsh || b.dataset.delsh));
-  if (b.dataset.delsh) confirmDlg(`حذف حساب ${x.name}؟`, async () => { await deleteDoc(doc(db,"sheikhs",x.id)); audit("حذف شيخ", x.name, halaqaName(x.halaqaId)); toast("تم الحذف"); });
+  if (b.dataset.delsh) confirmDlg(`حذف حساب ${x.name}؟`, async () => { await deleteDoc(doc(db,"sheikhs",x.id));
+    if (secReady()) await setDoc(doc(db,"secrets","pins"), { [x.id]: deleteField() }, { merge:true }); audit("حذف شيخ", x.name, halaqaName(x.halaqaId)); toast("تم الحذف"); });
   if (b.dataset.edsh){
     const hs = sortAr([...S.halaqat]).map(h=>`<option value="${h.id}" ${h.id===x.halaqaId?'selected':''}>${esc(h.name)}</option>`).join("");
     openDialog("تعديل حساب شيخ", `<div class="grid2"><label>الاسم<input id="eshName" value="${esc(x.name)}"></label>
-      <label>الحلقة<select id="eshHalaqa">${hs}</select></label><label>رمز الدخول<input id="eshPin" value="${esc(x.pin)}"></label></div>
+      <label>الحلقة<select id="eshHalaqa">${hs}</select></label><label>رمز الدخول<input id="eshPin" value="${esc(pinOf(x))}"></label></div>
       <div class="err" id="eshErr"></div>`, [
       { text:"حفظ", cls:"primary", onClick: async () => {
         const pin = $("eshPin").value.trim(); if (!pinOk(pin)){ $("eshErr").textContent = "الرمز 4 إلى 6 أرقام"; return false; }
-        await updateDoc(doc(db,"sheikhs",x.id), { name: $("eshName").value.trim(), halaqaId: $("eshHalaqa").value, pin });
-        audit("تعديل حساب شيخ", $("eshName").value.trim(), "", `${x.name} · ${halaqaName(x.halaqaId)}${x.pin !== pin ? " · رمز قديم" : ""}`, `${$("eshName").value.trim()} · ${halaqaName($("eshHalaqa").value)}${x.pin !== pin ? " · رمز جديد" : ""}`); toast("تم الحفظ");
+        const oldPin = pinOf(x);
+        await updateDoc(doc(db,"sheikhs",x.id), secOn() ? { name: $("eshName").value.trim(), halaqaId: $("eshHalaqa").value }
+          : { name: $("eshName").value.trim(), halaqaId: $("eshHalaqa").value, pin });
+        if (secReady()) await setDoc(doc(db,"secrets","pins"), { [x.id]: pin }, { merge:true });
+        audit("تعديل حساب شيخ", $("eshName").value.trim(), "", `${x.name} · ${halaqaName(x.halaqaId)}${oldPin !== pin ? " · رمز قديم" : ""}`, `${$("eshName").value.trim()} · ${halaqaName($("eshHalaqa").value)}${oldPin !== pin ? " · رمز جديد" : ""}`); toast("تم الحفظ");
       }}, { text:"إلغاء" }]);
   }
 });
@@ -3423,10 +3440,101 @@ $("saveStallBtn").onclick = async () => {
   const old = stallDays(); await setDoc(doc(db,"settings","app"), { stallDays: v }, { merge:true }); audit("مدة التوقف", "", "", `${old} يوم`, `${v} يوم`);
   toast("تم الحفظ");
 };
+// ===================== حماية التطبيق: الأجهزة المعتمدة =====================
+// كلمة السر ورموز المشايخ في secrets (للإدارة فقط). الجهاز يسجّل نفسه في devices والسيرفر يتحقق.
+S.sec = { app: null, pins: null, security: null, err: false }; S.devices = [];
+function secOn(){ return !!(S.sec.security && S.sec.security.enforce === true); }
+function secReady(){ return !!(S.sec.app && S.sec.pins && S.sec.security); }
+function curPassword(){ return (S.sec.app && S.sec.app.password) || S.settings.password || ""; }
+function pinOf(x){ return (S.sec.pins && S.sec.pins[x.id]) || x.pin || ""; }
+function startSecListeners(){
+  for (const k of ["app", "pins", "security"]) unsubs.push(onSnapshot(doc(db, "secrets", k),
+    d => { S.sec[k] = d.exists() ? d.data() : null; S.sec.err = false; $("curAppPass").value = curPassword() || "(لم تُحدد بعد)"; renderSheikhs(); renderSecurity(); },
+    err => { S.sec.err = true; renderSecurity(); }));
+  unsubs.push(onSnapshot(collection(db, "devices"), snap => { S.devices = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderSecurity(); },
+    err => { S.devices = []; renderSecurity(); }));
+}
+function renderSecurity(){
+  const box = $("secBox"); if (!box) return;
+  const shNames = Object.fromEntries(S.sheikhs.map(x => [x.id, x.name]));
+  const devs = [...S.devices].sort((a, b) => (b.atMs || 0) - (a.atMs || 0));
+  const regSh = new Set(devs.map(d => d.sheikhId).filter(Boolean));
+  const missing = sortAr(S.sheikhs.filter(x => !regSh.has(x.id)));
+  const step = secOn() ? 3 : secReady() && S.settings.securityReady ? 2 : 1;
+  const steps = [
+    ["نشر قواعد الحماية الجديدة في Firebase", step > 1 || secReady()],
+    ["تجهيز الحماية (نقل كلمة السر والرموز)", step > 1],
+    ["دخول كل الأجهزة مرة واحدة مع الإنترنت", step > 2 || (devs.length > 0 && !missing.length)],
+    ["تفعيل الحماية الكاملة", step > 2],
+  ];
+  box.innerHTML = `
+    <div class="sec-steps">${steps.map(([t, d], i) => `<div class="${d ? "done" : ""}"><b>${d ? "✓" : i + 1}</b> ${t}</div>`).join("")}</div>
+    ${S.sec.err && !secOn() ? `<p class="note-warn" style="margin-top:10px">لم تُنشر قواعد الحماية الجديدة بعد. انشرها من Firebase Console ← Firestore ← Rules، ثم حدّث هذه الصفحة.</p>` : ""}
+    ${step === 1 ? `<button class="primary" id="secPrepare" style="margin-top:10px">تجهيز الحماية</button>` : ""}
+    ${step === 2 ? `<div class="row" style="margin-top:10px"><button class="primary" id="secEnforce">تفعيل الحماية الكاملة</button></div>
+      <p class="muted" style="font-size:12.5px">فعّلها بعد أن يدخل كل مختبر وكل شيخ مرة واحدة من جواله وهو متصل بالإنترنت (بعد تحديث التطبيق). الجهاز الذي لم يدخل بعد التفعيل سيحتاج إنترنت عند أول دخول.</p>` : ""}
+    ${step === 3 ? `<p style="margin-top:10px">${pill("p-ok", "الحماية مفعّلة")} فقط الأجهزة المعتمدة تقرأ البيانات وتكتبها. <a href="#" id="secOff" class="muted" style="font-size:12.5px">إيقاف مؤقت (للطوارئ)</a></p>` : ""}
+    <h3 style="margin:14px 0 6px">الأجهزة المعتمدة (${devs.length})</h3>
+    ${devs.length ? `<table><thead><tr><th>النوع</th><th>الاسم</th><th>آخر دخول</th><th></th></tr></thead><tbody>${devs.map(d => `<tr>
+      <td>${d.role === "sheikh" ? "شيخ" : "مختبر"}</td><td>${esc(d.sheikhId ? (shNames[d.sheikhId] || "شيخ محذوف") : (d.name || "—"))}</td>
+      <td>${d.atMs ? esc(dayKey(gz(new Date(d.atMs)))) : "—"}</td>
+      <td class="actions"><button class="small danger" data-devdel="${esc(d.id)}">إلغاء الاعتماد</button></td></tr>`).join("")}</tbody></table>
+      <div class="row" style="margin-top:8px"><button class="small danger" id="devDelAll">إلغاء اعتماد كل الأجهزة</button></div>` : `<p class="muted">لا يوجد أجهزة معتمدة بعد.</p>`}
+    ${missing.length && step >= 2 ? `<p class="muted" style="margin-top:8px">مشايخ لم يدخلوا بعد: ${missing.map(x => esc(x.name)).join("، ")}</p>` : ""}`;
+}
+document.addEventListener("click", async ev => {
+  const t = ev.target;
+  if (t.closest("#secPrepare")){
+    const pass = curPassword();
+    if (!pass){ toast("حدّد كلمة سر التطبيق أولًا"); return; }
+    const pins = {}; S.sheikhs.forEach(x => { const p = pinOf(x); if (p) pins[x.id] = String(p); });
+    try {
+      await setDoc(doc(db, "secrets", "app"), { password: pass, updatedAt: serverTimestamp() });
+      await setDoc(doc(db, "secrets", "pins"), pins);
+      await setDoc(doc(db, "secrets", "security"), { enforce: false, preparedAt: serverTimestamp() }, { merge: true });
+      // فحص أن قواعد الحماية منشورة: تسجيل جهاز تجريبي بكلمة السر ثم حذفه
+      const uid = auth.currentUser.uid;
+      await setDoc(doc(db, "devices", uid), { pass, role: "test" });
+      await deleteDoc(doc(db, "devices", uid));
+      await setDoc(doc(db, "settings", "app"), { securityReady: true }, { merge: true });
+      audit("تجهيز حماية التطبيق"); toast("تم التجهيز — حدّث التطبيق على الجوالات وادخل مرة مع الإنترنت");
+    } catch (e){ console.error(e); toast("فشل التجهيز: تأكد من نشر قواعد الحماية الجديدة أولًا"); }
+  }
+  if (t.closest("#secEnforce")){
+    const regSh = new Set(S.devices.map(d => d.sheikhId).filter(Boolean));
+    const miss = S.sheikhs.filter(x => !regSh.has(x.id)).length;
+    confirmDlg(`تفعيل الحماية الكاملة؟${miss ? ` (${miss} من المشايخ لم يدخلوا بعد — سيحتاجون إنترنت عند أول دخول)` : ""} ستُحذف كلمة السر والرموز من الأماكن التي يقرؤها التطبيق.`, async () => {
+      await setDoc(doc(db, "secrets", "security"), { enforce: true, enforcedAt: serverTimestamp() }, { merge: true });
+      const b = writeBatch(db);
+      b.set(doc(db, "settings", "app"), { password: deleteField() }, { merge: true });
+      S.sheikhs.forEach(x => { if (x.pin !== undefined) b.update(doc(db, "sheikhs", x.id), { pin: deleteField() }); });
+      await b.commit();
+      audit("تفعيل حماية التطبيق"); toast("الحماية مفعّلة");
+    });
+  }
+  if (t.closest("#secOff")){
+    ev.preventDefault();
+    confirmDlg("إيقاف الحماية مؤقتًا؟ أي جهاز مسجّل دخولًا يستطيع القراءة والكتابة حتى تعيد التفعيل.", async () => {
+      await setDoc(doc(db, "secrets", "security"), { enforce: false }, { merge: true }); audit("إيقاف حماية التطبيق مؤقتًا"); toast("تم الإيقاف");
+    });
+  }
+  const dd = t.closest("[data-devdel]");
+  if (dd) confirmDlg("إلغاء اعتماد هذا الجهاز؟ سيحتاج كلمة السر أو الرمز مع الإنترنت ليدخل من جديد.", async () => {
+    await deleteDoc(doc(db, "devices", dd.dataset.devdel)); audit("إلغاء اعتماد جهاز"); toast("تم");
+  });
+  if (t.closest("#devDelAll")) confirmDlg(`إلغاء اعتماد كل الأجهزة (${S.devices.length})؟ كل جهاز سيحتاج الدخول من جديد مع الإنترنت.`, async () => {
+    const ids = S.devices.map(d => d.id);
+    for (let i = 0; i < ids.length; i += 400){ const b = writeBatch(db); ids.slice(i, i + 400).forEach(id => b.delete(doc(db, "devices", id))); await b.commit(); }
+    audit("إلغاء اعتماد كل الأجهزة"); toast("تم");
+  });
+});
+
 $("saveAppPassBtn").onclick = async () => {
   const p = $("newAppPass").value.trim();
   if (p.length < 4){ toast("كلمة السر 4 خانات على الأقل"); return; }
-  await setDoc(doc(db,"settings","app"), { password:p, updatedAt: serverTimestamp() }, { merge:true }); audit("تغيير كلمة سر التطبيق");
+  if (secReady()) await setDoc(doc(db,"secrets","app"), { password:p, updatedAt: serverTimestamp() }, { merge:true });
+  if (!secOn()) await setDoc(doc(db,"settings","app"), { password:p, updatedAt: serverTimestamp() }, { merge:true });
+  audit("تغيير كلمة سر التطبيق");
   $("newAppPass").value = ""; toast("تم حفظ كلمة السر");
 };
 </script>
