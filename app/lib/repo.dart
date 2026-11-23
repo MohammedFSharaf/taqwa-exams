@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import 'logic.dart';
+
 class Halaqa {
   final String id, name;
   Halaqa(this.id, this.name);
@@ -97,21 +99,7 @@ class Repo {
   bool get secReady => prefs.getBool('secReady') ?? false;
 
   /// رقم قصير يميّز الجهاز (يظهر في الإعدادات وفي قائمة الأجهزة بلوحة الإدارة)
-  static String codeOf(String id) {
-    const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-    var h = 5381;
-    for (final c in id.codeUnits) {
-      h = (h * 33 + c) & 0xFFFFFFFF;
-    }
-    final b = StringBuffer();
-    for (var i = 0; i < 4; i++) {
-      b.write(abc[h % abc.length]);
-      h = h ~/ abc.length;
-    }
-    return b.toString();
-  }
-
-  String? get deviceCode => uid == null ? null : codeOf(uid!);
+  String? get deviceCode => uid == null ? null : deviceCodeOf(uid!);
 
   /// آخر استخدام للجهاز (لقائمة الأجهزة بلوحة الإدارة)
   void touchDevice() {
@@ -133,7 +121,7 @@ class Repo {
         'at': FieldValue.serverTimestamp(),
         'atMs': DateTime.now().millisecondsSinceEpoch,
         'lastMs': DateTime.now().millisecondsSinceEpoch,
-        'code': codeOf(u),
+        'code': deviceCodeOf(u),
       }, SetOptions(merge: true)).timeout(const Duration(seconds: 15));
       await prefs.setString('deviceUid', u);
       if (pass != null) await prefs.setString('verifiedPass', pass);

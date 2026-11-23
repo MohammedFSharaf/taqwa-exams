@@ -298,3 +298,19 @@ PathStep? nextPathStep(String dir, int start, Set<String> passedKeys, [String? f
   }
   return last + 1 < steps.length ? steps[last + 1] : null;
 }
+
+
+/// رقم قصير يميّز الجهاز — نفس الحساب في لوحة الإدارة (deviceCode)
+String deviceCodeOf(String id) {
+  const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  var h = 5381;
+  for (final c in id.codeUnits) {
+    h = (h * 33 + c) & 0xFFFFFFFF;
+  }
+  final b = StringBuffer();
+  for (var i = 0; i < 4; i++) {
+    b.write(abc[h % abc.length]);
+    h = h ~/ abc.length;
+  }
+  return b.toString();
+}
