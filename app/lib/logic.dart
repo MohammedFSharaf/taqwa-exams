@@ -4,7 +4,6 @@ import 'quran_data.dart';
 
 const centerName = 'مركز التقوى لتعليم وتحفيظ القرآن الكريم';
 const ayahText = 'وَلَقَدْ يَسَّرْنَا الْقُرْآنَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ';
-const ayahRef = '[القمر: 17]';
 
 /// اسم كل جزء حسب خطة المركز (من الناس): من أي سورة لأي سورة
 final List<String> juzNames = [for (var n = 0; n <= 30; n++) n == 0 ? '' : unitDesc('desc', n)];
