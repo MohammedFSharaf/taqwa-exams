@@ -99,18 +99,18 @@ void main() {
   final np2 = nextPlan('desc', sC, 3);
   print('next2: ${np2?.mem} | ${np2?.review}');
 
-  // ===== على دفعات =====
-  final mur = [gidOf(77, 1), gidOf(77, 50)];
-  final q = splitQuestionSeg('desc', mur[0], mur[1], 1);
-  expect(q != null, 'split question for المرسلات');
-  final sp1 = dailyStatus('desc', 30, {'1|30'}, [
-    {'date': '2026-11-22', 'status': 'recited', 'newMem': {'fromG': mur[0], 'toG': mur[1], 'split': true}}
-  ], {'lastG': null, 'fresh': true}, 1);
-  expect(sp1.mode == 'review_surah', 'split -> review_surah (${sp1.mode})');
-  final sp0 = dailyStatus('desc', 30, {'1|30'}, [
-    {'date': '2026-11-22', 'status': 'recited', 'newMem': {'fromG': mur[0], 'toG': mur[1], 'split': false}}
-  ], {'lastG': null, 'fresh': true}, 1);
-  expect(sp0.mode == 'memorize' && posLabel(sp0.fromG!) == 'الإنسان 1', 'continuous -> next surah');
-  expect(splitQuestionSeg('desc', gidOf(87, 1), gidOf(87, 19), 1) == null, 'no question for short surah (الأعلى)');
-  expect(splitQuestionSeg('desc', gidOf(67, 1), gidOf(67, 30), 3) != null, 'الملك asks even if daily min is 3');
+  // ===== على دفعات (كل السور المكتملة) =====
+  final o29 = {juzOrdKey('desc', 29): 'first'};
+  final prS = {'lastG': null, 'fresh': true, 'juzOrder': {'${juzOrdKey('desc', 29)}': 'first'}};
+  Map<String, dynamic> lg(String d, int a, int b, [Map<String, dynamic> x = const {}]) =>
+      {'date': d, 'status': 'recited', 'newMem': {'fromG': a, 'toG': b, ...x}, 'reviews': []};
+  var dd = dailyStatus('desc', 30, {'1|30'}, [lg('2026-11-22', gidOf(67, 1), gidOf(67, 15)), lg('2026-11-23', gidOf(67, 16), gidOf(68, 10))], prS, 1);
+  expect(dd.mode == 'review_surah' && posLabel(dd.segFrom!) == 'الملك 1', 'pieces crossing -> review الملك (${dd.mode})');
+  dd = dailyStatus('desc', 30, {'1|30'}, [lg('2026-11-23', gidOf(67, 1), gidOf(68, 10), {'split': false})], prS, 1);
+  expect(dd.mode == 'memorize', 'continuous single -> memorize');
+  dd = dailyStatus('desc', 30, {'1|30'}, [lg('2026-11-23', gidOf(67, 1), gidOf(68, 10), {'split': true})], prS, 1);
+  expect(dd.mode == 'review_surah', 'split crossing -> review');
+  final qs = splitQuestionSegs('desc', gidOf(67, 1), gidOf(68, 10), o29);
+  expect(qs.length == 1 && splitSegsLabel(qs) == 'سورة الملك', 'question segs ${splitSegsLabel(qs)}');
+  expect(splitQuestionSegs('desc', gidOf(87, 1), gidOf(87, 19)).isEmpty, 'short surah no question');
 }

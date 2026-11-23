@@ -305,6 +305,35 @@
   .betatag{background:var(--goldb);color:#3B2C00}
   #tabs{padding:8px 10px 10px}
   #tabs .grp{color:#8DB4CF;padding:14px 12px 4px;font-size:11.5px;letter-spacing:.3px}
+  .note-warn{background:#FFF4DE;color:#8A5A00;border-radius:10px;padding:10px 14px;line-height:1.8}
+  body.dark .note-warn{background:#3A3115;color:#F0C64A}
+  /* بطاقات الحلقات */
+  .hq-card{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:var(--card);transition:box-shadow .15s,border-color .15s}
+  .hq-card:hover{border-color:#9cc3df;box-shadow:0 6px 18px rgba(10,60,100,.08)}
+  .hq-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .hq-name{font-size:16px;color:var(--navy, #0B3F63)}
+  body.dark .hq-name{color:#e6f0f7}
+  .hq-cnt{display:inline-block;background:#E6F2FA;color:#0B3F63;border-radius:10px;padding:0 10px;font-size:12.5px;font-weight:700;margin-inline-start:6px}
+  .hq-go{color:#0A86C4;font-weight:700;font-size:13px;white-space:nowrap}
+  .hq-people{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:10px}
+  .hq-people .av{margin-left:0}
+  .hq-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+  .hq-kpis div{background:var(--zebra);border-radius:12px;padding:10px;text-align:center}
+  .hq-kpis b{display:block;font-size:20px;color:#0B3F63}
+  body.dark .hq-kpis b{color:#e6f0f7}
+  .hq-kpis span{color:var(--muted);font-size:12.5px}
+  @media (max-width:700px){ .hq-kpis{grid-template-columns:repeat(2,1fr)} }
+  /* مجموعات القائمة القابلة للطي */
+  #tabs .grp.fold{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;user-select:none;border-radius:10px;padding:10px 12px 8px;margin-top:2px;font-size:13px;font-weight:800}
+  #tabs .grp.fold:hover{background:rgba(255,255,255,.06);color:#fff}
+  #tabs .grp .gend{display:flex;align-items:center;gap:8px}
+  #tabs .grp .gch{width:14px;height:14px;transition:transform .2s;opacity:.8}
+  #tabs .grp.open .gch{transform:rotate(-90deg)}
+  #tabs .grp.open .gsum{display:none}
+  #tabs .gbody{display:none;border-right:1px solid rgba(255,255,255,.13);margin-right:20px;padding-right:2px}
+  #tabs .gbody.open{display:block}
+  body.side-mini #tabs .gbody{display:block;border:0;margin:0;padding:0}
+  body.side-mini #tabs .grp .gend{display:none}
   #tabs button{border:0;border-radius:12px;padding:8px 12px;margin:1px 0;color:#DCEBF5;gap:10px;justify-content:flex-start}
   #tabs button .t{flex:1;text-align:right}
   #tabs button svg{width:19px;height:19px;flex:none;opacity:.85}
@@ -451,6 +480,7 @@
       <button data-tab="path"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h8.5a1 1 0 010 7h-11a1 1 0 000 7H15" /><circle cx="18" cy="19" r="3" /><circle cx="6" cy="5" r="3" /></svg><span class="t">خطة المركز ومسار الطلاب</span></button>
       <div class="grp">الكادر والإعدادات</div>
       <button data-tab="sheikhs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v16" /><path d="m16 12 2 2 4-4" /><path d="M22 6V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2h4.001A2 2 0 0022 17v-1.344" /></svg><span class="t">المشايخ</span></button>
+      <button data-tab="sheikhstats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><polyline points="16 11 18 13 22 9" /></svg><span class="t">متابعة المشايخ</span></button>
       <button data-tab="examiners"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /><path d="M2 6h4" /><path d="M2 10h4" /><path d="M2 14h4" /><path d="M2 18h4" /><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /></svg><span class="t">المختبرين</span></button>
       <button data-tab="audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></svg><span class="t">سجل التعديلات</span></button>
       <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></svg><span class="t">الإعدادات</span></button>
@@ -696,6 +726,22 @@
     </section>
 
     <!-- المشايخ -->
+    <section id="tab-sheikhstats" class="hidden">
+      <div class="card">
+        <h2>متابعة المشايخ</h2>
+        <div class="row">
+          <label>الشهر<input type="month" id="skMonth"></label>
+          <button class="primary" id="skExcel">تصدير Excel</button>
+        </div>
+        <div id="skAlert" style="margin-top:10px"></div>
+        <table style="margin-top:10px">
+          <thead><tr><th>الشيخ</th><th>الحلقة</th><th>أيام التسجيل</th><th>طلاب سمّعوا</th><th>التسجيلات</th><th>صفحات الحفظ</th><th>صفحات المراجعة</th><th>حضور الحلقة</th><th>آخر تسجيل</th></tr></thead>
+          <tbody id="skBody"></tbody>
+        </table>
+        <p class="muted" style="font-size:12.5px;margin-top:8px">أيام التسجيل: الأيام التي سجّل فيها الشيخ من أيام الجلسات في الشهر حتى اليوم (بدون الإجازات). التسجيلات التي أدخلتها الإدارة لا تُحسب للشيخ.</p>
+      </div>
+    </section>
+
     <section id="tab-sheikhs" class="hidden">
       <div class="card">
         <h2>حسابات المشايخ</h2>
@@ -763,16 +809,14 @@
 
     <!-- الحلقات -->
     <section id="tab-halaqat" class="hidden">
-      <div class="card">
+      <div id="halaqaView" class="hidden"></div>
+      <div class="card" id="halaqatList">
         <h2>الحلقات</h2>
         <div class="row" style="margin-bottom:12px">
           <label>اسم الحلقة<input id="newHalaqaName" style="min-width:260px"></label>
           <button class="primary" id="addHalaqaBtn">إضافة</button>
         </div>
-        <table>
-          <thead><tr><th>الحلقة</th><th>عدد الطلاب</th><th>عدد الاختبارات</th><th></th></tr></thead>
-          <tbody id="halaqatBody"></tbody>
-        </table>
+        <div id="halaqatCards"></div>
       </div>
     </section>
 
@@ -998,12 +1042,14 @@ function memOrder(dir, ord){
   for (const u of units){ let mn = 1e9, mx = -1; for (let g = u.a; g <= u.b; g++){ mn = Math.min(mn, pos[g]); mx = Math.max(mx, pos[g]); } for (let n = u.n1; n <= u.n2; n++){ jStart[n] = mn; jEnd[n] = mx; } }
   return (_ORDER[key] = { order, pos, jStart, jEnd });
 }
-// هل يُسأل «كيف سمّع السورة؟»: الحفظ يُكمل سورة كاملة أكبر من حد الحفظ اليومي
-function splitQuestionSeg(dir, fromG, toG, minNew, ord){
-  const O = memOrder(dir, ord), [sa, sb] = segmentOf(dir, toG);
-  if (toG !== sb || O.pos[fromG] > O.pos[sa] || pagesOfRange(sa, sb) <= 1 + 1e-9) return null;
-  return [sa, sb];
+// السور التي يُسأل عنها «كيف سمّعها؟»: كل سورة (أكبر من صفحة) مكتملة داخل الحفظ المسجّل
+function splitQuestionSegs(dir, fromG, toG, ord){
+  const O = memOrder(dir, ord), a = O.pos[fromG], b = O.pos[toG], out = [];
+  for (let p = a; p <= b;){ const [sa, sb] = segmentOf(dir, O.order[p]), ps = O.pos[sa], pe = O.pos[sb];
+    if (ps >= a && pe <= b && pagesOfRange(sa, sb) > 1 + 1e-9) out.push([sa, sb]); p = pe + 1; }
+  return out.length ? out : null;
 }
+function splitSegsLabel(segs){ return segs.map(s => rangeLabel(s[0], s[1])).join(" و"); }
 function hasStart(pr){ return !!pr && ("lastG" in pr || "fresh" in pr); }
 // حالة الطالب في السجل اليومي
 function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
@@ -1019,19 +1065,20 @@ function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
   if (!hasData) return { mode: "needs_start", ord, step, juz: J };
   if (cursor !== null && cursor >= O.jEnd[J]) return { mode: "review_exam", ord, step, juzFrom: J, juzTo: J, ready: true };
   if (cursor === null || cursor < O.jStart[J] - 1) cursor = O.jStart[J] - 1;
-  if (cursor >= O.jStart[J]){
-    const [sa, sb] = segmentOf(dir, O.order[cursor]);
-    if (cursor === O.pos[sb]){
-      const ps = O.pos[sa], pe = O.pos[sb];
-      const touching = logs.filter(l => l.newMem && O.pos[l.newMem.fromG] <= pe && O.pos[l.newMem.toG] >= ps);
-      const lg = progress && progress.lastG, pre = !!lg && O.pos[lg] >= ps && O.pos[lg] <= pe;
-      const split = touching.some(l => l.newMem && l.newMem.split === true);
-      if (touching.length >= 2 || pre || split){
-        const doneDate = touching.map(l => l.date).sort().pop() || "";
-        const reviewed = logs.some(l => (l.date||"") >= doneDate && reviewsCover(l.reviews, sa, sb));
-        if (!reviewed) return { mode: "review_surah", ord, step, juz: J, segFrom: sa, segTo: sb };
-      }
+  // كل سورة اكتمل حفظها في الجزء الحالي: إن حُفظت على دفعات ولم تُسمَّع كاملة بعدها ← مراجعتها إجبارية
+  const lgS = progress && progress.lastG;
+  for (let p2 = O.jStart[J]; p2 <= cursor;){
+    const [sa, sb] = segmentOf(dir, O.order[p2]), ps = O.pos[sa], pe = O.pos[sb];
+    if (pe > cursor) break;
+    const touching = logs.filter(l => l.newMem && l.newMem.fromG && l.newMem.toG && O.pos[l.newMem.fromG] <= pe && O.pos[l.newMem.toG] >= ps);
+    const pre = !!lgS && O.pos[lgS] >= ps && O.pos[lgS] <= pe;
+    const split = pagesOfRange(sa, sb) > 1 + 1e-9 && touching.some(l => l.newMem.split === true);
+    if (touching.length >= 2 || pre || split){
+      const doneDate = touching.map(l => l.date).sort().pop() || "";
+      const reviewed = logs.some(l => (l.date||"") >= doneDate && reviewsCover(l.reviews, sa, sb));
+      if (!reviewed) return { mode: "review_surah", ord, step, juz: J, segFrom: sa, segTo: sb };
     }
+    p2 = pe + 1;
   }
   const fromPos = cursor + 1;
   let t = 0, toPos = fromPos;
@@ -1226,7 +1273,7 @@ let curTab = "home", curStudent = null;
 const TAB_TITLE = {};
 document.querySelectorAll("#tabs button").forEach(b => {
   TAB_TITLE[b.dataset.tab] = (b.querySelector('.t') || b).textContent.trim();
-  b.onclick = () => go(b.dataset.tab);
+  b.onclick = () => { if (b.dataset.tab === "halaqat") curHalaqa = null; go(b.dataset.tab); };
 });
 TAB_TITLE.student = "ملف الطالب";
 function go(tab, push = true){
@@ -1234,11 +1281,12 @@ function go(tab, push = true){
   curTab = tab;
   const navTab = tab === "student" ? "students" : tab;
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x.dataset.tab === navTab));
+  if (typeof navGroupOf === "function"){ const gi = navGroupOf(navTab); if (gi >= 0) openNavGroup(gi, true); }
   document.querySelectorAll("main section").forEach(x => x.classList.add("hidden"));
   $("tab-"+tab).classList.remove("hidden");
   $("pageTitle").textContent = TAB_TITLE[tab] || "";
   document.body.classList.remove("nav-open");
-  const hash = tab === "student" ? "#student/" + curStudent : "#" + tab;
+  const hash = tab === "student" ? "#student/" + curStudent : (tab === "halaqat" && curHalaqa ? "#halaqa/" + curHalaqa : "#" + tab);
   if (push && location.hash !== hash) history.pushState(null, "", hash);
   if (tab === "home") renderHome();
   if (tab === "student") renderStudentPage();
@@ -1247,12 +1295,15 @@ function go(tab, push = true){
   if (tab === "weekly") renderWeekly();
   if (tab === "ready") renderReadyPage();
   if (tab === "path") renderPathPage();
+  if (tab === "sheikhstats") renderSheikhStats();
+  if (tab === "halaqat"){ renderHalaqat(); if (curHalaqa) $("pageTitle").textContent = halaqaName(curHalaqa) || TAB_TITLE.halaqat; }
   window.scrollTo(0, 0);
 }
 function route(){
   const h = decodeURIComponent(location.hash.slice(1));
   if (h.startsWith("student/")){ curStudent = h.slice(8); go("student", false); }
-  else go(h || "home", false);
+  else if (h.startsWith("halaqa/")){ curHalaqa = h.slice(7); go("halaqat", false); }
+  else { if (h === "halaqat") curHalaqa = null; go(h || "home", false); }
 }
 window.addEventListener("popstate", route);
 const ICON_SUN = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>`, ICON_MOON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg>`;
@@ -1262,6 +1313,40 @@ $("themeBtn").onclick = () => setTheme(!document.body.classList.contains("dark")
 function setMini(on){ document.body.classList.toggle("side-mini", on); try { localStorage.setItem("taqwaSideMini", on ? "1" : ""); } catch(_){} }
 try { if (localStorage.getItem("taqwaSideMini") === "1") setMini(true); } catch(_){}
 document.querySelectorAll("#tabs button").forEach(b => b.title = (b.querySelector(".t") || b).textContent.trim());
+// ===== مجموعات القائمة: تنطوي وتنفتح (واحدة مفتوحة في كل مرة) =====
+const NAV_GROUPS = [];
+(() => {
+  const chev = `<svg class="gch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>`;
+  document.querySelectorAll("#tabs .grp").forEach((g, i) => {
+    const body = document.createElement("div"); body.className = "gbody";
+    let n = g.nextElementSibling;
+    while (n && !n.classList.contains("grp")){ const nx = n.nextElementSibling; body.appendChild(n); n = nx; }
+    g.after(body);
+    const title = g.textContent.trim();
+    g.classList.add("fold"); g.innerHTML = `<span>${title}</span><span class="gend"><span class="badge gsum hidden"></span>${chev}</span>`;
+    g.onclick = () => openNavGroup(g.classList.contains("open") ? -1 : i, true);
+    NAV_GROUPS.push({ g, body });
+  });
+})();
+function openNavGroup(i, save){
+  NAV_GROUPS.forEach((x, k) => { x.g.classList.toggle("open", k === i); x.body.classList.toggle("open", k === i); });
+  if (save) try { localStorage.setItem("taqwaNavOpen", String(i)); } catch(_){}
+}
+function navGroupOf(tab){ return NAV_GROUPS.findIndex(x => x.body.querySelector(`button[data-tab="${tab}"]`)); }
+// مجموع التنبيهات على عنوان المجموعة المطوية
+function updateNavSums(){
+  for (const x of NAV_GROUPS){
+    let t = 0, red = false;
+    x.body.querySelectorAll(".badge:not(.hidden)").forEach(b => { const v = parseInt(b.textContent) || 0; t += v; if (v && b.classList.contains("red")) red = true; });
+    const sum = x.g.querySelector(".gsum");
+    if (sum.textContent !== String(t)) sum.textContent = t;
+    if (sum.classList.contains("hidden") !== !t) sum.classList.toggle("hidden", !t);
+    if (sum.classList.contains("red") !== red) sum.classList.toggle("red", red);
+  }
+}
+new MutationObserver(ms => { if (ms.some(m => !(m.target.closest && m.target.closest(".grp")) && !(m.target.parentElement && m.target.parentElement.closest(".grp")))) updateNavSums(); })
+  .observe($("tabs"), { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class"] });
+(() => { let i = -1; try { const v = localStorage.getItem("taqwaNavOpen"); if (v !== null) i = +v; } catch(_){} openNavGroup(i, false); updateNavSums(); })();
 $("menuBtn").onclick = () => { if (window.innerWidth > 900) setMini(!document.body.classList.contains("side-mini")); else document.body.classList.toggle("nav-open"); };
 $("shade").onclick = () => document.body.classList.remove("nav-open");
 document.addEventListener("click", ev => {
@@ -1559,6 +1644,7 @@ function confirmDlg(msg, onYes){
 function renderAll(){
   fillSelects();
   renderExams(); renderPending(); renderStudents(); renderHalaqat(); renderExaminers(); renderRetests(); renderStats(); renderDaily(); renderSheikhs();
+  if (curTab === "sheikhstats") renderSheikhStats();
   renderPermits(); renderBadges();
   if (curTab === "home") renderHome();
   if (curTab === "student") renderStudentPage();
@@ -2307,13 +2393,13 @@ function logEditor(sid, lg){
     if (v("lgStatus") !== "recited" || !$("lgHasNew").checked) return null;
     const a = clampG(v("lgFs"), n("lgFa")), b = clampG(v("lgTs"), n("lgTa"));
     if (O.pos[a] > O.pos[b]) return { err: "«من» يجب أن تكون قبل «إلى» في ترتيب الحفظ" };
-    const sq = splitQuestionSeg(dir, a, b, minNewPages(), ORD);
+    const sq = splitQuestionSegs(dir, a, b, ORD);
     const ch = document.querySelector('input[name="lgSplit"]:checked');
     return { fromG: a, toG: b, pages: memRangePages(dir, a, b, ORD), label: memRangeLabel(dir, a, b, ORD), sq, split: sq && ch ? ch.value === "1" : null };
   }
   function buildLog(){
     const nr = newRange(); if (nr && nr.err){ toast(nr.err); return null; }
-    if (nr && nr.sq && nr.split === null){ toast(`حدّد كيف سمّع ${rangeLabel(nr.sq[0], nr.sq[1])}: متصلة أو على دفعات`); return null; }
+    if (nr && nr.sq && nr.split === null){ toast(`حدّد كيف سمّع ${splitSegsLabel(nr.sq)}: متصلة أو على دفعات`); return null; }
     const status = v("lgStatus"), rec = status === "recited";
     const rv = rec ? reviews : [];
     const base = lg ? { ...lg } : { studentId: sid, studentName: st.name, halaqaId: st.halaqaId, date, sheikhId: null, sheikhName: "الإدارة",
@@ -2330,7 +2416,7 @@ function logEditor(sid, lg){
     const nr = newRange();
     $("lgNewInfo").textContent = !nr ? "" : nr.err ? nr.err : `${nr.label} — ${fp(nr.pages)} صفحة`;
     $("lgSplitBox").style.display = nr && !nr.err && nr.sq ? "" : "none";
-    if (nr && nr.sq) $("lgSplitQ").textContent = `كيف سمّع ${rangeLabel(nr.sq[0], nr.sq[1])}؟`;
+    if (nr && nr.sq) $("lgSplitQ").textContent = `كيف سمّع ${splitSegsLabel(nr.sq)}؟`;
     $("lgRevList").innerHTML = reviews.length ? reviews.map((r,i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)"><span>${esc(r.label)} <span class="muted">(${fp(r.pages)} ص)</span></span><button class="small danger" data-rdel="${i}">حذف</button></div>`).join("")
       + `<div class="muted" style="margin-top:4px">المجموع: ${fp(reviews.reduce((t,r)=>t+(r.pages||0),0))} صفحة</div>` : `<div class="muted">لا توجد مراجعة</div>`;
     const k = v("lgRk");
@@ -2857,13 +2943,106 @@ $("importBtn").onclick = async () => {
 };
 
 // ===== الحلقات =====
+// ===== متابعة المشايخ: نشاط كل شيخ في الشهر =====
+function sessionDatesOfMonth(mk, halaqaId){
+  // أيام الجلسات في الشهر حتى اليوم (بدون الإجازات)
+  const [y, m] = mk.split("-").map(Number), tk = dayKey(nowG()), out = [], days = sessionDays();
+  for (let d = 1; d <= 31; d++){
+    const dt = new Date(y, m - 1, d, 12); if (dt.getMonth() !== m - 1) break;
+    const k = dayKey(dt); if (k > tk) break;
+    if (days.includes(dt.getDay()) && !isHoliday(k, halaqaId)) out.push(k);
+  }
+  return out;
+}
+function sheikhStats(mk){
+  const tk = dayKey(nowG());
+  return sortAr([...S.sheikhs]).map(sh => {
+    const L = S.logs.filter(l => l.sheikhId === sh.id && (l.date || "").startsWith(mk));
+    const dates = [...new Set(L.map(l => l.date))].sort();
+    const sess = sessionDatesOfMonth(mk, sh.halaqaId);
+    const missed = sess.filter(d => !dates.includes(d));
+    const rec = L.filter(l => l.status === "recited");
+    const studs = new Set(rec.map(l => l.studentId));
+    // حضور الحلقة في الشهر (كل التسجيلات، من أي شيخ)
+    const H = aggLogs(S.logs.filter(l => l.halaqaId === sh.halaqaId && (l.date || "").startsWith(mk)));
+    const allSh = S.logs.filter(l => l.sheikhId === sh.id).map(l => l.date).sort();
+    const last = allSh.length ? allSh[allSh.length - 1] : "";
+    const idle = last ? Math.round((new Date(tk + "T12:00:00") - new Date(last + "T12:00:00")) / 86400000) : null;
+    // جلسات فاتته منذ آخر تسجيل (آخر أسبوعين، قبل اليوم)
+    let gap = 0;
+    for (let k = 1; k <= 14; k++){ const dt = nowG(); dt.setHours(12,0,0,0); dt.setDate(dt.getDate() - k); const dk = dayKey(dt);
+      if (last && dk <= last) break; if (sessionDays().includes(dt.getDay()) && !isHoliday(dk, sh.halaqaId)) gap++; }
+    return { sh, hq: halaqaName(sh.halaqaId), days: dates.length, sess: sess.length, missed, logs: L.length, studs: studs.size,
+      np: rec.reduce((t, l) => t + (l.newPages || 0), 0), rp: rec.reduce((t, l) => t + (l.reviewPages || 0), 0),
+      att: H.sessions ? H.attendance : null, last, idle, gap };
+  });
+}
+function renderSheikhStats(){
+  if (!$("skMonth").value) $("skMonth").value = dayKey(nowG()).slice(0, 7);
+  const mk = $("skMonth").value, R = sheikhStats(mk), cur = mk === dayKey(nowG()).slice(0, 7);
+  const lateList = cur ? R.filter(r => r.gap >= 2) : [];
+  $("skAlert").innerHTML = lateList.length ? `<div class="note-warn">فاتهم التسجيل في جلستين أو أكثر: ${lateList.map(r => `<b>${esc(r.sh.name)}</b> (${r.last ? `${r.gap} جلسات منذ ${esc(r.last)}` : "لم يسجّل أبدًا"})`).join("، ")}</div>` : "";
+  $("skBody").innerHTML = R.length ? R.map(r => {
+    const pct = r.sess ? Math.round(r.days * 100 / r.sess) : null;
+    const cls = pct === null ? "" : pct >= 90 ? "p-ok" : pct >= 70 ? "p-wa" : "p-no";
+    return `<tr><td><b>${esc(r.sh.name)}</b></td><td>${esc(r.hq) || "—"}</td>
+      <td>${r.days} من ${r.sess} ${pct === null ? "" : pill(cls, pct + "%")}${r.missed.length && r.missed.length <= 4 ? `<div class="muted" style="font-size:12px">فاته: ${r.missed.map(d => d.slice(5)).join("، ")}</div>` : ""}</td>
+      <td>${r.studs}</td><td>${r.logs}</td><td>${fp(r.np)}</td><td>${fp(r.rp)}</td><td>${r.att === null ? "—" : r.att + "%"}</td>
+      <td>${r.last ? esc(r.last) + (r.idle ? ` <span class="muted">(قبل ${r.idle} ${r.idle === 1 ? "يوم" : r.idle === 2 ? "يومين" : "أيام"})</span>` : ' <span class="muted">(اليوم)</span>') : '<span class="muted">لم يسجّل</span>'}</td></tr>`;
+  }).join("") : `<tr><td colspan="9" class="empty">لا توجد حسابات مشايخ</td></tr>`;
+}
+$("skMonth").addEventListener("input", renderSheikhStats);
+$("skExcel").onclick = () => {
+  const mk = $("skMonth").value, wb = newBook();
+  addSheet(wb, sheikhStats(mk).map(r => ({ "الشيخ": r.sh.name, "الحلقة": r.hq, "أيام التسجيل": r.days, "أيام الجلسات": r.sess, "طلاب سمّعوا": r.studs, "التسجيلات": r.logs,
+    "صفحات الحفظ": +fp(r.np), "صفحات المراجعة": +fp(r.rp), "حضور الحلقة %": r.att === null ? "" : r.att, "آخر تسجيل": r.last })), "متابعة المشايخ");
+  XLSX.writeFile(wb, `متابعة-المشايخ-${mk}.xlsx`);
+};
+// ===== الحلقات: بطاقة لكل حلقة، وصفحة لكل حلقة بطلابها =====
+let curHalaqa = null;
+function openHalaqa(id){ curHalaqa = id; go("halaqat"); }
+function halaqaSheikhs(id){ return S.sheikhs.filter(x => x.halaqaId === id).map(x => x.name); }
 function renderHalaqat(){
-  $("halaqatBody").innerHTML = sortAr([...S.halaqat]).map(h => `
-    <tr><td>${esc(h.name)}</td>
-    <td>${S.students.filter(s=>s.halaqaId===h.id && isActive(s)).length}</td>
-    <td>${S.exams.filter(e=>e.halaqaId===h.id).length}</td>
-    <td class="actions"><button class="small" data-edit="${h.id}">تعديل الاسم</button>
-    <button class="small danger" data-del="${h.id}">حذف</button></td></tr>`).join("");
+  const h = curHalaqa && S.halaqat.find(x => x.id === curHalaqa);
+  $("halaqatList").classList.toggle("hidden", !!h);
+  $("halaqaView").classList.toggle("hidden", !h);
+  if (h){ $("halaqaView").innerHTML = halaqaViewHtml(h); return; }
+  const list = sortAr([...S.halaqat]);
+  $("halaqatCards").innerHTML = list.length ? list.map(h => {
+    const studs = sortAr(S.students.filter(s => s.halaqaId === h.id && isActive(s)));
+    const sh = halaqaSheikhs(h.id);
+    const shown = studs.slice(0, 5);
+    return `<div class="hq-card" data-hqopen="${h.id}">
+      <div class="hq-top"><div><b class="hq-name">${esc(h.name)}</b> <span class="hq-cnt">${studs.length === 2 ? "طالبان" : `${studs.length} ${studs.length >= 3 && studs.length <= 10 ? "طلاب" : "طالب"}`}</span></div><a class="hq-go">عرض الطلاب ←</a></div>
+      <div class="muted" style="margin-top:4px">${sh.length ? "المشايخ: " + esc(sh.join("، ")) : "لا يوجد شيخ مسجّل"}</div>
+      ${studs.length ? `<div class="hq-people">${shown.map(s => avatarOf(s.id, s.name)).join("")}<span class="muted">${esc(shown.map(s => s.name.split(" ")[0]).join("، "))}${studs.length > 5 ? ` و${studs.length - 5} آخرين` : ""}</span></div>` : ""}
+    </div>`; }).join("") : `<div class="empty">لا توجد حلقات بعد</div>`;
+}
+function halaqaViewHtml(h){
+  const studs = sortAr(S.students.filter(s => s.halaqaId === h.id && isActive(s)));
+  const sh = halaqaSheikhs(h.id), tk = dayKey(nowG());
+  const [from, to] = wkRange(0);
+  const wl = S.logs.filter(l => l.halaqaId === h.id && l.date >= from && l.date <= to);
+  const todayLogs = S.logs.filter(l => l.halaqaId === h.id && l.date === tk);
+  const recited = todayLogs.filter(l => l.status === "recited").length;
+  const ready = studs.filter(s => { try { const r = examReady(s); return r.ok && !r.hafiz && r.reason === "ok"; } catch(_){ return false; } }).length;
+  const rows = studs.map((s, i) => {
+    let d = null; try { d = dailyOf(s); } catch(_){}
+    const l = todayLogs.find(x => x.studentId === s.id);
+    const st = l ? (l.status === "recited" ? pill("p-ok", "سمّع") : l.status === "excused" ? pill("p-wa", ST_TEXT[l.status]) : pill("p-no", ST_TEXT[l.status] || "")) : pill("p-wa", "لم يُسجَّل");
+    const ex = S.exams.filter(e => e.studentId === s.id).sort((a,b) => examMs(b) - examMs(a))[0];
+    return `<tr><td>${i + 1}</td><td>${nameLink(s.id, s.name, true)}</td><td>${d ? esc(dailyTitle(d)) : ""}</td><td>${st}</td>
+      <td>${ex ? `${esc(juzLabel(ex).split(":")[0])} ${ex.passed ? "✓" : `<span class="closed">(${esc(resultText(ex))})</span>`}` : '<span class="muted">—</span>'}</td></tr>`;
+  }).join("");
+  return `<div class="card">
+    <div class="crumb"><a data-hqback="1">→ كل الحلقات</a></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div><h2 style="margin:4px 0">${esc(h.name)}</h2><div class="muted">${sh.length ? "المشايخ: " + esc(sh.join("، ")) : "لا يوجد شيخ مسجّل"}</div></div>
+      <div class="row"><button class="small" data-hqrep="${h.id}">التقرير الأسبوعي</button> <button class="small" data-edit="${h.id}">تعديل الاسم</button> <button class="small danger" data-del="${h.id}">حذف</button></div>
+    </div>
+    <div class="hq-kpis"><div><b>${studs.length}</b><span>طالب</span></div><div><b>${recited}</b><span>سمّعوا اليوم</span></div><div><b>${fp(wl.reduce((t, l) => t + (l.status === "recited" ? l.newPages || 0 : 0), 0))} ص</b><span>حفظ هذا الأسبوع</span></div><div><b>${ready}</b><span>جاهزون للاختبار</span></div></div>
+    ${studs.length ? `<table><thead><tr><th>#</th><th>الطالب</th><th>المرحلة الآن</th><th>اليوم</th><th>آخر اختبار</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty">لا يوجد طلاب في هذه الحلقة</div>`}
+  </div>`;
 }
 $("addHalaqaBtn").onclick = async () => {
   const name = $("newHalaqaName").value.trim(); if (!name) return;
@@ -2872,8 +3051,12 @@ $("addHalaqaBtn").onclick = async () => {
   $("newHalaqaName").value = ""; toast("تمت الإضافة");
 };
 $("newHalaqaName").addEventListener("keydown", e => { if (e.key==="Enter") $("addHalaqaBtn").click(); });
-$("halaqatBody").addEventListener("click", ev => {
-  const b = ev.target.closest("button"); if (!b) return;
+$("tab-halaqat").addEventListener("click", ev => {
+  if (ev.target.closest("[data-rec]")) return;
+  const c = ev.target.closest("[data-hqopen]"); if (c){ openHalaqa(c.dataset.hqopen); return; }
+  if (ev.target.closest("[data-hqback]")){ ev.preventDefault(); curHalaqa = null; go("halaqat"); return; }
+  const rp = ev.target.closest("[data-hqrep]"); if (rp){ printDoc(`التقرير الأسبوعي للحلقة — ${wkLabel(0)}`, wkHalaqaHtml(rp.dataset.hqrep, 0)); return; }
+  const b = ev.target.closest("button[data-edit],button[data-del]"); if (!b) return;
   const h = S.halaqat.find(x=>x.id===(b.dataset.edit||b.dataset.del));
   if (b.dataset.edit){
     openDialog("تعديل اسم الحلقة", `<input id="ehName" style="width:100%" value="${esc(h.name)}">`, [
@@ -2887,7 +3070,7 @@ $("halaqatBody").addEventListener("click", ev => {
   }
   if (b.dataset.del){
     if (S.students.some(s=>s.halaqaId===h.id)){ toast("لا يمكن حذف حلقة فيها طلاب"); return; }
-    confirmDlg(`حذف حلقة ${h.name}؟`, async () => { await deleteDoc(doc(db,"halaqat",h.id)); audit("حذف حلقة", h.name); toast("تم الحذف"); });
+    confirmDlg(`حذف حلقة ${h.name}؟`, async () => { await deleteDoc(doc(db,"halaqat",h.id)); audit("حذف حلقة", h.name); toast("تم الحذف"); curHalaqa = null; go("halaqat"); });
   }
 });
 
