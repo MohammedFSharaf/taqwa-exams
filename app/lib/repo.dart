@@ -150,7 +150,11 @@ class Repo {
       if (!d.exists) {
         // ألغت الإدارة اعتماد الجهاز ← يُمسح ما حُفظ عليه من بيانات عند الفتح القادم
         await prefs.remove('deviceUid');
-        await prefs.setBool('wipeCache', true);
+        // المسح فقط بعد رفع (أو رفض) كل التسجيلات المعلّقة، وإلا نحاول في الفتح القادم
+        try {
+          await db.waitForPendingWrites().timeout(const Duration(seconds: 20));
+          await prefs.setBool('wipeCache', true);
+        } catch (_) {}
       }
     } catch (_) {}
   }

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
 import 'repo.dart';
@@ -13,19 +14,19 @@ import 'update_check.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: firebaseOptions);
+  // جهاز أُلغي اعتماده: مسح نسخة البيانات المحفوظة عليه قبل أن تبدأ قاعدة البيانات
+  final sp = await SharedPreferences.getInstance();
+  if (sp.getBool('wipeCache') == true) {
+    try {
+      await FirebaseFirestore.instance.clearPersistence();
+    } catch (_) {}
+    await sp.remove('wipeCache');
+  }
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
   await Repo.I.init();
-  // جهاز أُلغي اعتماده: مسح نسخة البيانات المحفوظة عليه قبل أي استخدام
-  if (Repo.I.prefs.getBool('wipeCache') == true) {
-    try {
-      await FirebaseFirestore.instance.terminate();
-      await FirebaseFirestore.instance.clearPersistence();
-    } catch (_) {}
-    await Repo.I.prefs.remove('wipeCache');
-  }
   UpdateWatcher.I.start();
   NetWatcher.I.start();
   runApp(const TaqwaApp());
