@@ -255,7 +255,8 @@ Future<String?> examinerLogin(String p) async {
   if (p.isEmpty) return 'كلمة السر غير صحيحة';
   // جهاز معتمد بنفس كلمة السر ← دخول فوري (يعمل بدون إنترنت)
   if (Repo.I.deviceOk && p == Repo.I.verifiedPass) return null;
-  final r = await Repo.I.registerDevice(pass: p, name: Repo.I.examinerName);
+  // بدون إنترنت لا ننتظر السيرفر
+  final r = NetWatcher.I.online ? await Repo.I.registerDevice(pass: p, name: Repo.I.examinerName) : 'offline';
   if (r == 'ok') return null;
   // قبل تفعيل الحماية: كلمة السر القديمة المحفوظة على الجهاز
   final legacy = Repo.I.appPassword;
@@ -268,7 +269,7 @@ Future<String?> examinerLogin(String p) async {
 Future<String?> sheikhLogin(String sheikhId, String pin, {String? legacyPin, String? name}) async {
   if (pin.isEmpty) return 'رمز الدخول غير صحيح';
   if (Repo.I.deviceOk && Repo.I.verifiedSheikh == sheikhId && Repo.I.verifiedPin == pin) return null;
-  final r = await Repo.I.registerDevice(sheikhId: sheikhId, pin: pin, name: name);
+  final r = NetWatcher.I.online ? await Repo.I.registerDevice(sheikhId: sheikhId, pin: pin, name: name) : 'offline';
   if (r == 'ok') return null;
   final hasLegacy = legacyPin != null && legacyPin.isNotEmpty;
   if (hasLegacy && pin == legacyPin && (r == 'offline' || !Repo.I.secReady)) return null;
