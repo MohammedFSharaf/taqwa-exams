@@ -292,30 +292,32 @@ DailyStatus dailyStatus(String dir, int start, Set<String> passedKeys, List<Map<
     return DailyStatus('review_exam', ord: ord, step: step, juz: j, juzFrom: j, juzTo: j, ready: true);
   }
   if (cursor == null || cursor < o.jStart[j] - 1) cursor = o.jStart[j] - 1;
-  if (cursor >= o.jStart[j]) {
-    final seg = segmentOf(dir, o.order[cursor]);
+  // كل سورة اكتمل حفظها في الجزء الحالي: إن حُفظت على دفعات ولم تُسمَّع كاملة بعدها ← مراجعتها إجبارية
+  final lgStart = progress == null ? null : _int(progress['lastG']);
+  for (var p = o.jStart[j]; p <= cursor;) {
+    final seg = segmentOf(dir, o.order[p]);
     final sa = seg[0], sb = seg[1];
-    if (cursor == o.pos[sb]) {
-      final ps = o.pos[sa], pe = o.pos[sb];
-      final touching = logs.where((l) {
-        final nm = l['newMem'];
-        if (nm is! Map || _int(nm['fromG']) == null || _int(nm['toG']) == null) return false;
-        return o.pos[_int(nm['fromG'])!] <= pe && o.pos[_int(nm['toG'])!] >= ps;
-      }).toList();
-      // جزء من السورة حُفظ قبل السجل (نقطة البداية داخلها أو عند آخرها) ← تُعدّ مقطّعة
-      final lg = progress == null ? null : _int(progress['lastG']);
-      final pre = lg != null && lg >= 1 && lg <= nAyah && o.pos[lg] >= ps && o.pos[lg] <= pe;
-      // سُمّعت على دفعات بنفس الجلسة (يحددها الشيخ)
-      final split = touching.any((l) => l['newMem'] is Map && (l['newMem'] as Map)['split'] == true);
-      if (touching.length >= 2 || pre || split) {
-        final dates = touching.map((l) => (l['date'] ?? '').toString()).toList()..sort();
-        final doneDate = dates.isEmpty ? '' : dates.last;
-        // كاملة في جلسة واحدة: مراجعات نفس الجلسة مجتمعةً تغطي السورة
-        final reviewed = logs.any((l) =>
-            (l['date'] ?? '').toString().compareTo(doneDate) >= 0 && reviewsCoverRange(l['reviews'], sa, sb));
-        if (!reviewed) return DailyStatus('review_surah', ord: ord, step: step, juz: j, segFrom: sa, segTo: sb);
-      }
+    final ps = o.pos[sa], pe = o.pos[sb];
+    if (pe > cursor) break; // لم تكتمل بعد
+    final touching = logs.where((l) {
+      final nm = l['newMem'];
+      if (nm is! Map || _int(nm['fromG']) == null || _int(nm['toG']) == null) return false;
+      return o.pos[_int(nm['fromG'])!] <= pe && o.pos[_int(nm['toG'])!] >= ps;
+    }).toList();
+    // جزء من السورة حُفظ قبل السجل (نقطة البداية داخلها أو عند آخرها) ← تُعدّ مقطّعة
+    final pre = lgStart != null && lgStart >= 1 && lgStart <= nAyah && o.pos[lgStart] >= ps && o.pos[lgStart] <= pe;
+    // سُمّعت على دفعات بنفس الجلسة (يحددها الشيخ) — للسور الأكبر من صفحة
+    final split = pagesOfRange(sa, sb) > 1 + 1e-9 &&
+        touching.any((l) => l['newMem'] is Map && (l['newMem'] as Map)['split'] == true);
+    if (touching.length >= 2 || pre || split) {
+      final dates = touching.map((l) => (l['date'] ?? '').toString()).toList()..sort();
+      final doneDate = dates.isEmpty ? '' : dates.last;
+      // كاملة في جلسة واحدة: مراجعات نفس الجلسة مجتمعةً تغطي السورة
+      final reviewed = logs.any((l) =>
+          (l['date'] ?? '').toString().compareTo(doneDate) >= 0 && reviewsCoverRange(l['reviews'], sa, sb));
+      if (!reviewed) return DailyStatus('review_surah', ord: ord, step: step, juz: j, segFrom: sa, segTo: sb);
     }
+    p = pe + 1;
   }
   final fromPos = cursor + 1;
   var t = 0.0;
@@ -490,13 +492,18 @@ NextPlan? nextPlan(String dir, DailyStatus n, double minReview) {
 }
 
 
-/// هل يُسأل الشيخ «كيف سمّع السورة؟»: الحفظ يُكمل سورة كاملة (أو جزءها في الوحدة) أكبر من حد الحفظ اليومي
-List<int>? splitQuestionSeg(String dir, int fromG, int toG, double minNew, [JuzOrd ord = const {}]) {
+/// السور التي يُسأل عنها الشيخ «كيف سمّعها؟»: كل سورة (أكبر من صفحة) مكتملة داخل الحفظ المسجّل
+List<List<int>> splitQuestionSegs(String dir, int fromG, int toG, [JuzOrd ord = const {}]) {
   final o = memOrder(dir, ord);
-  final seg = segmentOf(dir, toG);
-  final sa = seg[0], sb = seg[1];
-  if (toG != sb) return null; // لا يُكمل السورة
-  if (o.pos[fromG] > o.pos[sa]) return null; // جزء منها قبل اليوم (يُعالَج تلقائياً)
-  if (pagesOfRange(sa, sb) <= 1 + 1e-9) return null; // سورة قصيرة (صفحة أو أقل)
-  return seg;
+  final a = o.pos[fromG], b = o.pos[toG], out = <List<int>>[];
+  for (var p = a; p <= b;) {
+    final seg = segmentOf(dir, o.order[p]);
+    final ps = o.pos[seg[0]], pe = o.pos[seg[1]];
+    if (ps >= a && pe <= b && pagesOfRange(seg[0], seg[1]) > 1 + 1e-9) out.add(seg);
+    p = pe + 1;
+  }
+  return out;
 }
+
+/// اسم السور للسؤال: «سورة الملك» أو «سورة الملك وسورة القلم»
+String splitSegsLabel(List<List<int>> segs) => segs.map((s) => rangeLabel(s[0], s[1])).join(' و');

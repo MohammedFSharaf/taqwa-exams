@@ -1042,12 +1042,14 @@ function memOrder(dir, ord){
   for (const u of units){ let mn = 1e9, mx = -1; for (let g = u.a; g <= u.b; g++){ mn = Math.min(mn, pos[g]); mx = Math.max(mx, pos[g]); } for (let n = u.n1; n <= u.n2; n++){ jStart[n] = mn; jEnd[n] = mx; } }
   return (_ORDER[key] = { order, pos, jStart, jEnd });
 }
-// هل يُسأل «كيف سمّع السورة؟»: الحفظ يُكمل سورة كاملة أكبر من حد الحفظ اليومي
-function splitQuestionSeg(dir, fromG, toG, minNew, ord){
-  const O = memOrder(dir, ord), [sa, sb] = segmentOf(dir, toG);
-  if (toG !== sb || O.pos[fromG] > O.pos[sa] || pagesOfRange(sa, sb) <= 1 + 1e-9) return null;
-  return [sa, sb];
+// السور التي يُسأل عنها «كيف سمّعها؟»: كل سورة (أكبر من صفحة) مكتملة داخل الحفظ المسجّل
+function splitQuestionSegs(dir, fromG, toG, ord){
+  const O = memOrder(dir, ord), a = O.pos[fromG], b = O.pos[toG], out = [];
+  for (let p = a; p <= b;){ const [sa, sb] = segmentOf(dir, O.order[p]), ps = O.pos[sa], pe = O.pos[sb];
+    if (ps >= a && pe <= b && pagesOfRange(sa, sb) > 1 + 1e-9) out.push([sa, sb]); p = pe + 1; }
+  return out.length ? out : null;
 }
+function splitSegsLabel(segs){ return segs.map(s => rangeLabel(s[0], s[1])).join(" و"); }
 function hasStart(pr){ return !!pr && ("lastG" in pr || "fresh" in pr); }
 // حالة الطالب في السجل اليومي
 function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
@@ -1063,19 +1065,20 @@ function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
   if (!hasData) return { mode: "needs_start", ord, step, juz: J };
   if (cursor !== null && cursor >= O.jEnd[J]) return { mode: "review_exam", ord, step, juzFrom: J, juzTo: J, ready: true };
   if (cursor === null || cursor < O.jStart[J] - 1) cursor = O.jStart[J] - 1;
-  if (cursor >= O.jStart[J]){
-    const [sa, sb] = segmentOf(dir, O.order[cursor]);
-    if (cursor === O.pos[sb]){
-      const ps = O.pos[sa], pe = O.pos[sb];
-      const touching = logs.filter(l => l.newMem && O.pos[l.newMem.fromG] <= pe && O.pos[l.newMem.toG] >= ps);
-      const lg = progress && progress.lastG, pre = !!lg && O.pos[lg] >= ps && O.pos[lg] <= pe;
-      const split = touching.some(l => l.newMem && l.newMem.split === true);
-      if (touching.length >= 2 || pre || split){
-        const doneDate = touching.map(l => l.date).sort().pop() || "";
-        const reviewed = logs.some(l => (l.date||"") >= doneDate && reviewsCover(l.reviews, sa, sb));
-        if (!reviewed) return { mode: "review_surah", ord, step, juz: J, segFrom: sa, segTo: sb };
-      }
+  // كل سورة اكتمل حفظها في الجزء الحالي: إن حُفظت على دفعات ولم تُسمَّع كاملة بعدها ← مراجعتها إجبارية
+  const lgS = progress && progress.lastG;
+  for (let p2 = O.jStart[J]; p2 <= cursor;){
+    const [sa, sb] = segmentOf(dir, O.order[p2]), ps = O.pos[sa], pe = O.pos[sb];
+    if (pe > cursor) break;
+    const touching = logs.filter(l => l.newMem && l.newMem.fromG && l.newMem.toG && O.pos[l.newMem.fromG] <= pe && O.pos[l.newMem.toG] >= ps);
+    const pre = !!lgS && O.pos[lgS] >= ps && O.pos[lgS] <= pe;
+    const split = pagesOfRange(sa, sb) > 1 + 1e-9 && touching.some(l => l.newMem.split === true);
+    if (touching.length >= 2 || pre || split){
+      const doneDate = touching.map(l => l.date).sort().pop() || "";
+      const reviewed = logs.some(l => (l.date||"") >= doneDate && reviewsCover(l.reviews, sa, sb));
+      if (!reviewed) return { mode: "review_surah", ord, step, juz: J, segFrom: sa, segTo: sb };
     }
+    p2 = pe + 1;
   }
   const fromPos = cursor + 1;
   let t = 0, toPos = fromPos;
@@ -2390,13 +2393,13 @@ function logEditor(sid, lg){
     if (v("lgStatus") !== "recited" || !$("lgHasNew").checked) return null;
     const a = clampG(v("lgFs"), n("lgFa")), b = clampG(v("lgTs"), n("lgTa"));
     if (O.pos[a] > O.pos[b]) return { err: "«من» يجب أن تكون قبل «إلى» في ترتيب الحفظ" };
-    const sq = splitQuestionSeg(dir, a, b, minNewPages(), ORD);
+    const sq = splitQuestionSegs(dir, a, b, ORD);
     const ch = document.querySelector('input[name="lgSplit"]:checked');
     return { fromG: a, toG: b, pages: memRangePages(dir, a, b, ORD), label: memRangeLabel(dir, a, b, ORD), sq, split: sq && ch ? ch.value === "1" : null };
   }
   function buildLog(){
     const nr = newRange(); if (nr && nr.err){ toast(nr.err); return null; }
-    if (nr && nr.sq && nr.split === null){ toast(`حدّد كيف سمّع ${rangeLabel(nr.sq[0], nr.sq[1])}: متصلة أو على دفعات`); return null; }
+    if (nr && nr.sq && nr.split === null){ toast(`حدّد كيف سمّع ${splitSegsLabel(nr.sq)}: متصلة أو على دفعات`); return null; }
     const status = v("lgStatus"), rec = status === "recited";
     const rv = rec ? reviews : [];
     const base = lg ? { ...lg } : { studentId: sid, studentName: st.name, halaqaId: st.halaqaId, date, sheikhId: null, sheikhName: "الإدارة",
@@ -2413,7 +2416,7 @@ function logEditor(sid, lg){
     const nr = newRange();
     $("lgNewInfo").textContent = !nr ? "" : nr.err ? nr.err : `${nr.label} — ${fp(nr.pages)} صفحة`;
     $("lgSplitBox").style.display = nr && !nr.err && nr.sq ? "" : "none";
-    if (nr && nr.sq) $("lgSplitQ").textContent = `كيف سمّع ${rangeLabel(nr.sq[0], nr.sq[1])}؟`;
+    if (nr && nr.sq) $("lgSplitQ").textContent = `كيف سمّع ${splitSegsLabel(nr.sq)}؟`;
     $("lgRevList").innerHTML = reviews.length ? reviews.map((r,i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)"><span>${esc(r.label)} <span class="muted">(${fp(r.pages)} ص)</span></span><button class="small danger" data-rdel="${i}">حذف</button></div>`).join("")
       + `<div class="muted" style="margin-top:4px">المجموع: ${fp(reviews.reduce((t,r)=>t+(r.pages||0),0))} صفحة</div>` : `<div class="muted">لا توجد مراجعة</div>`;
     const k = v("lgRk");
@@ -3022,7 +3025,7 @@ function halaqaViewHtml(h){
   const wl = S.logs.filter(l => l.halaqaId === h.id && l.date >= from && l.date <= to);
   const todayLogs = S.logs.filter(l => l.halaqaId === h.id && l.date === tk);
   const recited = todayLogs.filter(l => l.status === "recited").length;
-  const ready = studs.filter(s => { try { const r = examReady(s); return r.ok && !r.hafiz; } catch(_){ return false; } }).length;
+  const ready = studs.filter(s => { try { const r = examReady(s); return r.ok && !r.hafiz && r.reason === "ok"; } catch(_){ return false; } }).length;
   const rows = studs.map((s, i) => {
     let d = null; try { d = dailyOf(s); } catch(_){}
     const l = todayLogs.find(x => x.studentId === s.id);

@@ -798,11 +798,14 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       _ => const Color(0xFF9AAAB6),
     };
     final needChoice = l == null && _needsStartChoice(s, st);
-    final canQuick = !needChoice && l == null && st.mode == 'memorize' && st.fromG != null && st.suggestToG != null;
+    // الحفظ المقترح يُكمل سورة أكبر من صفحة ← تُفتح شاشة الطالب ليُسأل «كيف سمّعها؟»
+    final askSplit = l == null && st.mode == 'memorize' && st.fromG != null && st.suggestToG != null &&
+        splitQuestionSegs(s.pathDir, st.fromG!, st.suggestToG!, st.ord).isNotEmpty;
+    final canQuick = !needChoice && !askSplit && l == null && st.mode == 'memorize' && st.fromG != null && st.suggestToG != null;
     String sub = st.title;
     Color subColor = context.sub;
     String? nextLine;
-    if (canQuick) {
+    if (canQuick || askSplit) {
       nextLine = 'التالي: ${memRangeLabel(s.pathDir, st.fromG!, st.suggestToG!, st.ord)}';
     } else if (needChoice) {
       nextLine = 'تحديد سورة البداية في الجزء';
@@ -836,6 +839,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       action = FilledButton.tonal(onPressed: () => _startSheet(s, st), child: const Text('تحديد البداية'));
     } else if (needChoice) {
       action = FilledButton.tonal(onPressed: () => _open(s, st, l), child: const Text('سورة البداية'));
+    } else if (askSplit) {
+      action = FilledButton.tonal(onPressed: () => _open(s, st, l), child: const Text('تسجيل'));
     } else if (canQuick) {
       action = FilledButton(
         style: FilledButton.styleFrom(
@@ -1010,11 +1015,12 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   MemOrder get _o => memOrder(_dir, _st.ord);
   JuzOrd get _ord => _st.ord;
 
-  /// السورة التي يُسأل عنها «كيف سمّعها؟» (إن وُجدت)
-  List<int>? get _splitSeg {
+  /// السور التي يُسأل عنها «كيف سمّعها؟» (إن وُجدت)
+  List<List<int>>? get _splitSeg {
     final withNew = _att == 'recited' && _hasNew && _canNew && _from != null && _to != null;
     if (!withNew) return null;
-    return splitQuestionSeg(_dir, _from!, _to!, widget.minNew, _ord);
+    final segs = splitQuestionSegs(_dir, _from!, _to!, _ord);
+    return segs.isEmpty ? null : segs;
   }
 
   bool get _juzChoice => _st.juz > 0 && juzHasChoice(_dir, _st.juz) && _st.step?.type == 1;
@@ -1384,7 +1390,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     if (sq != null && _split == null) {
       haptic();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('حدّد كيف سمّع ${rangeLabel(sq[0], sq[1])}: متصلة أو على دفعات')));
+          content: Text('حدّد كيف سمّع ${splitSegsLabel(sq)}: متصلة أو على دفعات')));
       return;
     }
     Repo.I.saveLog(widget.student.id, widget.date, prev: _c.todayLog, {
@@ -1542,7 +1548,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
   }
 
   /// سؤال «كيف سمّع السورة؟»
-  Widget _splitQuestion(List<int> seg) {
+  Widget _splitQuestion(List<List<int>> segs) {
     final fg = context.goldFg;
     Widget opt(String t, bool v) {
       final on = _split == v;
@@ -1575,7 +1581,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(color: context.goldBg, borderRadius: BorderRadius.circular(12)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('كيف سمّع ${rangeLabel(seg[0], seg[1])}؟', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 14.5)),
+        Text('كيف سمّع ${splitSegsLabel(segs)}؟', style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 14.5)),
         const SizedBox(height: 8),
         Row(children: [opt('متصلة في جلسة واحدة', false), const SizedBox(width: 6), opt('على دفعات', true)]),
         const SizedBox(height: 6),
