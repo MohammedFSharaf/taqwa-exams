@@ -66,9 +66,76 @@ class Repo {
       _subs.add(db.collection(c).snapshots().listen((_) {}, onError: (_) {}));
     }
     _subs.add(db.collection('settings').doc('app').snapshots().listen((d) {
-      final p = d.data()?['password'];
-      if (p is String && p.isNotEmpty) prefs.setString('appPassword', p);
+      final data = d.data();
+      final p = data?['password'];
+      // كلمة السر القديمة (قبل تفعيل الحماية) — تُحذف من الجهاز إذا حُذفت من السيرفر
+      if (p is String && p.isNotEmpty) {
+        prefs.setString('appPassword', p);
+      } else if (d.exists) {
+        prefs.remove('appPassword');
+      }
+      if (data?['securityReady'] == true) prefs.setBool('secReady', true);
     }, onError: (_) {}));
+  }
+
+  /// بعد اعتماد الجهاز: إعادة فتح القوائم (كانت مرفوضة قبل الاعتماد)
+  void restartSync() {
+    for (final s in _subs) {
+      s.cancel();
+    }
+    _subs.clear();
+    startSync();
+  }
+
+  // ===================== اعتماد الجهاز =====================
+  // السيرفر يتحقق من كلمة سر التطبيق أو رمز الشيخ عند تسجيل الجهاز (لا يراها التطبيق)
+  bool get deviceOk => uid != null && prefs.getString('deviceUid') == uid;
+  String? get verifiedPass => prefs.getString('verifiedPass');
+  String? get verifiedSheikh => prefs.getString('verifiedSheikh');
+  String? get verifiedPin => prefs.getString('verifiedPin');
+  /// الإدارة جهّزت الحماية: كلمة سر مرفوضة من السيرفر = خطأ (لا نرجع للتحقق القديم)
+  bool get secReady => prefs.getBool('secReady') ?? false;
+
+  /// النتيجة: 'ok' أو 'denied' (كلمة سر/رمز خطأ) أو 'offline'
+  Future<String> registerDevice({String? pass, String? sheikhId, String? pin, String? name}) async {
+    final u = uid;
+    if (u == null) return 'offline';
+    try {
+      await db.collection('devices').doc(u).set({
+        'role': sheikhId != null ? 'sheikh' : 'examiner',
+        if (pass != null) 'pass': pass,
+        if (sheikhId != null) 'sheikhId': sheikhId,
+        if (pin != null) 'pin': pin,
+        if (name != null && name.isNotEmpty) 'name': name,
+        'at': FieldValue.serverTimestamp(),
+        'atMs': DateTime.now().millisecondsSinceEpoch,
+      }, SetOptions(merge: true)).timeout(const Duration(seconds: 15));
+      await prefs.setString('deviceUid', u);
+      if (pass != null) await prefs.setString('verifiedPass', pass);
+      if (sheikhId != null && pin != null) {
+        await prefs.setString('verifiedSheikh', sheikhId);
+        await prefs.setString('verifiedPin', pin);
+      }
+      restartSync();
+      return 'ok';
+    } on FirebaseException catch (e) {
+      return e.code == 'permission-denied' ? 'denied' : 'offline';
+    } catch (_) {
+      return 'offline';
+    }
+  }
+
+  /// جهاز ألغت الإدارة اعتماده ← يحتاج دخولًا جديدًا
+  Future<void> verifyDevice() async {
+    if (!deviceOk) return;
+    try {
+      final d = await db
+          .collection('devices')
+          .doc(uid)
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 10));
+      if (!d.exists) await prefs.remove('deviceUid');
+    } catch (_) {}
   }
 
   Future<void> fetchPasswordOnce() async {
@@ -91,7 +158,13 @@ class Repo {
   }
 
   String? get examinerName => prefs.getString('examinerName');
-  Future<void> setExaminerName(String n) => prefs.setString('examinerName', n);
+  Future<void> setExaminerName(String n) async {
+    await prefs.setString('examinerName', n);
+    // اسم الجهاز في قائمة الأجهزة المعتمدة بلوحة الإدارة
+    if (deviceOk) {
+      _fire(db.collection('devices').doc(uid).set({'name': n}, SetOptions(merge: true)));
+    }
+  }
 
   Stream<List<Halaqa>> halaqat() => db.collection('halaqat').snapshots().map((s) {
         final l = s.docs.map((d) => Halaqa(d.id, (d.data()['name'] ?? '').toString())).toList();

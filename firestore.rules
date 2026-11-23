@@ -8,9 +8,40 @@ service cloud.firestore {
         && request.auth.token.get('email', '') == 'admin@taqwa.com';
     }
 
-    // أي جهاز عليه التطبيق (دخول مجهول)
-    function isApp() {
+    function signedIn() {
       return request.auth != null;
+    }
+
+    // ===== حماية التطبيق =====
+    // قبل التفعيل: أي جهاز مسجّل دخولًا مجهولًا (كما كان).
+    // بعد التفعيل من لوحة الإدارة: فقط الأجهزة التي تحقق السيرفر من كلمة سرها أو رمز شيخها.
+    function enforced() {
+      return exists(/databases/$(database)/documents/secrets/security)
+        && get(/databases/$(database)/documents/secrets/security).data.get('enforce', false) == true;
+    }
+    function isDevice() {
+      return signedIn() && exists(/databases/$(database)/documents/devices/$(request.auth.uid));
+    }
+    function isApp() {
+      return isAdmin() || (signedIn() && (isDevice() || !enforced()));
+    }
+    // كلمة سر التطبيق أو رمز الشيخ — يقارنها السيرفر ولا يراها التطبيق
+    function validCred(d) {
+      return (d.get('pass', '') != ''
+              && d.get('pass', '') == get(/databases/$(database)/documents/secrets/app).data.get('password', '#'))
+        || (d.get('sheikhId', '') != '' && d.get('pin', '') != ''
+              && d.get('pin', '') == get(/databases/$(database)/documents/secrets/pins).data.get(d.get('sheikhId', ''), '#'));
+    }
+
+    // الأسرار: كلمة السر ورموز المشايخ وحالة الحماية — الإدارة فقط
+    match /secrets/{doc} {
+      allow read, write: if isAdmin();
+    }
+    // الأجهزة المعتمدة: يسجّل الجهاز نفسه بكلمة سر صحيحة، والإدارة تقرأ وتلغي
+    match /devices/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if signedIn() && request.auth.uid == uid && validCred(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // الإعدادات (كلمة سر التطبيق)
@@ -21,7 +52,7 @@ service cloud.firestore {
 
     // الحلقات والمختبرين: التطبيق يقرأ فقط
     match /halaqat/{id} {
-      allow read: if isApp();
+      allow read: if signedIn(); // أسماء الحلقات تظهر في شاشة دخول الشيخ
       allow write: if isAdmin();
     }
     match /examiners/{id} {
@@ -54,7 +85,7 @@ service cloud.firestore {
     // ===== السجل اليومي =====
     // حسابات المشايخ: الإدارة تكتب، والتطبيق يقرأ
     match /sheikhs/{id} {
-      allow read: if isApp();
+      allow read: if signedIn(); // الأسماء فقط (الرموز في secrets/pins)
       allow write: if isAdmin();
     }
     // سجل كل طالب لكل يوم

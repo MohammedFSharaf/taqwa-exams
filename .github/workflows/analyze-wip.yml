@@ -84,3 +84,22 @@ jobs:
 
       - run: flutter build apk --release --target-platform android-arm64
       - run: ls -la build/app/outputs/flutter-apk/ && unzip -p build/app/outputs/flutter-apk/app-release.apk AndroidManifest.xml | strings | grep -i biometric || true
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Firestore rules tests (emulator)
+        run: |
+          cd .github/rules-test
+          cp ../../firestore.rules .
+          echo '{"firestore":{"rules":"firestore.rules"},"emulators":{"firestore":{"port":8080}}}' > firebase.json
+          npm init -y >/dev/null
+          npm i --no-audit --no-fund firebase-tools@13 @firebase/rules-unit-testing@3 firebase@10 >/dev/null
+          npx firebase emulators:exec --only firestore --project demo-taqwa "node rules-test.mjs"
