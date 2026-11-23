@@ -185,11 +185,18 @@ class Repo {
       db.collection('progress').where('halaqaId', isEqualTo: halaqaId).snapshots().map(_docs);
   Stream<List<Map<String, dynamic>>> halaqaExams(String halaqaId) =>
       db.collection('exams').where('halaqaId', isEqualTo: halaqaId).snapshots().map(_docs);
+  /// كل سجل طالب مرة واحدة (لمن بدأ جزءه قبل نافذة السجل الحديث)
+  Future<List<Map<String, dynamic>>> studentLogsOnce(String studentId) async {
+    final q = await db.collection('logs').where('studentId', isEqualTo: studentId).get();
+    return q.docs.map((d) => {...d.data(), 'id': d.id}).toList();
+  }
+
   Stream<List<Map<String, dynamic>>> studentLogs(String studentId) =>
       db.collection('logs').where('studentId', isEqualTo: studentId).snapshots().map(_docs);
   /// سجل آخر [days] يوماً لكل المركز (لقائمة الجاهزين للاختبار)
   Stream<List<Map<String, dynamic>>> recentLogs(int days) {
-    final d = DateTime.now().subtract(Duration(days: days));
+    final n = DateTime.now();
+    final d = DateTime(n.year, n.month, n.day - days);
     String two(int n) => n.toString().padLeft(2, '0');
     final from = '${d.year}-${two(d.month)}-${two(d.day)}';
     return db.collection('logs').where('date', isGreaterThanOrEqualTo: from).snapshots().map(_docs);
