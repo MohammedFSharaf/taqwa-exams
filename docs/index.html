@@ -2410,6 +2410,7 @@ function logEditor(sid, lg){
     const rv = rec ? reviews : [];
     const base = lg ? { ...lg } : { studentId: sid, studentName: st.name, halaqaId: st.halaqaId, date, sheikhId: null, sheikhName: "الإدارة",
       extraDay: !sessionDays().includes(new Date(date + "T12:00:00").getDay()), holiday: isHoliday(date, st.halaqaId), dir };
+    if (base.extraDay) base.extraHalaqa = isExtraSession(date, st.halaqaId);
     delete base.id;
     return { ...base, status, newMem: nr ? { fromG: nr.fromG, toG: nr.toG, pages: nr.pages, label: nr.label, ...(nr.sq ? { split: nr.split } : {}) } : null,
       reviews: rv, newPages: nr ? nr.pages : 0, reviewPages: rv.reduce((t, r) => t + (r.pages || 0), 0),
@@ -3003,7 +3004,7 @@ function sessionDatesOfMonth(mk, halaqaId){
   for (let d = 1; d <= 31; d++){
     const dt = new Date(y, m - 1, d, 12); if (dt.getMonth() !== m - 1) break;
     const k = dayKey(dt); if (k > tk) break;
-    if (days.includes(dt.getDay()) && !isHoliday(k, halaqaId)) out.push(k);
+    if ((days.includes(dt.getDay()) && !isHoliday(k, halaqaId)) || isExtraSession(k, halaqaId)) out.push(k);
   }
   return out;
 }
@@ -3165,8 +3166,12 @@ function dailyTitle(d){
     default: return `في الجزء ${unitNum(d.step ? d.step.dir : "desc", d.juz)} — التالي من ${posLabel(d.fromG)}`;
   }
 }
-function isHoliday(date, halaqaId){ return S.holidays.some(h => h.date === date && (h.halaqaId === "all" || h.halaqaId === halaqaId)); }
-function logHoliday(l){ return l.holiday === true || isHoliday(l.date, l.halaqaId); }
+function isHoliday(date, halaqaId){ return S.holidays.some(h => h.kind !== "extra" && h.date === date && (h.halaqaId === "all" || h.halaqaId === halaqaId)); }
+// جلسة تحفيظ إضافية للحلقة كاملة (يفتحها الشيخ في يوم ليس يوم تحفيظ) — يُحسب فيها الغياب
+function isExtraSession(date, halaqaId){ return S.holidays.some(h => h.kind === "extra" && h.date === date && h.halaqaId === halaqaId); }
+// تسميع إضافي لطالب في يوم ليس يوم تحفيظ: تُحسب صفحاته ولا يدخل في الحضور والغياب
+function logExtraOnly(l){ return l.extraDay === true && l.extraHalaqa !== true && !isExtraSession(l.date, l.halaqaId); }
+function logHoliday(l){ return l.holiday === true || isHoliday(l.date, l.halaqaId) || logExtraOnly(l); }
 function logWarn(l){
   if (l.status !== "recited" || logHoliday(l)) return "";
   if (l.newMem && (l.newPages||0) < minNewPages() - 1e-9) return "أقل من حد الحفظ";
@@ -3200,7 +3205,7 @@ function renderDaily(){
     const hol = isHoliday(date, s.halaqaId);
     const d = dailyOf(s), w = l ? logWarn(l) : "";
     return `<tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
-      <td>${l ? (ST_TEXT[l.status]||"") + (logHoliday(l) ? ' <span class="muted">(يوم إجازة)</span>' : "") : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
+      <td>${l ? (ST_TEXT[l.status]||"") + (logExtraOnly(l) ? ' <span class="muted">(إضافي)</span>' : logHoliday(l) ? ' <span class="muted">(يوم إجازة)</span>' : "") : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
       <td>${l && l.newMem ? `${esc(l.newMem.label)} <b>(${fp(l.newPages)})</b>` : ""}</td>
       <td>${l && (l.reviews||[]).length ? `${reviewsText(l)} <b>= ${fp(l.reviewPages)}</b>` : ""}</td>
       <td class="muted">${esc(dailyTitle(d))}${d.mode === "review_exam" ? (() => { const r = examReady(s); return " " + (r.ok ? pill("p-ok","جاهز ✓") : pill("p-wa", esc(readyText(r)))); })() : ""}</td><td>${esc(l ? l.sheikhName||"" : "")}</td>
@@ -3276,7 +3281,7 @@ $("dsExcel").onclick = () => {
 
 // ----- الإجازات
 function renderHolidays(){
-  const list = [...S.holidays].sort((a,b)=>b.date.localeCompare(a.date)).slice(0, 60);
+  const list = S.holidays.filter(h => h.kind !== "extra").sort((a,b)=>b.date.localeCompare(a.date)).slice(0, 60);
   $("hBody").innerHTML = list.length ? list.map(h => `<tr><td>${esc(h.date)}</td><td>${h.halaqaId === "all" ? "<b>المركز كله</b>" : esc(halaqaName(h.halaqaId))}</td>
     <td>${esc(h.reason||"")}</td><td class="muted">${esc(h.by||"")}</td><td class="actions"><button class="small danger" data-delh="${h.id}">حذف</button></td></tr>`).join("")
     : `<tr><td colspan="5" class="muted" style="text-align:center">لا توجد إجازات</td></tr>`;
@@ -3384,7 +3389,7 @@ function dailyRecordHtml(sid){
     </table>
     <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px"><b>الجلسات</b><button class="small primary" data-addlog="${sid}">+ إضافة جلسة</button></div>
     <table><thead><tr><th>التاريخ</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>المُسجِّل</th><th></th></tr></thead><tbody>
-    ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${logHoliday(l) ? ' <span class="muted">(إجازة)</span>' : (l.extraDay ? ' <span class="muted">(إضافية)</span>' : "")}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
+    ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${l.extraDay ? ' <span class="muted">(إضافية)</span>' : (logHoliday(l) ? ' <span class="muted">(إجازة)</span>' : "")}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
       <td>${l.newMem ? `${esc(l.newMem.label)} (${fp(l.newPages)})` : ""}</td><td>${reviewsText(l)}${(l.reviews||[]).length ? ` = ${fp(l.reviewPages)}` : ""}</td>
       <td>${esc(l.sheikhName||"")}${l.editedBy ? ' <span class="muted">(عُدّلت)</span>' : ""}</td><td class="actions" style="white-space:nowrap"><button class="small" data-editlog="${l.id}">تعديل</button> <button class="small danger" data-dellog="${l.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">لا توجد جلسات</td></tr>`}
     </tbody></table>`;

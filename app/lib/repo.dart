@@ -286,6 +286,16 @@ class Repo {
     }
   }
 
+  /// جلسة تحفيظ إضافية للحلقة كاملة (في يوم ليس يوم تحفيظ) — يُحسب فيها الغياب
+  void setHalaqaExtra(String halaqaId, String date, bool on, String by) {
+    final ref = db.collection('holidays').doc('x_${halaqaId}_$date');
+    if (on) {
+      _fire(ref.set({'halaqaId': halaqaId, 'date': date, 'kind': 'extra', 'reason': 'جلسة تحفيظ إضافية', 'by': by}));
+    } else {
+      _fire(ref.delete());
+    }
+  }
+
   String? get sheikhId => prefs.getString('sheikhId');
   Future<void> setSheikhId(String? id) =>
       id == null ? prefs.remove('sheikhId') : prefs.setString('sheikhId', id);
