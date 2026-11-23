@@ -96,6 +96,29 @@ class Repo {
   /// الإدارة جهّزت الحماية: كلمة سر مرفوضة من السيرفر = خطأ (لا نرجع للتحقق القديم)
   bool get secReady => prefs.getBool('secReady') ?? false;
 
+  /// رقم قصير يميّز الجهاز (يظهر في الإعدادات وفي قائمة الأجهزة بلوحة الإدارة)
+  static String codeOf(String id) {
+    const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    var h = 5381;
+    for (final c in id.codeUnits) {
+      h = (h * 33 + c) & 0xFFFFFFFF;
+    }
+    final b = StringBuffer();
+    for (var i = 0; i < 4; i++) {
+      b.write(abc[h % abc.length]);
+      h = h ~/ abc.length;
+    }
+    return b.toString();
+  }
+
+  String? get deviceCode => uid == null ? null : codeOf(uid!);
+
+  /// آخر استخدام للجهاز (لقائمة الأجهزة بلوحة الإدارة)
+  void touchDevice() {
+    if (!deviceOk) return;
+    _fire(db.collection('devices').doc(uid).set({'lastMs': DateTime.now().millisecondsSinceEpoch}, SetOptions(merge: true)));
+  }
+
   /// النتيجة: 'ok' أو 'denied' (كلمة سر/رمز خطأ) أو 'offline'
   Future<String> registerDevice({String? pass, String? sheikhId, String? pin, String? name}) async {
     final u = uid;
@@ -109,6 +132,8 @@ class Repo {
         if (name != null && name.isNotEmpty) 'name': name,
         'at': FieldValue.serverTimestamp(),
         'atMs': DateTime.now().millisecondsSinceEpoch,
+        'lastMs': DateTime.now().millisecondsSinceEpoch,
+        'code': codeOf(u),
       }, SetOptions(merge: true)).timeout(const Duration(seconds: 15));
       await prefs.setString('deviceUid', u);
       if (pass != null) await prefs.setString('verifiedPass', pass);

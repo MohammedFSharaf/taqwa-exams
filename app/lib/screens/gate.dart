@@ -254,7 +254,10 @@ const offlineFirstMsg = 'لا يوجد اتصال بالإنترنت — أول 
 Future<String?> examinerLogin(String p) async {
   if (p.isEmpty) return 'كلمة السر غير صحيحة';
   // جهاز معتمد بنفس كلمة السر ← دخول فوري (يعمل بدون إنترنت)
-  if (Repo.I.deviceOk && p == Repo.I.verifiedPass) return null;
+  if (Repo.I.deviceOk && p == Repo.I.verifiedPass) {
+    Repo.I.touchDevice();
+    return null;
+  }
   // بدون إنترنت لا ننتظر السيرفر
   final r = NetWatcher.I.online ? await Repo.I.registerDevice(pass: p, name: Repo.I.examinerName) : 'offline';
   if (r == 'ok') return null;
@@ -268,7 +271,10 @@ Future<String?> examinerLogin(String p) async {
 /// دخول الشيخ: يعيد null عند النجاح أو رسالة الخطأ
 Future<String?> sheikhLogin(String sheikhId, String pin, {String? legacyPin, String? name}) async {
   if (pin.isEmpty) return 'رمز الدخول غير صحيح';
-  if (Repo.I.deviceOk && Repo.I.verifiedSheikh == sheikhId && Repo.I.verifiedPin == pin) return null;
+  if (Repo.I.deviceOk && Repo.I.verifiedSheikh == sheikhId && Repo.I.verifiedPin == pin) {
+    Repo.I.touchDevice();
+    return null;
+  }
   final r = NetWatcher.I.online ? await Repo.I.registerDevice(sheikhId: sheikhId, pin: pin, name: name) : 'offline';
   if (r == 'ok') return null;
   final hasLegacy = legacyPin != null && legacyPin.isNotEmpty;
