@@ -117,4 +117,8 @@ void main() {
   // ===== التوقيت الصيفي =====
   final ws = DateTime(2027, 3, 27 - 7); // أسبوع قبل
   expect(DateTime(ws.year, ws.month, ws.day + 7).day == 27, 'calendar add across DST');
+
+  // ===== رقم الجهاز (يطابق اللوحة) =====
+  expect(Repo.codeOf('u1') == 'R34M' && Repo.codeOf('Xy8kQ2LmNoPqRsTuVwXyZ0123ab') == '7MUM' && Repo.codeOf('abcdefghijklmnopqrstuvwxyz12') == 'JNZM',
+      'device code matches admin (${Repo.codeOf('u1')})');
 }

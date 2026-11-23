@@ -626,6 +626,27 @@ void showSettingsSheet(BuildContext context) {
               title: Text('الدخول بالبصمة', style: TextStyle(fontWeight: FontWeight.w800, color: ctx.ink)),
               subtitle: Text('لهذا الجهاز فقط', style: TextStyle(color: ctx.sub, fontSize: 12.5)),
             ),
+            if (Repo.I.deviceCode != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('رقم هذا الجهاز', style: TextStyle(fontWeight: FontWeight.w800, color: ctx.ink)),
+                      Text('يظهر نفس الرقم للإدارة في قائمة الأجهزة المعتمدة',
+                          style: TextStyle(color: ctx.sub, fontSize: 12.5)),
+                    ]),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(color: ctx.soft, borderRadius: BorderRadius.circular(10)),
+                    child: Text(Repo.I.deviceCode!,
+                        textDirection: TextDirection.ltr,
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 3, color: ctx.ink, fontFamily: 'monospace')),
+                  ),
+                ]),
+              ),
             const SizedBox(height: 6),
             const DevCredit(),
           ],
