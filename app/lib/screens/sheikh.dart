@@ -95,7 +95,7 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
                 child: Text(
                   snap.connectionState == ConnectionState.waiting
                       ? 'جارٍ التحميل...'
-                      : 'لا توجد حسابات محفّظين — تضيفها الإدارة من لوحة الإدارة.',
+                      : 'لا توجد حسابات مشايخ — تضيفها الإدارة من لوحة الإدارة.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.grey),
                 ),
@@ -124,7 +124,7 @@ class _SheikhLoginFormState extends State<SheikhLoginForm> {
                 DropdownButtonFormField<String>(
                   value: valid,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'اسم المحفّظ'),
+                  decoration: const InputDecoration(labelText: 'اسم الشيخ'),
                   items: [
                     for (final x in list)
                       DropdownMenuItem(
@@ -230,7 +230,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     super.dispose();
   }
 
-  /// شرط الاختبار من السجل اليومي (تسميع الجزء كاملاً في جلسة)
+  /// شرط الاختبار من السجل اليومي (تسميع الجزء كاملًا في جلسة)
   ExamReady _readiness(Student s, List<Map<String, dynamic>> logs) {
     final mine = _exams.where((e) => e['studentId'] == s.id);
     final passed = {
@@ -362,7 +362,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(on ? 'تعليم اليوم إجازة للحلقة؟' : 'إلغاء إجازة اليوم؟'),
+        title: Text(on ? 'اعتبار اليوم إجازة للحلقة؟' : 'إلغاء إجازة اليوم؟'),
         content: Text(on ? 'لن يُحسب غياب ولا تنبيهات على طلاب الحلقة اليوم.' : 'سيعود اليوم يوم تحفيظ عادي.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
@@ -458,7 +458,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                [if (absent > 0) 'غياب $absent', if (pending > 0) 'بانتظار الرفع $pending'].join(' · '),
+                [if (absent > 0) 'غياب $absent', if (pending > 0) 'لم يُرسل بعد $pending'].join(' · '),
                 style: TextStyle(color: context.sub, fontSize: 12.5),
               ),
             ),
@@ -518,8 +518,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تسجيل الباقين غائب؟'),
-        content: Text('سيُسجَّل ${todo.length} طالب غائبين لهذا اليوم. يمكن تعديل أي واحد بعدها.'),
+        title: const Text('تسجيل الباقين غائبين؟'),
+        content: Text('سيُسجَّل غياب ${studentsCount(todo.length)} لهذا اليوم. يمكن تعديل أي واحد بعدها.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
           FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأكيد')),
@@ -530,7 +530,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     for (final s in todo) {
       _quickStatus(s, _statusOf(s), 'absent');
     }
-    if (mounted) showSavedTick(context, sub: 'سُجّل ${todo.length} غائبين');
+    if (mounted) showSavedTick(context, sub: 'سُجّل غياب ${studentsCount(todo.length)}');
   }
 
   /// نقطة البداية (نافذة من تحت)
@@ -553,8 +553,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     var ay = ayahsIn(sel).last;
     final res = await showAppSheet<(int, String)?>(
       context,
-      title: 'من وين بيبلش «${s.name}»؟',
-      subtitle: 'مرة واحدة فقط — بعدها التطبيق بيكمل لحاله',
+      title: 'من أين يبدأ «${s.name}»؟',
+      subtitle: 'مرة واحدة فقط، ثم يكمل التطبيق تلقائيًا',
       builder: (ctx, setS) {
         Widget opt(String t, bool on, VoidCallback f) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -602,8 +602,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                 }),
               const SizedBox(height: 6),
             ],
-            opt('بيبلش الجزء ${unitNum(dir, j)} من أوله', fresh, () => fresh = true),
-            opt('حافظ لحد آية معيّنة', !fresh, () => fresh = false),
+            opt('يبدأ الجزء ${unitNum(dir, j)} من أوله', fresh, () => fresh = true),
+            opt('حفظ حتى آية معيّنة', !fresh, () => fresh = false),
             if (!fresh) ...[
               Row(children: [
                 Expanded(
@@ -633,7 +633,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
               ]),
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text('آخر آية حفظها. إذا أنهى الجزء كاملاً اختر آخر آية فيه.',
+                child: Text('آخر آية حفظها. إذا أنهى الجزء كاملًا اختر آخر آية فيه.',
                     style: TextStyle(color: ctx.sub, fontSize: 12.5)),
               ),
             ],
@@ -646,7 +646,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     if (res == null) return;
     if (hasChoice) _pickJuzStart(s, j, res.$2);
     Repo.I.setProgress(s.id, _halaqaId, res.$1 == 0 ? null : res.$1, _sheikhName);
-    if (mounted) showSavedTick(context, title: 'تم تحديد البداية', sub: s.name);
+    if (mounted) showSavedTick(context, title: 'تم تحديد موضع الحفظ', sub: s.name);
   }
 
   void _setShowLast(bool v) {
@@ -655,7 +655,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     setState(() => _showLast = v);
   }
 
-  /// جلسات الطالب قبل اليوم (الأحدث أولاً)
+  /// جلسات الطالب قبل اليوم (الأحدث أولًا)
   List<Map<String, dynamic>> _before(String sid) => _logsOf(sid)
       .where((l) => (l['date'] ?? '').toString().compareTo(_today) < 0)
       .toList()
@@ -722,7 +722,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                       const EmptyState(
                         icon: Icons.groups_rounded,
                         title: 'لا يوجد طلاب في الحلقة',
-                        text: 'تضيف الإدارة الطلاب من لوحة الإدارة، وبيظهروا هنا مباشرة.',
+                        text: 'تضيف الإدارة الطلاب من لوحة الإدارة، ويظهرون هنا مباشرة.',
                       ),
                     if (all.isNotEmpty && todo.isEmpty && done.isNotEmpty && _q.isEmpty)
                       Panel(
@@ -744,7 +744,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                         child: Text(
                             holiday
                                 ? 'لا يُحسب غياب اليوم. من يسمّع يُسجَّل له حفظه ومراجعته.'
-                                : 'اضغط مطوّلاً على الطالب لتسجيل الغياب',
+                                : 'اضغط مطوّلًا على الطالب لتسجيل الغياب',
                             style: TextStyle(fontSize: 12, color: holiday ? context.goldFg : context.sub)),
                       ),
                     ],
@@ -768,7 +768,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                             foregroundColor: context.badFg,
                           ),
                           onPressed: () => _markRestAbsent(todoAll),
-                          child: Text('تسجيل الباقين غائب (${todoAll.length})'),
+                          child: Text('تسجيل الباقين غائبين (${todoAll.length})'),
                         ),
                       ),
                   ],
@@ -824,7 +824,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       if (l == null) {
         sub += r.ok
             ? ' · جاهز للاختبار ✓'
-            : ' · قبل الاختبار: ${st.juzFrom == st.juzTo ? 'تسميع الجزء كاملاً في جلسة' : 'تسميع كل جزء كاملاً'}';
+            : ' · قبل الاختبار: ${st.juzFrom == st.juzTo ? 'تسميع الجزء كاملًا في جلسة' : 'تسميع كل جزء كاملًا'}';
       }
     }
     final prog = l == null ? juzProgress(s.pathDir, st) : null;
@@ -836,7 +836,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     } else if (l != null) {
       action = Tag(statusText(status), fg: stFg, bg: stBg);
     } else if (st.mode == 'needs_start') {
-      action = FilledButton.tonal(onPressed: () => _startSheet(s, st), child: const Text('تحديد البداية'));
+      action = FilledButton.tonal(onPressed: () => _startSheet(s, st), child: const Text('تحديد موضع الحفظ'));
     } else if (needChoice) {
       action = FilledButton.tonal(onPressed: () => _open(s, st, l), child: const Text('سورة البداية'));
     } else if (askSplit) {
@@ -902,7 +902,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                 if (warn != null) Text(warn, style: TextStyle(color: context.goldFg, fontSize: 12)),
                 if (deadline != null && st.step != null) DeadlineTag(deadline, st.step!.reviewDays),
                 if (l != null && l['_pending'] == true)
-                  Text('بانتظار الرفع', style: TextStyle(color: context.goldFg, fontSize: 11.5)),
+                  Text('لم يُرسل بعد', style: TextStyle(color: context.goldFg, fontSize: 11.5)),
                 if (prog != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 6, left: 8),
@@ -959,7 +959,7 @@ class DayCtx {
   final DailyStatus st;
   final Map<String, dynamic>? todayLog;
   final Map<String, dynamic> base;
-  final List<Map<String, dynamic>> recent; // آخر الجلسات قبل اليوم (الأحدث أولاً)
+  final List<Map<String, dynamic>> recent; // آخر الجلسات قبل اليوم (الأحدث أولًا)
   final ExamReady? ready; // شرط الاختبار (قبل تسجيل اليوم)
   final int? deadline; // الأيام المتبقية من مهلة المراجعة
   final DailyStatus Function(Map<String, dynamic> draft)? next; // الحالة بعد تسجيل اليوم
@@ -1321,7 +1321,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (quick.isNotEmpty) ...[
-              Text('سريع', style: TextStyle(color: ctx.sub, fontWeight: FontWeight.w700)),
+              Text('تسجيل سريع', style: TextStyle(color: ctx.sub, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               for (final q in quick) quickTile(q),
               const SizedBox(height: 8),
@@ -1419,14 +1419,14 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     }
   }
 
-  /// شرط الاختبار: تسميع الجزء كاملاً مراجعةً في جلسة واحدة
+  /// شرط الاختبار: تسميع الجزء كاملًا مراجعةً في جلسة واحدة
   Widget _readyBox() {
     final r = _c.ready!;
     final step = _st.step;
     String text;
     var ok = r.ok;
     if (r.ok) {
-      text = 'جاهز للاختبار ✓ — سمّع المطلوب كاملاً';
+      text = 'جاهز للاختبار ✓ — سمّع المطلوب كاملًا';
     } else if (step != null && r.reason == 'review') {
       final nowDone = _att == 'recited' &&
           r.missing.any((j) => reviewsCoverRange(_reviews, unitRange(_dir, j)[0], unitRange(_dir, j)[1]));
@@ -1435,12 +1435,12 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
           .toList();
       if (left.isEmpty) {
         ok = true;
-        text = 'بهذا التسجيل يصبح جاهزاً للاختبار ✓';
+        text = 'بهذا التسجيل يصبح جاهزًا للاختبار ✓';
       } else {
         text = step.type == 1
-            ? 'المطلوب قبل الاختبار: تسميع الجزء ${unitNum(_dir, step.start)} كاملاً في جلسة واحدة (زر «الجزء من أوله» في المراجعة)'
-            : 'المطلوب قبل الاختبار: تسميع كل جزء كاملاً في جلسة — بقي: ${left.map((j) => 'الجزء ${unitNum(_dir, j)}').join('، ')}';
-        if (nowDone) text += '\nهذا التسجيل يُكمل جزءاً منها ✓';
+            ? 'المطلوب قبل الاختبار: تسميع الجزء ${unitNum(_dir, step.start)} كاملًا في جلسة واحدة (زر «الجزء من أوله» في المراجعة)'
+            : 'المطلوب قبل الاختبار: تسميع كل جزء كاملًا في جلسة — بقي: ${left.map((j) => 'الجزء ${unitNum(_dir, j)}').join('، ')}';
+        if (nowDone) text += '\nهذا التسجيل يُكمل جزءًا منها ✓';
       }
     } else {
       text = step != null ? r.message(step) : '';
@@ -1688,7 +1688,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _box('أول مرة للطالب في السجل اليومي.\nحدّد آخر آية حفظها في الجزء ${unitNum(_dir, j)} (${unitDesc(_dir, j)})، وبعدها يكمل التطبيق تلقائياً.',
+        _box('أول مرة للطالب في السجل اليومي.\nحدّد آخر آية حفظها في الجزء ${unitNum(_dir, j)} (${unitDesc(_dir, j)})، وبعدها يكمل التطبيق تلقائيًا.',
             context.goldBg, context.goldFg),
         if (hasChoice) ...[
           const SizedBox(height: 6),
@@ -1703,12 +1703,12 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
         ],
         const SizedBox(height: 8),
         NavyButton(
-          text: 'بيبلش الجزء ${unitNum(_dir, j)} من أوله',
+          text: 'يبدأ الجزء ${unitNum(_dir, j)} من أوله',
           onPressed: () {
             saveStart();
             Repo.I.setProgress(widget.student.id, widget.halaqaId, null, widget.sheikhName);
             Navigator.of(context).pop();
-            showSavedTick(context, title: 'تم تحديد البداية', sub: widget.student.name);
+            showSavedTick(context, title: 'تم تحديد موضع الحفظ', sub: widget.student.name);
           },
         ),
         const SizedBox(height: 18),
@@ -1733,15 +1733,15 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
           onChanged: (v) => setState(() => _startAyah = v),
         ),
         const SizedBox(height: 6),
-        Text('إذا أنهى الجزء كاملاً اختر آخر آية فيه.', style: TextStyle(color: context.sub)),
+        Text('إذا أنهى الجزء كاملًا اختر آخر آية فيه.', style: TextStyle(color: context.sub)),
         const SizedBox(height: 16),
         GoldButton(
-          text: 'حفظ نقطة البداية',
+          text: 'حفظ موضع الحفظ',
           onPressed: () {
             saveStart();
             Repo.I.setProgress(widget.student.id, widget.halaqaId, gidOf(s, a), widget.sheikhName);
             Navigator.of(context).pop();
-            showSavedTick(context, title: 'تم تحديد البداية', sub: widget.student.name);
+            showSavedTick(context, title: 'تم تحديد موضع الحفظ', sub: widget.student.name);
           },
         ),
       ],
@@ -1854,7 +1854,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
                 setState(() => _hasNew = false);
                 Navigator.pop(ctx);
               },
-              child: Text('ما سمّع حفظاً جديداً اليوم', style: TextStyle(color: ctx.badFg, fontWeight: FontWeight.w700)),
+              child: Text('لم يسمّع حفظًا جديدًا اليوم', style: TextStyle(color: ctx.badFg, fontWeight: FontWeight.w700)),
             ),
           ],
         );
@@ -1871,7 +1871,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     Widget newBody;
     Widget? newAction;
     if (_st.mode == 'review_surah' && !_surahReviewDone) {
-      newBody = Text('لازم يراجع ${rangeLabel(_st.segFrom!, _st.segTo!)} كاملة قبل الحفظ الجديد',
+      newBody = Text('يجب مراجعة ${rangeLabel(_st.segFrom!, _st.segTo!)} كاملة قبل الحفظ الجديد',
           style: TextStyle(color: context.badFg, fontWeight: FontWeight.w700, height: 1.5));
     } else if (_canNew && _from != null) {
       if (_hasNew && _to != null) {
@@ -1882,7 +1882,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
           _tagPages(pages, warn: pages < widget.minNew - 1e-9),
         ]);
       } else {
-        newBody = Text('ما سمّع حفظاً جديداً', style: TextStyle(color: context.sub, fontSize: 15));
+        newBody = Text('لم يسمّع حفظًا جديدًا', style: TextStyle(color: context.sub, fontSize: 15));
       }
       newAction = _link('تغيير', _newMemSheet);
     } else {
@@ -2131,7 +2131,7 @@ class SheikhHomeScreenStateText {
 
 /// آخر تسميع للطالب: آخر جلسة، وإن غاب فيها فآخر جلسة سمّع فيها
 class LastRecital extends StatelessWidget {
-  final List<Map<String, dynamic>> recent; // الأحدث أولاً
+  final List<Map<String, dynamic>> recent; // الأحدث أولًا
   final VoidCallback? onTap;
   final bool compact;
   const LastRecital({super.key, required this.recent, this.onTap, this.compact = false});

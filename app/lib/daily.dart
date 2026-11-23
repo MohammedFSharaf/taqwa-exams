@@ -125,8 +125,8 @@ String juzStartSurahName(String dir, int j, String start) {
   return surahName(start == 'first' ? surahOf(u.a) : surahOf(u.b));
 }
 
-/// ترتيب الحفظ: من البقرة = الوحدات بترتيب المصحف، من الناس = الوحدات تنازلياً.
-/// داخل كل وحدة السور حسب سورة البداية (الافتراضي: تنازلياً لمن الناس، تصاعدياً لمن البقرة)، وكل سورة من أولها
+/// ترتيب الحفظ: من البقرة = الوحدات بترتيب المصحف، من الناس = الوحدات تنازليًا.
+/// داخل كل وحدة السور حسب سورة البداية (الافتراضي: تنازليًا لمن الناس، تصاعديًا لمن البقرة)، وكل سورة من أولها
 MemOrder memOrder(String dir, [JuzOrd ord = const {}]) {
   final d = dir == 'asc' ? 'asc' : 'desc';
   final units = unitsOf(d);
@@ -240,11 +240,11 @@ class DailyStatus {
       case 'hafiz':
         return 'حافظ للقرآن الكريم';
       case 'needs_start':
-        return 'يحتاج تحديد نقطة البداية';
+        return 'يحتاج تحديد موضع الحفظ';
       case 'review_surah':
         return 'مراجعة سورة ${rangeLabel(segFrom!, segTo!).replaceFirst('سورة ', '')} كاملة (إجباري)';
       case 'review_exam':
-        if (step?.type == 30) return 'مراجعة المصحف كاملاً للاختبار';
+        if (step?.type == 30) return 'مراجعة المصحف كاملًا للاختبار';
         return (step?.type ?? 1) == 1
             ? 'مراجعة الجزء ${unitNum(step?.dir ?? 'desc', juzFrom)} للاختبار'
             : 'مراجعة ${examTypes[step!.type]} (${step!.start}–${step!.end}) للاختبار';
@@ -339,8 +339,8 @@ int jsDay(DateTime d) => d.weekday % 7;
 
 
 // ===================== شرط الاختبار من السجل اليومي =====================
-/// الشرط: أتمّ حفظ الجزء، ثم سمّعه كاملاً مراجعةً في جلسة واحدة (بعد آخر اختبار له).
-/// للتجميعي: كل جزء من أجزائه مُسمَّع كاملاً في جلسة (يجوز في جلسات مختلفة).
+/// الشرط: أتمّ حفظ الجزء، ثم سمّعه كاملًا مراجعةً في جلسة واحدة (بعد آخر اختبار له).
+/// للتجميعي: كل جزء من أجزائه مُسمَّع كاملًا في جلسة (يجوز في جلسات مختلفة).
 class ExamReady {
   final bool ok;
   final String reason; // ok / needs_start / memorizing / review
@@ -350,14 +350,14 @@ class ExamReady {
   String message(PathStep step) {
     switch (reason) {
       case 'ok':
-        return 'جاهز للاختبار: سمّع المطلوب كاملاً في السجل اليومي';
+        return 'جاهز للاختبار: سمّع المطلوب كاملًا في السجل اليومي';
       case 'needs_start':
-        return 'لم تُحدَّد نقطة بدايته في السجل اليومي — يحددها الشيخ ثم يُسمّعه الجزء كاملاً';
+        return 'لم تُحدَّد نقطة بدايته في السجل اليومي — يحددها الشيخ ثم يُسمّعه الجزء كاملًا';
       case 'memorizing':
         return 'ما زال يحفظ الجزء ${unitNum(step.dir, step.start)} — لم يُتمّ حفظه في السجل اليومي';
       default:
-        if (step.type == 1) return 'لم يُسمِّع الجزء ${unitNum(step.dir, step.start)} كاملاً في جلسة واحدة بعد إتمام حفظه';
-        return 'لم يُسمِّع كاملاً بعد: ${missing.map((j) => 'الجزء ${unitNum(step.dir, j)}').join('، ')}';
+        if (step.type == 1) return 'لم يُسمِّع الجزء ${unitNum(step.dir, step.start)} كاملًا في جلسة واحدة بعد إتمام حفظه';
+        return 'لم يُسمِّع كاملًا بعد: ${missing.map((j) => 'الجزء ${unitNum(step.dir, j)}').join('، ')}';
     }
   }
 }
@@ -449,7 +449,7 @@ int? reviewDaysLeft(String dir, DailyStatus st, List<Map<String, dynamic>> logs,
   final d = DateTime.tryParse(since);
   if (d == null) return null;
   final n = DateTime.now();
-  // فرق الأيام بالتقويم (UTC) حتى لا يخطئ يوماً عند تغيّر التوقيت الصيفي
+  // فرق الأيام بالتقويم (UTC) حتى لا يخطئ يومًا عند تغيّر التوقيت الصيفي
   final days = DateTime.utc(n.year, n.month, n.day).difference(DateTime.utc(d.year, d.month, d.day)).inDays;
   return st.step!.reviewDays - days;
 }
@@ -508,3 +508,21 @@ List<List<int>> splitQuestionSegs(String dir, int fromG, int toG, [JuzOrd ord = 
 
 /// اسم السور للسؤال: «سورة الملك» أو «سورة الملك وسورة القلم»
 String splitSegsLabel(List<List<int>> segs) => segs.map((s) => rangeLabel(s[0], s[1])).join(' و');
+
+/// «طالب واحد / طالبين / 3 طلاب / 11 طالبًا»
+String studentsCount(int n) => n == 1
+    ? 'طالب واحد'
+    : n == 2
+        ? 'طالبين'
+        : (n >= 3 && n <= 10)
+            ? '$n طلاب'
+            : '$n طالبًا';
+
+/// «جلسة واحدة / جلستين / 3 جلسات / 11 جلسة»
+String sessionsCount(int n) => n == 1
+    ? 'جلسة واحدة'
+    : n == 2
+        ? 'جلستين'
+        : (n >= 3 && n <= 10)
+            ? '$n جلسات'
+            : '$n جلسة';

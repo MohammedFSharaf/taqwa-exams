@@ -14,7 +14,7 @@ const examTypes = <int, String>{
   3: 'اختبار 3 أجزاء',
   5: 'اختبار 5 أجزاء',
   10: 'اختبار 10 أجزاء',
-  30: 'اختبار 30 جزءاً',
+  30: 'اختبار 30 جزءًا',
 };
 
 const int qCount = 5;
@@ -185,7 +185,7 @@ String rangeSurahs(int a, int b) {
 }
 
 String juzLabel(int start, int end, {int type = 0, String dir = 'desc'}) {
-  if (type == 30) return 'المصحف كاملاً';
+  if (type == 30) return 'المصحف كاملًا';
   final u = unitOf(dir, start);
   if (start == end || (type == 1) || (u.n1 == start && u.n2 == end)) {
     return 'الجزء ${unitNum(dir, start)}: ${unitDesc(dir, start)}';
@@ -205,10 +205,10 @@ class PathStep {
   int get a => units.map((n) => unitOf(dir, n).a).reduce(min);
   int get b => units.map((n) => unitOf(dir, n).b).reduce(max);
   bool get isUnit => type == 1;
-  String get rangeText => type == 30 ? 'المصحف كاملاً' : '($start–$end) ${rangeSurahs(a, b)}';
+  String get rangeText => type == 30 ? 'المصحف كاملًا' : '($start–$end) ${rangeSurahs(a, b)}';
   String get label {
     if (type == 1) return 'الجزء ${unitNum(dir, start)}: ${unitDesc(dir, start)}';
-    if (type == 30) return 'المصحف كاملاً (الختام)';
+    if (type == 30) return 'المصحف كاملًا (الختام)';
     return '${examTypes[type]} ($start–$end): ${rangeSurahs(a, b)}';
   }
 
@@ -286,7 +286,7 @@ List<PathStep> _makePath(String d) {
 
 /// الاختبار التالي للطالب، أو null إذا أتمّ المسار (حافظ)
 /// [fromKey] مرحلة البداية (مثل "10|21") إن حدّدتها الإدارة، وإلا يبدأ من الوحدة التي فيها جزء البداية.
-/// ما قبل آخر اختبار نجح فيه الطالب يُعدّ منتهياً (لا يرجع الطلاب القدامى لمجمّعات أُضيفت للخطة).
+/// ما قبل آخر اختبار نجح فيه الطالب يُعدّ منتهيًا (لا يرجع الطلاب القدامى لمجمّعات أُضيفت للخطة).
 PathStep? nextPathStep(String dir, int start, Set<String> passedKeys, [String? fromKey]) {
   final steps = buildPath(dir);
   var first = fromKey == null || fromKey.isEmpty ? -1 : steps.indexWhere((x) => x.key == fromKey);

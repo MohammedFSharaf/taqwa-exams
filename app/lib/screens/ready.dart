@@ -21,7 +21,7 @@ class ReadyEntry {
   ReadyEntry(this.student, this.halaqa, this.step, this.byPermit, [this.daysLeft]);
 }
 
-/// يتابع الطلاب الجاهزين للاختبار (سمّعوا المطلوب كاملاً في السجل اليومي)
+/// يتابع الطلاب الجاهزين للاختبار (سمّعوا المطلوب كاملًا في السجل اليومي)
 class ReadyWatcher extends ChangeNotifier {
   static final ReadyWatcher I = ReadyWatcher._();
   ReadyWatcher._();
@@ -29,14 +29,14 @@ class ReadyWatcher extends ChangeNotifier {
   bool _started = false;
   bool loaded = false;
   List<ReadyEntry> entries = [];
-  /// معلومات كل طالب: الاختبار التالي، وهل رسب فيه سابقاً
+  /// معلومات كل طالب: الاختبار التالي، وهل رسب فيه سابقًا
   Map<String, ({String label, bool retest})> info = {};
   List<Student> get students => _students;
   List<Halaqa> get halaqat => _halaqat;
   List<Student> _students = [];
   List<Halaqa> _halaqat = [];
   List<Map<String, dynamic>> _exams = [], _logs = [], _progress = [], _permits = [];
-  // سجل كامل لطلاب يمتد حفظهم قبل نافذة الـ180 يوماً
+  // سجل كامل لطلاب يمتد حفظهم قبل نافذة الـ180 يومًا
   final Map<String, List<Map<String, dynamic>>> _fullLogs = {};
   final Set<String> _fetching = {};
   static const _windowDays = 180;
@@ -89,7 +89,7 @@ class ReadyWatcher extends ChangeNotifier {
     for (final l in _logs) {
       (logsBy[(l['studentId'] ?? '').toString()] ??= []).add(l);
     }
-    // طالب أقدم سجلاته عند حافة النافذة ← غالباً له سجل أقدم: نجلب سجله كاملاً مرة واحدة وندمجه
+    // طالب أقدم سجلاته عند حافة النافذة ← غالبًا له سجل أقدم: نجلب سجله كاملًا مرة واحدة وندمجه
     final n = DateTime.now();
     final edge = dayKey(DateTime(n.year, n.month, n.day - _windowDays + 7));
     for (final sid in logsBy.keys.toList()) {
@@ -127,7 +127,7 @@ class ReadyWatcher extends ChangeNotifier {
       };
       final step = nextPathStep(s.pathDir, s.pathStart, passed, s.pathFrom);
       inf[s.id] = (
-        label: step?.label ?? 'أتمّ المسار',
+        label: step?.label ?? 'أتمّ خطة المركز',
         retest: step != null && ex.any((e) => e['type'] == step.type && e['startJuz'] == step.start && e['passed'] != true),
       );
       if (s.pending) continue;
@@ -193,8 +193,8 @@ class ReadyScreen extends StatelessWidget {
             return SingleChildScrollView(
               child: EmptyState(
                 icon: Icons.fact_check_outlined,
-                title: 'لا يوجد جاهزون الآن',
-                text: 'يظهر الطالب هنا بعد أن يُتمّ حفظ الجزء ويُسمّعه كاملاً في جلسة واحدة، أو بتصريح من الإدارة.',
+                title: 'لا يوجد طلاب جاهزون الآن',
+                text: 'يظهر الطالب هنا بعد أن يُتمّ حفظ الجزء ويُسمّعه كاملًا في جلسة واحدة، أو بتصريح من الإدارة.',
                 action: SizedBox(
                   width: 220,
                   child: GoldButton(

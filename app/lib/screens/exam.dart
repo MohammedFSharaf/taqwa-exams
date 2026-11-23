@@ -70,7 +70,7 @@ class _ExamScreenState extends State<ExamScreen> {
         title: const Text('إغلاق الاختبار'),
         content: Text(
           'وصل الخصم في السؤال ${_idx + 1} إلى ${fmt(_q.deduction)} علامات.\n'
-          'بهذا يُغلق الاختبار ويُسجَّل الطالب راسباً.',
+          'بهذا يُغلق الاختبار ويُسجَّل أن الطالب لم يجتزه.',
           style: const TextStyle(height: 1.6),
         ),
         actions: [

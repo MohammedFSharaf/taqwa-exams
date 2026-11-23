@@ -520,7 +520,7 @@ class NetWatcher extends ChangeNotifier {
 /// شريط «بدون إنترنت» (يظهر فقط عند انقطاع الاتصال)
 class OfflineBanner extends StatelessWidget {
   final String text;
-  const OfflineBanner({super.key, this.text = 'بدون إنترنت — التسجيلات محفوظة وبتترفع لحالها'});
+  const OfflineBanner({super.key, this.text = 'لا يوجد إنترنت — التسجيلات محفوظة وتُرسل تلقائيًا عند الاتصال'});
 
   @override
   Widget build(BuildContext context) {

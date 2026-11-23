@@ -112,7 +112,7 @@ class _GateScreenState extends State<GateScreen> {
           const Icon(Icons.wifi_off, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
           const Text(
-            'أول تشغيل للتطبيق يحتاج اتصالاً بالإنترنت لتحميل القوائم.\nبعدها يعمل التطبيق بدون إنترنت.',
+            'أول تشغيل للتطبيق يحتاج اتصالًا بالإنترنت لتحميل القوائم.\nبعدها يعمل التطبيق بدون إنترنت.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, height: 1.7),
           ),
