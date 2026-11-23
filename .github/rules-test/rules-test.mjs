@@ -30,6 +30,8 @@ await t("pre: anon writes log", assertSucceeds(setDoc(doc(anon, "logs/s1_2026-11
 await t("pre: unauth cannot read", assertFails(getDocs(collection(nobody, "students"))));
 await t("anon cannot read secrets", assertFails(getDoc(doc(anon, "secrets/app"))));
 await t("admin reads secrets", assertSucceeds(getDoc(doc(admin, "secrets/app"))));
+await t("pending student ok", assertSucceeds(setDoc(doc(anon, "students/p1"), { name: "طالب جديد", status: "pending", halaqaId: "h1" })));
+await t("pending long name denied", assertFails(setDoc(doc(anon, "students/p2"), { name: "x".repeat(101), status: "pending", halaqaId: "h1" })));
 // ---- تسجيل الأجهزة
 await t("wrong pass denied", assertFails(setDoc(doc(dev, "devices/dev1"), { pass: "0000", role: "examiner" })));
 await t("other uid denied", assertFails(setDoc(doc(dev, "devices/dev9"), { pass: "1234", role: "examiner" })));

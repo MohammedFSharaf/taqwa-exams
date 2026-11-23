@@ -40,7 +40,10 @@ double _num(dynamic v) => v is num ? v.toDouble() : 0;
 class WeekSum {
   final List<Map<String, dynamic>> logs;
   WeekSum(this.logs);
-  int get present => logs.where((l) => l['status'] == 'recited' || l['status'] == 'norecite').length;
+  /// تسميع إضافي لطالب في يوم ليس يوم تحفيظ: لا يدخل في الحضور
+  static bool _extraOnly(Map<String, dynamic> l) => l['extraDay'] == true && l['extraHalaqa'] != true;
+  int get present =>
+      logs.where((l) => !_extraOnly(l) && (l['status'] == 'recited' || l['status'] == 'norecite')).length;
   int get absent => logs.where((l) => l['status'] == 'absent').length;
   int get sessions => logs.where((l) => l['holiday'] != true || l['status'] == 'recited').length;
   double get newPages => logs.fold(0.0, (a, l) => a + _num(l['newPages']));
