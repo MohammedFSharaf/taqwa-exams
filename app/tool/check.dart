@@ -121,4 +121,8 @@ void main() {
   // ===== رقم الجهاز (يطابق اللوحة) =====
   expect(Repo.codeOf('u1') == 'R34M' && Repo.codeOf('Xy8kQ2LmNoPqRsTuVwXyZ0123ab') == '7MUM' && Repo.codeOf('abcdefghijklmnopqrstuvwxyz12') == 'JNZM',
       'device code matches admin (${Repo.codeOf('u1')})');
+
+  // ===== رقم الجهاز (يطابق اللوحة) =====
+  expect(deviceCodeOf('u1') == 'R34M' && deviceCodeOf('Xy8kQ2LmNoPqRsTuVwXyZ0123ab') == '7MUM' && deviceCodeOf('abcdefghijklmnopqrstuvwxyz12') == 'JNZM',
+      'device code matches admin (${deviceCodeOf('u1')})');
 }
