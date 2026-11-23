@@ -198,6 +198,10 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
   bool get _isSessionDay => _sessionDays.contains(jsDay(DateTime.now()));
   bool get _holidayAll => _holidays.any((h) => h['id'] == 'all_$_today');
   bool get _holidayHalaqa => _holidays.any((h) => h['id'] == '${_halaqaId}_$_today');
+  /// جلسة تحفيظ إضافية للحلقة كاملة في يوم ليس يوم تحفيظ (يُحسب فيها الغياب)
+  bool get _extraHalaqa => _holidays.any((h) => h['id'] == 'x_${_halaqaId}_$_today');
+  /// يوم ليس يوم تحفيظ ولا جلسة للحلقة: التسجيل مقفل إلا التسميع الإضافي لطالب
+  bool get _locked => !_isSessionDay && !_extraHalaqa;
 
   @override
   void initState() {
@@ -304,6 +308,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         'sheikhId': widget.sheikh['id'],
         'sheikhName': _sheikhName,
         'extraDay': !_isSessionDay,
+        if (!_isSessionDay) 'extraHalaqa': _extraHalaqa,
         'holiday': _holidayAll || _holidayHalaqa,
         'mode': st.mode,
         'dir': s.pathDir,
@@ -373,6 +378,36 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     if (ok == true) Repo.I.setHalaqaHoliday(_halaqaId, _today, on, _sheikhName);
   }
 
+  /// فتح أو إلغاء جلسة تحفيظ إضافية للحلقة كاملة
+  Future<void> _toggleExtra() async {
+    final on = !_extraHalaqa;
+    if (!on && _logs.any((l) => l['date'] == _today)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('لا يمكن إلغاء الجلسة بعد التسجيل فيها — احذف التسجيلات أولًا من لوحة الإدارة')));
+      return;
+    }
+    final ok = await showAppSheet<bool>(
+      context,
+      title: on ? 'جلسة تحفيظ للحلقة كاملة؟' : 'إلغاء جلسة التحفيظ الإضافية؟',
+      builder: (ctx, _) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(
+            on
+                ? '• يصبح اليوم يوم تحفيظ لهذه الحلقة.\n• يُسجَّل الحضور والغياب لكل الطلاب، ويُحسب الغياب كأي يوم تحفيظ.\n• يظهر في التقارير «جلسة إضافية».'
+                : 'يعود اليوم يومًا ليس فيه تحفيظ، ويُقفل التسجيل.',
+            style: TextStyle(color: ctx.txt, height: 1.8, fontSize: 14.5)),
+        const SizedBox(height: 16),
+        NavyButton(text: on ? 'نعم، ابدأ الجلسة' : 'نعم، ألغِ الجلسة', onPressed: () => Navigator.pop(ctx, true)),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          child: const Text('إلغاء'),
+        ),
+      ]),
+    );
+    if (ok == true) Repo.I.setHalaqaExtra(_halaqaId, _today, on, _sheikhName);
+  }
+
   Widget _header(DateTime now, int done, int todo, int absent, int pending, int total) {
     final names = _sheikhs
         .where((x) => x['halaqaId'] == _halaqaId)
@@ -404,27 +439,52 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                 ),
               ),
           ]),
-          if (holiday || !_isSessionDay)
+          if (_isSessionDay && holiday)
             Container(
               margin: const EdgeInsets.only(top: 6),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(color: context.goldBg, borderRadius: BorderRadius.circular(8)),
               child: Text(
-                [
-                  if (_holidayAll) 'اليوم إجازة للمركز — التسجيل اختياري',
-                  if (!_holidayAll && _holidayHalaqa) 'اليوم إجازة للحلقة — التسجيل اختياري',
-                  if (!_isSessionDay) 'جلسة إضافية (ليس يوم تحفيظ)',
-                ].join(' · '),
+                _holidayAll ? 'اليوم إجازة للمركز — التسجيل اختياري' : 'اليوم إجازة للحلقة — التسجيل اختياري',
                 style: TextStyle(color: context.goldFg, fontSize: 12.5, fontWeight: FontWeight.bold),
               ),
             ),
+          if (_locked)
+            Container(
+              margin: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: context.field, borderRadius: BorderRadius.circular(14)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text('اليوم ليس يوم تحفيظ', style: TextStyle(color: context.ink, fontWeight: FontWeight.w800, fontSize: 15.5)),
+                const SizedBox(height: 2),
+                Text('التسجيل مقفل. اضغط على أي طالب لتسميع إضافي، أو افتح جلسة للحلقة كاملة.',
+                    style: TextStyle(color: context.sub, fontSize: 13, height: 1.6)),
+                const SizedBox(height: 10),
+                NavyButton(text: 'جلسة تحفيظ للحلقة كاملة', onPressed: _toggleExtra),
+              ]),
+            ),
+          if (!_isSessionDay && _extraHalaqa)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, children: [
+                Tag('جلسة تحفيظ إضافية للحلقة', fg: context.goldFg, bg: context.goldBg),
+                InkWell(
+                  onTap: _toggleExtra,
+                  child: Text('إلغاء الجلسة', style: TextStyle(color: context.accent, fontSize: 13, fontWeight: FontWeight.w700)),
+                ),
+              ]),
+            ),
           const SizedBox(height: 10),
-          Row(children: [
-            Text('$done من $total سجّلوا',
-                style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: 14)),
-            const SizedBox(width: 10),
-            Expanded(child: MiniBar(total == 0 ? 0 : done / total, color: context.accent, height: 7)),
-          ]),
+          if (_locked)
+            Text(done == 0 ? 'لا تسميع إضافي اليوم' : 'تسميع إضافي اليوم: ${studentsCount(done)}',
+                style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: 14))
+          else
+            Row(children: [
+              Text('$done من $total سجّلوا',
+                  style: TextStyle(color: context.accent, fontWeight: FontWeight.w800, fontSize: 14)),
+              const SizedBox(width: 10),
+              Expanded(child: MiniBar(total == 0 ? 0 : done / total, color: context.accent, height: 7)),
+            ]),
           Row(children: [
             Expanded(
               child: InkWell(
@@ -724,7 +784,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                         title: 'لا يوجد طلاب في الحلقة',
                         text: 'تضيف الإدارة الطلاب من لوحة الإدارة، ويظهرون هنا مباشرة.',
                       ),
-                    if (all.isNotEmpty && todo.isEmpty && done.isNotEmpty && _q.isEmpty)
+                    if (!_locked && all.isNotEmpty && todo.isEmpty && done.isNotEmpty && _q.isEmpty)
                       Panel(
                         color: context.okBg,
                         child: Row(children: [
@@ -737,20 +797,21 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                         ]),
                       ),
                     if (todo.isNotEmpty) ...[
-                      SectionLabel('${holiday ? 'إجازة' : 'لم يُسجّل بعد'} (${todo.length})'),
+                      SectionLabel('${_locked ? 'الطلاب' : holiday ? 'إجازة' : 'لم يُسجّل بعد'} (${todo.length})'),
                       for (final s in todo) _studentRow(s, numbers[s.id] ?? 0),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(6, 0, 6, 4),
-                        child: Text(
-                            holiday
-                                ? 'لا يُحسب غياب اليوم. من يسمّع يُسجَّل له حفظه ومراجعته.'
-                                : 'اضغط مطوّلًا على الطالب لتسجيل الغياب',
-                            style: TextStyle(fontSize: 12, color: holiday ? context.goldFg : context.sub)),
-                      ),
+                      if (!_locked)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(6, 0, 6, 4),
+                          child: Text(
+                              holiday
+                                  ? 'لا يُحسب غياب اليوم. من يسمّع يُسجَّل له حفظه ومراجعته.'
+                                  : 'اضغط مطوّلًا على الطالب لتسجيل الغياب',
+                              style: TextStyle(fontSize: 12, color: holiday ? context.goldFg : context.sub)),
+                        ),
                     ],
                     if (done.isNotEmpty)
                       SectionLabel(
-                        'تم التسجيل (${done.length})',
+                        '${_locked ? 'سمّعوا تسميعًا إضافيًا' : 'تم التسجيل'} (${done.length})',
                         trailing: InkWell(
                           onTap: () => setState(() => _showDone = !_showDone),
                           child: Text(_showDone ? 'إخفاء' : 'عرض',
@@ -759,7 +820,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
                       ),
                     if (_showDone || _q.isNotEmpty)
                       for (final s in done) _studentRow(s, numbers[s.id] ?? 0),
-                    if (todoAll.isNotEmpty && !holiday && _q.isEmpty)
+                    if (todoAll.isNotEmpty && !holiday && !_locked && _q.isEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 14),
                         child: OutlinedButton(
@@ -831,7 +892,11 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
     final deadline = st.mode == 'review_exam' ? reviewDaysLeft(s.pathDir, st, _logsOf(s.id), _lastPassDate(s.id)) : null;
     final holiday = _holidayAll || _holidayHalaqa;
     Widget action;
-    if (l == null && holiday && st.mode == 'needs_start') {
+    if (_locked && l == null) {
+      action = const SizedBox.shrink();
+    } else if (_locked && l != null) {
+      action = Tag(status == 'recited' ? '✓ إضافي' : statusText(status), fg: stFg, bg: stBg);
+    } else if (l == null && holiday && st.mode == 'needs_start') {
       action = Tag('إجازة', fg: context.sub, bg: context.field);
     } else if (l != null) {
       action = Tag(statusText(status), fg: stFg, bg: stBg);
@@ -872,7 +937,7 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
           _open(s, st, l);
         }
       },
-      onLongPress: () => _longPress(s, st, l),
+      onLongPress: _locked ? null : () => _longPress(s, st, l),
       child: Row(
         children: [
           NameAvatar(s.name, color: avatar, size: 44),
@@ -933,7 +998,8 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
         ready: st.mode == 'review_exam' ? _readiness(s, before) : null,
         deadline: st.mode == 'review_exam' ? reviewDaysLeft(s.pathDir, st, before, _lastPassDate(s.id)) : null,
         next: (draft) => dailyStatus(s.pathDir, s.pathStart, passed, [...before, draft], _prOf(s.id), _minNew,
-            fromKey: s.pathFrom));
+            fromKey: s.pathFrom),
+        extraOnly: _locked);
   }
 
   void _open(Student s, DailyStatus st, Map<String, dynamic>? l) {
@@ -963,7 +1029,8 @@ class DayCtx {
   final ExamReady? ready; // شرط الاختبار (قبل تسجيل اليوم)
   final int? deadline; // الأيام المتبقية من مهلة المراجعة
   final DailyStatus Function(Map<String, dynamic> draft)? next; // الحالة بعد تسجيل اليوم
-  DayCtx(this.st, this.todayLog, this.base, this.recent, {this.ready, this.deadline, this.next});
+  final bool extraOnly; // تسميع إضافي لطالب في يوم ليس يوم تحفيظ (بدون غياب)
+  DayCtx(this.st, this.todayLog, this.base, this.recent, {this.ready, this.deadline, this.next, this.extraOnly = false});
 }
 
 // ===================== تسجيل طالب لليوم =====================
@@ -2026,7 +2093,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     const atts = ['recited', 'norecite', 'absent', 'excused'];
     final ai = atts.indexOf(_att);
     final recited = _att == 'recited';
-    final hasNext = _nextIndex != null;
+    final hasNext = !_c.extraOnly && _nextIndex != null;
     final summary = recited
         ? [
             if (_hasNew && _canNew && _from != null && _to != null) 'سمّع ${fmtPages(_newPages)} ص',
@@ -2040,13 +2107,16 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
         children: [
           _topLine(),
-          PillChoice(
-            items: [ai == 0 ? '✓ سمّع' : 'سمّع', 'لم يسمّع', 'غائب', 'بعذر'],
-            selected: ai,
-            height: 50,
-            fontSize: 15,
-            onChanged: (i) => setState(() => _att = atts[i]),
-          ),
+          if (_c.extraOnly)
+            Center(child: Tag('تسميع إضافي — اليوم ليس يوم تحفيظ', fg: context.goldFg, bg: context.goldBg))
+          else
+            PillChoice(
+              items: [ai == 0 ? '✓ سمّع' : 'سمّع', 'لم يسمّع', 'غائب', 'بعذر'],
+              selected: ai,
+              height: 50,
+              fontSize: 15,
+              onChanged: (i) => setState(() => _att = atts[i]),
+            ),
           const SizedBox(height: 12),
           if (recited) _mainCard() else const SizedBox.shrink(),
           if (!recited)

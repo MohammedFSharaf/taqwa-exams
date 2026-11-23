@@ -477,7 +477,7 @@
       <button data-tab="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg><span class="t">التقرير الشهري</span></button>
       <button data-tab="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2" /><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2" /><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3" /><path d="M4 22h16" /><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z" /><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3" /></svg><span class="t">الترتيب والتكريم</span></button>
       <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z" /><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /></svg><span class="t">إحصائيات الاختبارات</span></button>
-      <button data-tab="path"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h8.5a1 1 0 010 7h-11a1 1 0 000 7H15" /><circle cx="18" cy="19" r="3" /><circle cx="6" cy="5" r="3" /></svg><span class="t">خطة المركز ومسار الطلاب</span></button>
+      <button data-tab="path"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h8.5a1 1 0 010 7h-11a1 1 0 000 7H15" /><circle cx="18" cy="19" r="3" /><circle cx="6" cy="5" r="3" /></svg><span class="t">خطة المركز وتقدّم الطلاب</span></button>
       <div class="grp">الكادر والإعدادات</div>
       <button data-tab="sheikhs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v16" /><path d="m16 12 2 2 4-4" /><path d="M22 6V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2h4.001A2 2 0 0022 17v-1.344" /></svg><span class="t">المشايخ</span></button>
       <button data-tab="sheikhstats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><polyline points="16 11 18 13 22 9" /></svg><span class="t">متابعة المشايخ</span></button>
@@ -537,7 +537,7 @@
     <section id="tab-permits" class="hidden">
       <div class="card">
         <h2>تصاريح إعادة الاختبارات الناجحة</h2>
-        <p class="muted">الاختبار الناجح لا يُعاد إلا بتصريح من الإدارة. يُعطى التصريح من ملف الطالب، ويسمح بإعادة واحدة وينتهي تلقائياً بعدها.</p>
+        <p class="muted">الاختبار الناجح لا يُعاد إلا بتصريح من الإدارة. يُعطى التصريح من ملف الطالب، ويسمح بإعادة واحدة وينتهي تلقائيًا بعدها.</p>
         <div id="permitsList"></div>
       </div>
     </section>
@@ -552,7 +552,7 @@
         </div>
       </div>
       <div class="kpis" id="wkKpis"></div>
-      <div class="card"><h2>شو سمّع كل طالب هالأسبوع</h2><div id="wkBody"></div></div>
+      <div class="card"><h2>ما سمّعه كل طالب هذا الأسبوع</h2><div id="wkBody"></div></div>
     </section>
 
     <!-- المراجعة للاختبار -->
@@ -560,7 +560,7 @@
       <div class="kpis" id="rdKpis"></div>
       <div class="card">
         <h2>الطلاب في مرحلة المراجعة للاختبار</h2>
-        <p class="muted">بعد إتمام حفظ الجزء أو الوصول لاختبار مجمّع، يراجع الطالب ولا يحفظ جديداً. المهلة حسب خطة المركز: أسبوع للجزء، شهر للمجمّع، شهران للمستوى (10 أجزاء).</p>
+        <p class="muted">بعد إتمام حفظ الجزء أو الوصول لاختبار مجمّع، يراجع الطالب ولا يحفظ جديدًا. المهلة حسب خطة المركز: أسبوع للجزء، شهر للمجمّع، شهران للمستوى (10 أجزاء).</p>
         <div class="row" style="margin-bottom:10px"><label>الحلقة<select id="rdHalaqa"></select></label><label>الحالة<select id="rdState"><option value="">الكل</option><option value="ready">جاهز للاختبار</option><option value="over">تجاوز المهلة</option><option value="rev">يراجع</option></select></label></div>
         <div id="rdBody"></div>
       </div>
@@ -569,7 +569,7 @@
     <!-- خطة المركز ومسار الطلاب -->
     <section id="tab-path" class="hidden">
       <div class="card">
-        <h2>خطة المركز ومسار الطلاب</h2>
+        <h2>خطة المركز وتقدّم الطلاب</h2>
         <p class="muted">الرقم بجانب كل اختبار = عدد الطلاب الذين اختبارهم التالي هو هذا. الأجزاء محسوبة بالسور الكاملة حسب خطة المركز.</p>
       </div>
       <div class="pathcols"><div class="card"><h2>من الناس</h2><div class="tl" id="pathDesc"></div></div><div class="card"><h2>من البقرة</h2><div class="tl" id="pathAsc"></div></div></div>
@@ -589,7 +589,7 @@
           <label>النتيجة
             <select id="fResult">
               <option value="">الكل</option><option value="pass">ناجح</option>
-              <option value="fail">راسب</option><option value="closed">أُغلق الاختبار</option>
+              <option value="fail">لم يجتز</option><option value="closed">أُغلق الاختبار</option>
             </select>
           </label>
           <label>إعادة
@@ -617,7 +617,7 @@
     <section id="tab-retests" class="hidden">
       <div class="card">
         <h2>طلاب بانتظار الإعادة</h2>
-        <p class="muted">آخر نتيجة للطالب في نفس الاختبار (نفس النوع والأجزاء) راسب، ولم يُعَد له بنجاح بعد.</p>
+        <p class="muted">آخر نتيجة للطالب في نفس الاختبار (نفس النوع والأجزاء) «لم يجتز»، ولم يُعَد له بنجاح بعد.</p>
         <div class="row" style="margin-bottom:10px">
           <label>الحلقة<select id="rHalaqa"></select></label>
           <span class="muted" id="retestsCount"></span>
@@ -640,7 +640,7 @@
           <button id="stAll">كل الفترات</button>
         </div>
       </div>
-      <div class="card"><h2>تقدّم الطلاب في المسار</h2><div id="stPath"></div></div>
+      <div class="card"><h2>تقدّم الطلاب في خطة المركز</h2><div id="stPath"></div></div>
       <div class="stats" id="stSummary"></div>
       <div class="card"><h2>حسب الحلقة</h2><div id="stByHalaqa"></div></div>
       <div class="card"><h2>حسب المختبر</h2><div id="stByExaminer"></div></div>
@@ -718,7 +718,7 @@
         <div class="row" style="margin-bottom:10px">
           <label>التاريخ<input type="date" id="hDate"></label>
           <label>لمن<select id="hHalaqa"></select></label>
-          <label>السبب<input id="hReason" placeholder="مثلاً: عيد، ظرف طارئ"></label>
+          <label>السبب<input id="hReason" placeholder="مثلًا: عيد، ظرف طارئ"></label>
           <button class="primary" id="addHolidayBtn">إضافة إجازة</button>
         </div>
         <table><thead><tr><th>التاريخ</th><th>لمن</th><th>السبب</th><th>أضافها</th><th></th></tr></thead><tbody id="hBody"></tbody></table>
@@ -760,7 +760,7 @@
     <section id="tab-pending" class="hidden">
       <div class="card">
         <h2>طلاب أضافهم المختبرين</h2>
-        <p class="muted">اعتمد الطالب إذا كان جديداً فعلاً، أو ادمجه مع طالب موجود إذا كان مكرراً (تنتقل اختباراته للطالب الموجود).</p>
+        <p class="muted">اعتمد الطالب إذا كان جديدًا فعلًا، أو ادمجه مع طالب موجود إذا كان مكررًا (تنتقل اختباراته للطالب الموجود).</p>
         <table>
           <thead><tr><th>الاسم</th><th>الحلقة</th><th>أضافه</th><th>عدد الاختبارات</th><th></th></tr></thead>
           <tbody id="pendingBody"></tbody>
@@ -778,14 +778,14 @@
           <label>اسم الجد<input id="newN3" style="width:120px"></label>
           <label>اسم العائلة<input id="newN4" style="width:130px"></label>
           <label>الحلقة<select id="newStudentHalaqa"></select></label>
-          <label>الاتجاه<select id="newDir"></select></label>
+          <label>طريقة الحفظ<select id="newDir"></select></label>
           <label>مرحلة البداية<select id="newStart" style="max-width:300px"></select></label>
           <button class="primary" id="addStudentBtn">إضافة</button>
         </div>
       </div>
       <div class="card">
         <h2>استيراد من Excel</h2>
-        <p class="muted">ملف فيه عمودين: <b>اسم الطالب</b> و<b>اسم الحلقة</b>، ويمكن إضافة عمودين اختياريين: <b>الاتجاه</b> (من الناس / من البقرة) و<b>جزء البداية</b> (رقم). الصف الأول عناوين. الحلقات غير الموجودة تُضاف تلقائياً، والأسماء المكررة بنفس الحلقة تُتجاهل.</p>
+        <p class="muted">ملف فيه عمودين: <b>اسم الطالب</b> و<b>اسم الحلقة</b>، ويمكن إضافة عمودين اختياريين: <b>طريقة الحفظ</b> (من الناس / من البقرة) و<b>جزء البداية</b> (رقم). الصف الأول عناوين. الحلقات غير الموجودة تُضاف تلقائيًا، والأسماء المكررة بنفس الحلقة تُتجاهل.</p>
         <div class="row">
           <input type="file" id="importFile" accept=".xlsx,.xls,.csv">
           <button class="primary" id="importBtn">استيراد</button>
@@ -801,7 +801,7 @@
           <span class="muted" id="studentsCount"></span>
         </div>
         <div class="tblwrap"><table>
-          <thead><tr><th>الاسم</th><th>الحلقة</th><th class="hm">العمر / الصف</th><th>المسار</th><th>الاختبار التالي</th><th>الاختبارات</th><th></th></tr></thead>
+          <thead><tr><th>الاسم</th><th>الحلقة</th><th class="hm">العمر / الصف</th><th>طريقة الحفظ</th><th>الاختبار التالي</th><th>الاختبارات</th><th></th></tr></thead>
           <tbody id="studentsBody"></tbody>
         </table></div>
       </div>
@@ -824,7 +824,7 @@
     <section id="tab-examiners" class="hidden">
       <div class="card">
         <h2>أسماء المختبرين</h2>
-        <p class="muted">هذه الأسماء تظهر في التطبيق للاختيار، ويقدر المختبر يكتب اسماً غيرها.</p>
+        <p class="muted">هذه الأسماء تظهر في التطبيق للاختيار، ويقدر المختبر يكتب اسمًا غيرها.</p>
         <div class="row" style="margin-bottom:12px">
           <label>الاسم<input id="newExaminerName" style="min-width:260px"></label>
           <button class="primary" id="addExaminerBtn">إضافة</button>
@@ -849,12 +849,12 @@
       </div>
       <div class="card">
         <h2>شرط التسميع قبل الاختبار</h2>
-        <p class="muted">عند التفعيل: لا يبدأ المختبر اختبار الطالب إلا إذا أتمّ حفظ الجزء في السجل اليومي وسمّعه كاملاً مراجعةً في جلسة واحدة (أو بتصريح من الإدارة). عند الإيقاف: يظهر للمختبر تنبيه فقط ويستطيع البدء.</p>
+        <p class="muted">عند التفعيل: لا يبدأ المختبر اختبار الطالب إلا إذا أتمّ حفظ الجزء في السجل اليومي وسمّعه كاملًا مراجعةً في جلسة واحدة (أو بتصريح من الإدارة). عند الإيقاف: يظهر للمختبر تنبيه فقط ويستطيع البدء.</p>
         <label style="flex-direction:row;align-items:center;gap:10px;font-size:15px"><input type="checkbox" id="reqLog" style="width:20px;height:20px"> <b>تفعيل الشرط (إجباري)</b> <span id="reqLogState"></span></label>
       </div>
       <div class="card">
         <h2>مدة التوقف</h2>
-        <p class="muted">الطالب الذي يبقى على نفس الاختبار في المسار أكثر من هذه المدة يظهر في قائمة "المتوقفين" في الإحصائيات.</p>
+        <p class="muted">الطالب الذي يبقى على نفس الاختبار في الخطة أكثر من هذه المدة يظهر في قائمة "المتوقفين" في الإحصائيات.</p>
         <div class="row">
           <label>عدد الأيام<input type="number" id="stallDays" min="1" style="width:110px"></label>
           <button class="primary" id="saveStallBtn">حفظ</button>
@@ -909,21 +909,21 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "admin@taqwa.com";
 
 // ===== ثوابت الاختبار =====
-const TYPES = {1:"اختبار جزء", 3:"اختبار 3 أجزاء", 5:"اختبار 5 أجزاء", 10:"اختبار 10 أجزاء", 30:"اختبار 30 جزءاً"};
+const TYPES = {1:"اختبار جزء", 3:"اختبار 3 أجزاء", 5:"اختبار 5 أجزاء", 10:"اختبار 10 أجزاء", 30:"اختبار 30 جزءًا"};
 const Q_COUNT = 5, Q_MAX = 15, TAJWEED_MAX = 20, PERF_MAX = 5, PASS_MARK = 85, CLOSE_AT = 9;
 const ERR_VAL = 1, ALERT_VAL = 0.5;
 
 function juzLabel(e){
   if (!e.startJuz) return "";
   const dir = e.pathDir === "asc" ? "asc" : "desc";
-  if (e.type === 30) return "المصحف كاملاً";
+  if (e.type === 30) return "المصحف كاملًا";
   if (e.type === 1 || e.startJuz === e.endJuz) return `الجزء ${unitNum(dir, e.startJuz)}: ${unitDesc(dir, e.startJuz)}`;
   const st = buildPath(dir).find(x => x.type === e.type && x.start === e.startJuz);
   return st ? `(${st.start}–${st.end}) ${rangeSurahs(st.a, st.b)}` : `من الجزء ${e.startJuz} إلى الجزء ${e.endJuz}`;
 }
 function resultOf(e){ return e.closed ? "closed" : (e.passed ? "pass" : "fail"); }
 function resultText(e){
-  return e.closed ? "راسب – أُغلق الاختبار" : (e.passed ? "ناجح" : "راسب");
+  return e.closed ? "لم يجتز – أُغلق الاختبار" : (e.passed ? "ناجح" : "لم يجتز");
 }
 // ===== مسار الحفظ =====
 const DIRS = { desc: "من الناس (30 ← 1)", asc: "من البقرة (1 ← 30)" };
@@ -985,7 +985,7 @@ function buildPath(dir){
   level = 4; s.push(mk(30, 1, 30, unitsOf(d).map(x => x.n1)));
   return (_PATHS[d] = s);
 }
-// ما قبل آخر اختبار نجح فيه الطالب يُعدّ منتهياً (لا يرجع الطلاب القدامى لمجمّعات أُضيفت للخطة)
+// ما قبل آخر اختبار نجح فيه الطالب يُعدّ منتهيًا (لا يرجع الطلاب القدامى لمجمّعات أُضيفت للخطة)
 function pathStatus(dir, start, passed, fromKey){
   const steps = buildPath(dir);
   let first = fromKey ? steps.findIndex(x => x.key === fromKey) : -1;
@@ -998,7 +998,7 @@ function pathStatus(dir, start, passed, fromKey){
 }
 function stepLabel(st){
   if (st.type === 1) return `الجزء ${unitNum(st.dir, st.start)}: ${unitDesc(st.dir, st.start)}`;
-  if (st.type === 30) return "المصحف كاملاً (الختام)";
+  if (st.type === 30) return "المصحف كاملًا (الختام)";
   return `${TYPES[st.type]} (${st.start}–${st.end}): ${rangeSurahs(st.a, st.b)}`;
 }
 const Q = {"names":["الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه","الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم","لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر","فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق","الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة","الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس","التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد","الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات","القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر","المسد","الإخلاص","الفلق","الناس"],"counts":[7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6],"pageStart":[1,8,13,24,32,37,45,56,65,69,77,84,91,96,101,109,113,120,127,134,142,149,153,161,171,177,184,189,194,198,204,210,218,223,227,232,238,241,245,253,256,260,264,267,272,277,282,289,290,294,303,309,316,323,331,339,346,355,364,371,377,385,394,402,409,415,426,434,442,447,451,459,467,474,480,488,494,500,505,508,513,517,520,527,531,538,545,553,559,568,573,580,585,588,595,599,607,615,621,628,634,641,648,656,664,669,672,675,679,683,687,693,701,706,711,715,720,727,734,740,746,752,759,765,773,778,783,790,798,808,817,825,834,842,849,858,863,871,880,884,891,900,908,914,921,927,932,936,941,947,955,966,977,985,992,998,1006,1012,1022,1028,1036,1042,1050,1059,1075,1085,1092,1098,1104,1110,1114,1118,1125,1133,1142,1150,1161,1169,1177,1186,1194,1201,1206,1213,1222,1230,1236,1242,1249,1256,1262,1267,1272,1276,1283,1290,1297,1304,1308,1315,1322,1329,1335,1342,1347,1353,1358,1365,1371,1379,1385,1390,1398,1407,1418,1426,1435,1443,1453,1462,1471,1479,1486,1493,1502,1511,1519,1527,1536,1545,1555,1562,1571,1582,1591,1601,1611,1619,1627,1634,1640,1649,1660,1666,1675,1683,1692,1700,1708,1713,1721,1726,1736,1742,1750,1756,1761,1769,1775,1784,1793,1803,1818,1834,1854,1873,1893,1908,1916,1928,1936,1944,1956,1966,1974,1981,1989,1995,2004,2012,2020,2030,2037,2047,2057,2068,2079,2088,2096,2105,2116,2126,2134,2145,2156,2161,2168,2175,2186,2194,2202,2215,2224,2238,2251,2262,2276,2289,2302,2315,2327,2346,2361,2386,2400,2413,2425,2436,2447,2462,2474,2484,2494,2508,2519,2528,2541,2556,2565,2574,2585,2596,2601,2611,2619,2626,2634,2642,2651,2660,2668,2674,2691,2701,2716,2733,2748,2763,2778,2792,2802,2812,2819,2823,2828,2835,2845,2850,2853,2858,2867,2876,2888,2899,2911,2923,2933,2952,2972,2993,3016,3044,3069,3092,3116,3139,3160,3173,3182,3195,3204,3215,3223,3236,3248,3258,3266,3274,3281,3288,3296,3303,3312,3323,3330,3337,3347,3355,3364,3371,3379,3386,3393,3404,3415,3425,3434,3442,3451,3460,3470,3481,3489,3498,3504,3515,3524,3534,3540,3549,3556,3564,3569,3577,3584,3588,3596,3607,3614,3621,3629,3638,3646,3655,3664,3672,3679,3691,3699,3705,3718,3733,3746,3760,3776,3789,3813,3840,3865,3891,3915,3942,3971,3987,3997,4013,4032,4054,4064,4069,4080,4090,4099,4106,4115,4126,4133,4141,4150,4159,4167,4174,4183,4192,4200,4211,4219,4230,4239,4248,4257,4265,4273,4283,4288,4295,4304,4317,4324,4336,4348,4359,4373,4386,4399,4415,4433,4454,4474,4487,4496,4506,4516,4525,4531,4539,4546,4557,4565,4575,4584,4593,4599,4607,4612,4617,4624,4631,4646,4666,4682,4706,4727,4750,4767,4785,4811,4829,4853,4874,4896,4918,4942,4969,4996,5030,5056,5079,5087,5094,5100,5105,5111,5116,5126,5130,5136,5143,5151,5156,5162,5169,5178,5186,5193,5200,5209,5218,5223,5230,5237,5242,5254,5268,5287,5314,5332,5358,5386,5415,5430,5448,5461,5476,5495,5513,5543,5571,5597,5617,5642,5673,5703,5728,5759,5801,5830,5855,5883,5910,5932,5964,5994,6017,6044,6073,6099,6126,6138,6156,6177,6194,6208,6222,6237],"juz":[[1,148],[149,259],[260,385],[386,516],[517,640],[641,750],[751,899],[900,1041],[1042,1200],[1201,1327],[1328,1478],[1479,1648],[1649,1802],[1803,2029],[2030,2214],[2215,2483],[2484,2673],[2674,2855],[2856,3159],[3160,3340],[3341,3533],[3534,3705],[3706,4058],[4059,4218],[4219,4510],[4511,4675],[4676,5104],[5105,5241],[5242,5672],[5673,6236]]};
@@ -1055,6 +1055,8 @@ function splitQuestionSegs(dir, fromG, toG, ord){
   return out.length ? out : null;
 }
 function splitSegsLabel(segs){ return segs.map(s => rangeLabel(s[0], s[1])).join(" و"); }
+function studentsCount(n){ return n === 1 ? "طالب واحد" : n === 2 ? "طالبان" : n >= 3 && n <= 10 ? `${n} طلاب` : `${n} طالبًا`; }
+function sessionsCount(n){ return n === 1 ? "جلسة واحدة" : n === 2 ? "جلستان" : n >= 3 && n <= 10 ? `${n} جلسات` : `${n} جلسة`; }
 function hasStart(pr){ return !!pr && ("lastG" in pr || "fresh" in pr); }
 // حالة الطالب في السجل اليومي
 function dailyStatus(dir, start, passedKeys, logs, progress, minNew, fromKey){
@@ -1095,7 +1097,7 @@ function memRangePages(dir, fromG, toG, ord){ const O = memOrder(dir, ord); let 
 function memRangeLabel(dir, fromG, toG, ord){
   const O = memOrder(dir, ord), a = O.pos[fromG], b = O.pos[toG];
   if (dir === "asc" && toG - fromG === b - a) return rangeLabel(fromG, toG);
-  // من الناس: قد يشمل عدة سور تنازلياً
+  // من الناس: قد يشمل عدة سور تنازليًا
   const parts = []; let i = a;
   while (i <= b){ const s = surahOf(O.order[i]); let j = i; while (j + 1 <= b && surahOf(O.order[j+1]) === s) j++; parts.push(rangeLabel(O.order[i], O.order[j])); i = j + 1; }
   return parts.join("، ");
@@ -1115,12 +1117,12 @@ function nextText(s){ const p = studentPath(s); return p.hafiz ? "حافظ لل�
 function blockName(p){
   if (p.hafiz) return "حافظ للقرآن";
   const lv = p.steps[p.next].level;
-  if (lv === 4) return "اختبار المصحف كاملاً";
+  if (lv === 4) return "اختبار المصحف كاملًا";
   return LEVELS[lv];
 }
 function stallDays(){ const v = parseInt(S.settings && S.settings.stallDays); return v > 0 ? v : DEFAULT_STALL_DAYS; }
 function pathFields(dir, sel, idp){
-  return `<label>الاتجاه<select id="${idp}Dir">${Object.entries(DIRS).map(([k,v])=>`<option value="${k}" ${k===dir?'selected':''}>${v}</option>`).join("")}</select></label>
+  return `<label>طريقة الحفظ<select id="${idp}Dir">${Object.entries(DIRS).map(([k,v])=>`<option value="${k}" ${k===dir?'selected':''}>${v}</option>`).join("")}</select></label>
   <label>مرحلة البداية<select id="${idp}Start">${stepOptions(dir, sel)}</select></label>`;
 }
 function fillPathSelects(dirSel, startSel, dir, sel){
@@ -1209,7 +1211,7 @@ $("loginBtn").onclick = async () => {
     else if (c === "auth/user-not-found") m = "لا يوجد مستخدم admin@taqwa.com في Firebase";
     else if (c === "auth/operation-not-allowed") m = "تسجيل الدخول بالإيميل وكلمة السر غير مفعّل في Firebase";
     else if (c === "auth/network-request-failed") m = "مشكلة في الاتصال بالإنترنت";
-    else if (c === "auth/too-many-requests") m = "محاولات كثيرة، انتظر قليلاً ثم حاول";
+    else if (c === "auth/too-many-requests") m = "محاولات كثيرة، انتظر قليلًا ثم حاول";
     $("loginErr").textContent = m;
   }
 };
@@ -1243,7 +1245,7 @@ function listen(name, cb){
       const ids = new Set(snap.docs.map(d => d.id));
       if (SEEN[name]){
         for (const d of snap.docs){ if (SEEN[name].has(d.id)) continue; const x = { id:d.id, ...d.data() };
-          if (name === "exams") notify(`<b>وصل اختبار جديد</b>${esc(x.studentName)} — ${esc(juzLabel(x))} — ${x.closed ? "أُغلق" : (x.passed ? "ناجح " : "راسب ") + fmtNum(x.total)}`, x.passed ? "" : "fail", () => studentRecord(x.studentId));
+          if (name === "exams") notify(`<b>وصل اختبار جديد</b>${esc(x.studentName)} — ${esc(juzLabel(x))} — ${x.closed ? "أُغلق" : (x.passed ? "ناجح " : "لم يجتز ") + fmtNum(x.total)}`, x.passed ? "" : "fail", () => studentRecord(x.studentId));
           else if (x.status === "pending") notify(`<b>طالب جديد بانتظار الموافقة</b>${esc(x.name)} — ${esc(halaqaName(x.halaqaId))}`, "", () => go("pending")); }
       }
       SEEN[name] = ids;
@@ -1367,7 +1369,7 @@ const GRADES = ["رياض أطفال","الأول","الثاني","الثالث"
 const INFO_FIELDS = [["dob","تاريخ الميلاد"],["grade","الصف الدراسي"],["guardianName","اسم ولي الأمر"],["guardianPhone","جوال ولي الأمر"],["address","السكن"],["housing","نازح / مقيم"],["orphan","يتيم"],["joinedAt","تاريخ الالتحاق"]];
 function ageOf(dob){ if (!dob) return null; const b = new Date(dob + "T12:00:00"), n = nowG(); if (isNaN(b)) return null; let a = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--; return a; }
 function infoMissing(sid){ const i = S.info[sid] || {}; return INFO_FIELDS.filter(([k]) => k === "orphan" ? typeof i.orphan !== "boolean" : !i[k]).map(([,t]) => t); }
-// يقسم الاسم لأجزاء مع إبقاء الأسماء المركّبة معاً (عبد الرحمن، أبو بكر…)
+// يقسم الاسم لأجزاء مع إبقاء الأسماء المركّبة معًا (عبد الرحمن، أبو بكر…)
 function splitName(n){
   const t = String(n||"").trim().split(/\s+/).filter(Boolean), out = [];
   for (let i = 0; i < t.length; i++){
@@ -1391,8 +1393,8 @@ function infoCardHtml(st){
   return `<div class="card">
     <h2>البيانات الشخصية <span style="display:flex;gap:6px;align-items:center">${miss.length ? pill("p-wa", `ناقص ${miss.length}`) : pill("p-ok","مكتملة")}<button class="small primary" data-info="${st.id}">تعديل</button></span></h2>
     <div class="info4">
-      <div style="grid-column:1/-1"><div class="muted">الاسم رباعياً</div>${(() => { const np = namePartsOf(st, i);
-        return ["الأول","الأب","الجد","العائلة"].map((t, k) => `<span class="nmpart"><i>${t}</i>${np[k] ? esc(np[k]) : '<span class="muted">—</span>'}</span>`).join("") + (np.filter(Boolean).length < 4 ? ' <span class="pill p-wa">ليس رباعياً</span>' : ""); })()}</div>
+      <div style="grid-column:1/-1"><div class="muted">الاسم رباعيًا</div>${(() => { const np = namePartsOf(st, i);
+        return ["الأول","الأب","الجد","العائلة"].map((t, k) => `<span class="nmpart"><i>${t}</i>${np[k] ? esc(np[k]) : '<span class="muted">—</span>'}</span>`).join("") + (np.filter(Boolean).length < 4 ? ' <span class="pill p-wa">ليس رباعيًا</span>' : ""); })()}</div>
       <div><div class="muted">تاريخ الميلاد</div>${i.dob ? `${esc(i.dob)} <span class="muted">(${a} سنة)</span>` : v("")}</div>
       <div><div class="muted">الصف الدراسي</div>${v(i.grade)}</div>
       <div><div class="muted">تاريخ الالتحاق بالمركز</div>${v(i.joinedAt)}</div>
@@ -1408,7 +1410,7 @@ function infoEditor(sid, stOverride, isNew){
   const st = stOverride || stuById(sid) || {}, i = S.info[sid] || {};
   const opt = (arr, cur) => `<option value="">—</option>` + arr.map(x => `<option ${x === cur ? "selected" : ""}>${x}</option>`).join("");
   openDialog(isNew ? "بيانات الطالب الجديد" : "تعديل البيانات الشخصية", `
-    ${isNew ? '<p class="muted">تمت إضافة الطالب. أكمل بياناته الآن أو لاحقاً من ملفه.</p>' : ""}
+    ${isNew ? '<p class="muted">تمت إضافة الطالب. أكمل بياناته الآن أو لاحقًا من ملفه.</p>' : ""}
     <div class="grid2">
       ${(() => { const np = namePartsOf(st, i); return `
       <label>الاسم الأول<input id="inN1" value="${esc(np[0])}"></label>
@@ -1430,7 +1432,7 @@ function infoEditor(sid, stOverride, isNew){
       const name = parts.filter(Boolean).join(" ");
       const phone = $("inGPhone").value.replace(/[^\d+]/g, "");
       if (!parts[0]){ $("inErr").textContent = "اكتب الاسم الأول"; return false; }
-      if (parts.filter(Boolean).length < 4 && !confirm("الاسم ليس رباعياً. حفظ على كل حال؟")) return false;
+      if (parts.filter(Boolean).length < 4 && !confirm("الاسم ليس رباعيًا. حفظ على كل حال؟")) return false;
       if (phone && phone.replace(/\D/g, "").length < 9){ $("inErr").textContent = "رقم الجوال غير صحيح"; return false; }
       const o = $("inOrphan").value;
       const data = { n1: parts[0], n2: parts[1], n3: parts[2], n4: parts[3], dob: $("inDob").value, grade: $("inGrade").value, guardianName: $("inGName").value.trim(), guardianPhone: phone,
@@ -1442,7 +1444,7 @@ function infoEditor(sid, stOverride, isNew){
         toast("تم حفظ البيانات");
       } catch(e){ console.error(e); $("inErr").textContent = "لم تُحفظ: تأكد من نشر قواعد الأمان الجديدة (studentInfo)"; return false; }
     }},
-    { text: isNew ? "لاحقاً" : "إلغاء" }
+    { text: isNew ? "لاحقًا" : "إلغاء" }
   ]);
 }
 document.addEventListener("click", ev => { const b = ev.target.closest("[data-info]"); if (b){ ev.preventDefault(); infoEditor(b.dataset.info); } });
@@ -1451,7 +1453,7 @@ $("sInfoExcel").onclick = () => {
   const rows = sortAr(approvedStudents().filter(s => (!h || s.halaqaId === h))).filter(s => !inf || (inf === "orphan" ? (S.info[s.id]||{}).orphan === true : inf === "displaced" ? (S.info[s.id]||{}).housing === "نازح" : infoMissing(s.id).length)).map(s => {
     const i = S.info[s.id] || {};
     const np = namePartsOf(s, i);
-    return { "الاسم الأول": np[0], "اسم الأب": np[1], "اسم الجد": np[2], "اسم العائلة": np[3], "الاسم كاملاً": s.name, "الحلقة": halaqaName(s.halaqaId), "تاريخ الميلاد": i.dob || "", "العمر": ageOf(i.dob) ?? "", "الصف": i.grade || "",
+    return { "الاسم الأول": np[0], "اسم الأب": np[1], "اسم الجد": np[2], "اسم العائلة": np[3], "الاسم كاملًا": s.name, "الحلقة": halaqaName(s.halaqaId), "تاريخ الميلاد": i.dob || "", "العمر": ageOf(i.dob) ?? "", "الصف": i.grade || "",
       "اسم ولي الأمر": i.guardianName || "", "جوال ولي الأمر": i.guardianPhone || "", "السكن": i.address || "", "نازح / مقيم": i.housing || "",
       "يتيم": i.orphan === true ? "نعم" : i.orphan === false ? "لا" : "", "تاريخ الالتحاق": i.joinedAt || "" }; });
   const wb = XLSX.utils.book_new(); addSheet(wb, rows, "بيانات الطلاب"); XLSX.writeFile(wb, `بيانات-طلاب-مركز-التقوى-${dayKey(nowG())}.xlsx`);
@@ -1478,7 +1480,7 @@ function renderWeekly(){
     <div class="kpi"><div class="l">الحضور</div><div class="v">${counted ? Math.round(pres*100/counted) + "%" : "—"}</div><div class="s">${pres} حضور من ${counted} جلسة</div></div>
     <div class="kpi"><div class="l">صفحات الحفظ</div><div class="v">${fp(np)}</div><div class="s">${studs.length} طالب</div></div>
     <div class="kpi"><div class="l">صفحات المراجعة</div><div class="v">${fp(rp)}</div><div class="s">&nbsp;</div></div>
-    <div class="kpi"><div class="l">غياب متكرر هالأسبوع</div><div class="v" style="color:${many.length ? "var(--red)" : "inherit"}">${many.length}</div><div class="s">${many.length ? many.slice(0,3).map(x => esc(x.name.split(" ")[0])).join("، ") : "لا أحد"}</div></div>`;
+    <div class="kpi"><div class="l">غياب متكرر هذا الأسبوع</div><div class="v" style="color:${many.length ? "var(--red)" : "inherit"}">${many.length}</div><div class="s">${many.length ? many.slice(0,3).map(x => esc(x.name.split(" ")[0])).join("، ") : "لا أحد"}</div></div>`;
   const rows = pageSlice("weekly", studs).map(s => {
     const L = logs.filter(l => l.studentId === s.id).sort((x,y) => x.date.localeCompare(y.date));
     const nm = L.filter(l => l.newMem && l.newMem.label).map(l => l.newMem.label);
@@ -1488,7 +1490,7 @@ function renderWeekly(){
     return `<tr><td>${nameLink(s.id, s.name, true)} <button class="small" data-wkrep="${s.id}" title="تقرير الطالب الأسبوعي">تقرير</button></td>${h ? "" : `<td class="hm">${hqTag(s.halaqaId)}</td>`}<td><span class="dots">${dots || '<span class="muted">لا تسجيل</span>'}</span></td>
       <td class="wkline">${L.length ? `<i>حفظ:</i> ${nm.length ? esc(nm.join("، ")) + ` <b>(${fp(n)} ص)</b>` : "—"}<br><i>راجع:</i> ${rv.length ? esc(rv.join("، ")) + ` <b>(${fp(r)} ص)</b>` : "—"}` : '<span class="muted">—</span>'}</td></tr>`;
   }).join("");
-  $("wkBody").innerHTML = studs.length ? `<div class="tblwrap"><table><thead><tr><th>الطالب</th>${h ? "" : '<th class="hm">الحلقة</th>'}<th>الجلسات</th><th>شو سمّع</th></tr></thead><tbody>${rows}${pager("weekly", studs.length, h ? 3 : 4)}</tbody></table></div>` : emptyHtml("لا يوجد طلاب");
+  $("wkBody").innerHTML = studs.length ? `<div class="tblwrap"><table><thead><tr><th>الطالب</th>${h ? "" : '<th class="hm">الحلقة</th>'}<th>الجلسات</th><th>ما سمّعه</th></tr></thead><tbody>${rows}${pager("weekly", studs.length, h ? 3 : 4)}</tbody></table></div>` : emptyHtml("لا يوجد طلاب");
 }
 $("wkPrev").onclick = () => { WK++; renderWeekly(); };
 $("wkNext").onclick = () => { if (WK > 0){ WK--; renderWeekly(); } };
@@ -1573,8 +1575,8 @@ function renderReadyPage(){
   const all = reviewRows(), h = $("rdHalaqa").value, f = $("rdState").value;
   const ready = all.filter(x => x.r && x.r.ok), over = all.filter(x => x.dl && x.dl.left < 0);
   $("rdKpis").innerHTML = `
-    <div class="kpi"><div class="l">في مرحلة المراجعة</div><div class="v">${all.length}</div><div class="s">لا يحفظون جديداً الآن</div></div>
-    <div class="kpi"><div class="l">جاهزون للاختبار</div><div class="v" style="color:var(--ok)">${ready.length}</div><div class="s">سمّعوا المطلوب كاملاً</div></div>
+    <div class="kpi"><div class="l">في مرحلة المراجعة</div><div class="v">${all.length}</div><div class="s">لا يحفظون جديدًا الآن</div></div>
+    <div class="kpi"><div class="l">جاهزون للاختبار</div><div class="v" style="color:var(--ok)">${ready.length}</div><div class="s">سمّعوا المطلوب كاملًا</div></div>
     <div class="kpi"><div class="l">تجاوزوا المهلة</div><div class="v" style="color:var(--red)">${over.length}</div><div class="s">تحتاج متابعة</div></div>
     <div class="kpi"><div class="l">بتصريح</div><div class="v">${all.filter(x => x.perm).length}</div><div class="s">مسموح بدون الشرط</div></div>`;
   let list = all.filter(x => !h || x.st.halaqaId === h);
@@ -1597,16 +1599,16 @@ function renderPathPage(){
     $(el).innerHTML = buildPath(dir).map((x, i) => {
       const head = x.level !== lv ? `<div class="lv">${LEVELS[(lv = x.level)]}</div>` : "";
       const cls = x.type >= 10 ? "c10" : x.type > 1 ? "c" : "";
-      const t = x.type === 1 ? `الجزء ${unitNum(dir, x.start)}` : x.type === 30 ? "الختام: المصحف كاملاً" : `مجمّع ${x.type} أجزاء (${x.start}–${x.end})`;
-      const sub = x.type === 1 ? unitDesc(dir, x.start) : x.type === 30 ? "بعده يصبح الطالب حافظاً" : rangeSurahs(x.a, x.b);
+      const t = x.type === 1 ? `الجزء ${unitNum(dir, x.start)}` : x.type === 30 ? "الختام: المصحف كاملًا" : `مجمّع ${x.type} أجزاء (${x.start}–${x.end})`;
+      const sub = x.type === 1 ? unitDesc(dir, x.start) : x.type === 30 ? "بعده يصبح الطالب حافظًا" : rangeSurahs(x.a, x.b);
       const per = x.type === 30 ? "" : x.reviewDays === 7 ? "أسبوع" : x.reviewDays === 30 ? "شهر" : "شهرين";
       return `${head}<div class="st ${cls}"><span class="n">${i+1}</span><div class="x"><b>${esc(t)}</b><span class="muted">${esc(sub)}${per ? " · مهلة " + per : ""}</span></div><span class="cnt" title="عدد الطلاب">${cnt[x.key] || 0}</span></div>`;
-    }).join("") + `<div class="lv">حفّاظ أتمّوا المسار: ${hafiz}</div>`;
+    }).join("") + `<div class="lv">حفّاظ أتمّوا خطة المركز: ${hafiz}</div>`;
   }
 }
 
 // ===== صدقة جارية =====
-const DED_INTRO = "أُنجز هذا العمل صدقةً جاريةً عن أرواح من وضعوا اللبنات الأولى لمركز التقوى لتعليم وتحفيظ القرآن الكريم، ليبقى أجره موصولاً لهم ما دام في المركز حافظٌ يحفظ، ومُسمِّعٌ يُسمِّع، ومختبِرٌ يختبر:";
+const DED_INTRO = "أُنجز هذا العمل صدقةً جاريةً عن أرواح من وضعوا اللبنات الأولى لمركز التقوى لتعليم وتحفيظ القرآن الكريم، ليبقى أجره موصولًا لهم ما دام في المركز حافظٌ يحفظ، ومُسمِّعٌ يُسمِّع، ومختبِرٌ يختبر:";
 const DED_NAMES = ["الشيخ ياسر العفيفي (أبو حمزة)","الشيخ محمد صيام (أبو أنس)","الشيخ أمجد هتهت (أبو الأدهم)","الشيخ مصطفى المدهون (أبو جعفر)","الشيخ وسام أبو كويك (أبو حازم)","الشيخ عبد الرحمن العفيفي (أبو صلاح)","الشيخ يوسف العفيفي (أبو الحسن)","الشيخ عبد الرحيم شرف (أبو خالد)"];
 const DED_OUTRO = "رحمهم الله رحمةً واسعة، وأسكنهم الفردوس الأعلى، ونسأل الله أن يتقبّل هذا العمل ويجعله في ميزان حسناتهم.";
 const DED_SHORT = "صدقة جارية عن أرواح مؤسسي مركز التقوى — رحمهم الله";
@@ -1712,7 +1714,7 @@ function renderExams(){
   const closed = list.filter(e=>resultOf(e)==="closed").length;
   $("examStats").innerHTML = `<span>عدد الاختبارات: <b>${list.length}</b></span>
     <span>ناجح: <b class="pass">${pass}</b></span>
-    <span>راسب: <b class="fail">${list.length-pass}</b></span>
+    <span>لم يجتز: <b class="fail">${list.length-pass}</b></span>
     <span>منها أُغلق: <b class="closed">${closed}</b></span>`;
   let lastG = null;
   const shown = pageSlice("exams", list);
@@ -1947,7 +1949,7 @@ function permitsHtml(sid){
   }).join("");
   return `<h2>الاختبارات الناجحة — إعادتها تحتاج إذن الإدارة</h2>
     <table><thead><tr><th>الاختبار</th><th>تاريخ النجاح</th><th>المجموع</th><th>الإذن</th></tr></thead><tbody>${rows}</tbody></table>
-    <p class="muted">الإذن يسمح بإعادة واحدة، وينتهي تلقائياً بعد أن يُعاد الاختبار. يصل للجوالات عند اتصالها بالإنترنت.</p>`;
+    <p class="muted">الإذن يسمح بإعادة واحدة، وينتهي تلقائيًا بعد أن يُعاد الاختبار. يصل للجوالات عند اتصالها بالإنترنت.</p>`;
 }
 const onStudentClick = async ev => {
   const b = ev.target.closest("button"); if (!b) return;
@@ -1983,17 +1985,17 @@ function studentRecordHtml(sid, forPrint){
     const passed = passedKeys(sid);
     const total = p.steps.length - p.first;
     const doneSteps = p.steps.slice(p.first).filter(x => passed.has(x.key)).length;
-    const stage = p.hafiz ? `<span class="hafiz">أتمّ المسار — حافظ للقرآن الكريم</span>` : `المرحلة ${p.next+1} من ${p.steps.length}`;
+    const stage = p.hafiz ? `<span class="hafiz">أتمّ خطة المركز — حافظ للقرآن الكريم</span>` : `المرحلة ${p.next+1} من ${p.steps.length}`;
     const chips = p.steps.map((x,i) => {
       const cls = i < p.first ? "ex" : passed.has(x.key) ? "on" : i === p.next ? "cur" : "";
       return `<span class="${cls} ${x.type>1?'big':''}" title="${i+1}. ${esc(stepLabel(x))}">${stepShort(x)}</span>`;
     }).join("");
     pathHtml = `
-      <tr><td>المسار</td><td>${DIRS[sDir(st)]} — البداية: ${esc(startLabel(st))}</td></tr>
+      <tr><td>طريقة الحفظ</td><td>${DIRS[sDir(st)]} — البداية: ${esc(startLabel(st))}</td></tr>
       <tr><td>المرحلة</td><td>${stage}<div class="progress"><span style="width:${pct(doneSteps,total)}%"></span></div></td></tr>
       <tr><td>الاختبار التالي</td><td><b>${p.hafiz ? "—" : esc(stepLabel(p.steps[p.next]))}</b></td></tr>
       ${forPrint ? "" : `<tr><td>خريطة المراحل</td><td><div class="chips">${chips}</div>
-        <div class="muted" style="margin-top:4px">أخضر: ناجح · إطار بني: الحالي · باهت: معفى (قبل نقطة البداية) · م3/م5/م10: مجمّع</div></td></tr>`}`;
+        <div class="muted" style="margin-top:4px">أخضر: ناجح · إطار بني: الحالي · باهت: معفى (قبل مرحلة البداية) · م3/م5/م10: مجمّع</div></td></tr>`}`;
   }
   const juzChips = Array.from({length:30},(_,i)=>i+1).map(j => forPrint
       ? (done.has(j) ? `${j}` : null) : `<span class="${done.has(j)?'on':''}" title="${unitDesc(st && st.pathDir === "asc" ? "asc" : "desc", j)}">${j}</span>`).filter(Boolean);
@@ -2002,7 +2004,7 @@ function studentRecordHtml(sid, forPrint){
       <tr><td>الطالب</td><td><b>${esc(name)}</b></td></tr>
       <tr><td>الحلقة</td><td>${esc(hName)}</td></tr>
       ${pathHtml}
-      <tr><td>عدد الاختبارات</td><td>${exams.length} (ناجح ${pass}، راسب ${exams.length-pass})</td></tr>
+      <tr><td>عدد الاختبارات</td><td>${exams.length} (ناجح ${pass}، لم يجتز ${exams.length-pass})</td></tr>
       <tr><td>الأجزاء المجتازة</td><td>${done.size} من 30 — المتبقي ${30-done.size}</td></tr>
     </table>
     ${forPrint ? `<p>الأجزاء المجتازة: ${juzChips.join("، ") || "لا يوجد"}</p>` : `<div class="chips" style="margin:10px 0">${juzChips.join("")}</div>`}
@@ -2039,7 +2041,7 @@ function avatarOf(sid, name){
   const ini = (parts[0] === "عبد" && parts[1] ? parts[1] : parts[0] || "").charAt(0);
   return `<span class="av" style="background:${hqColor(st.halaqaId)}">${esc(ini)}</span>`;
 }
-function resPill(e){ return `<span class="rpill ${resultOf(e)}">${e.closed ? "أُغلق" : e.passed ? "ناجح" : "راسب"}</span>`; }
+function resPill(e){ return `<span class="rpill ${resultOf(e)}">${e.closed ? "أُغلق" : e.passed ? "ناجح" : "لم يجتز"}</span>`; }
 function markHtml(e){ if (e.closed) return `<span class="mk lo">—</span>`; const t = +e.total || 0; return `<span class="mk ${t >= 95 ? "hi" : t >= 85 ? "ok" : "lo"}">${fmtNum(e.total)}</span>`; }
 function moreMenu(items){ return `<details class="more"><summary>⋯</summary><div class="mbox">${items}</div></details>`; }
 function emptyHtml(text){
@@ -2100,7 +2102,7 @@ function stalledList(){
   return out.sort((a,b)=>b.d-a.d);
 }
 function readyForExam(){ return approvedStudents().filter(s => { try { const r = examReady(s); return r.ok && !r.hafiz && r.reason === "ok"; } catch(_){ return false; } }); }
-// ===== شرط الاختبار: أتمّ الحفظ ثم سمّع الجزء كاملاً مراجعةً في جلسة واحدة =====
+// ===== شرط الاختبار: أتمّ الحفظ ثم سمّع الجزء كاملًا مراجعةً في جلسة واحدة =====
 function reviewsCover(reviews, a, b){
   const iv = (reviews||[]).filter(r => r && r.fromG && r.toG).map(r => [Math.min(r.fromG, r.toG), Math.max(r.fromG, r.toG)]).sort((x,y)=>x[0]-y[0]);
   let cur = a;
@@ -2136,9 +2138,9 @@ function examPermitted(s, step){
 function readyText(r){
   if (r.hafiz) return "";
   if (r.ok) return "جاهز للاختبار ✓";
-  if (r.reason === "needs_start") return "لم تُحدَّد نقطة البداية في السجل اليومي";
+  if (r.reason === "needs_start") return "لم يُحدَّد موضع الحفظ في السجل اليومي";
   if (r.reason === "memorizing") return `ما زال يحفظ الجزء ${unitNum(r.step.dir, r.step.start)}`;
-  return r.step.type === 1 ? `لم يُسمِّع الجزء ${unitNum(r.step.dir, r.step.start)} كاملاً في جلسة واحدة` : (r.missing.length > 3 ? `بقي تسميع ${r.missing.length} أجزاء كاملة` : `بقي تسميع: ${r.missing.map(j => "الجزء " + unitNum(r.step.dir, j)).join("، ")}`);
+  return r.step.type === 1 ? `لم يُسمِّع الجزء ${unitNum(r.step.dir, r.step.start)} كاملًا في جلسة واحدة` : (r.missing.length > 3 ? `بقي تسميع ${r.missing.length} أجزاء كاملة` : `بقي تسميع: ${r.missing.map(j => "الجزء " + unitNum(r.step.dir, j)).join("، ")}`);
 }
 // ===== مهلة المراجعة قبل الاختبار: أسبوع للجزء، شهر للمجمّع، شهران للمستوى =====
 function reviewLeft(st){
@@ -2212,7 +2214,7 @@ function renderHome(){
     : `<p class="muted">لا توجد حلقات بعد</p>`;
   const att = totS ? Math.round(totP*100/totS) : 0;
   $("homeKpis").innerHTML = `
-    <div class="kpi"><div class="l">اختبارات اليوم</div><div class="v">${exToday.length}</div><div class="s">${exToday.length ? `${exPass} ناجح · ${exToday.length-exPass} راسب` : "لا يوجد اختبارات اليوم"}</div></div>
+    <div class="kpi"><div class="l">اختبارات اليوم</div><div class="v">${exToday.length}</div><div class="s">${exToday.length ? `${exPass} ناجح · ${exToday.length-exPass} لم يجتز` : "لا يوجد اختبارات اليوم"}</div></div>
     <div class="kpi"><div class="l">نسبة النجاح هذا الشهر</div><div class="v">${mList.length ? mRate + "%" : "—"}</div>
       <div class="s ${pList.length && mList.length ? (diff >= 0 ? "up" : "dn") : ""}">${pList.length && mList.length ? `${diff >= 0 ? "▲" : "▼"} ${Math.abs(diff)}% عن الشهر الماضي` : `${mList.length} اختبار هذا الشهر`}</div></div>
     <div class="kpi"><div class="l">حضور التسميع اليوم</div><div class="v">${anyLog ? att + "%" : "—"}</div><div class="s">${anyLog ? `${totP} من ${totS} طالب` : (isSession ? "لم يُسجَّل تسميع بعد" : "ليس من أيام التحفيظ")}</div></div>
@@ -2221,7 +2223,7 @@ function renderHome(){
   const pr = pendingRetests(), stl = stalledList(), fa = frequentAbsence(), pend = S.students.filter(s=>s.status==="pending"), rdy = readyForExam();
   const al = [];
   if (pr.length) al.push(["#c0504d", `${pr.length} بانتظار الإعادة`, `أقدمهم: ${esc(pr[0].last.studentName)} — منذ ${daysSince(pr[0].last)} يوم`, "retests"]);
-  if (stl.length) al.push(["var(--amber)", `${stl.length} متوقفون أكثر من ${stallDays()} يوماً`, "بدون اختبار جديد في المسار", "stats"]);
+  if (stl.length) al.push(["var(--amber)", `${stl.length} متوقفون أكثر من ${stallDays()} يومًا`, "بدون اختبار جديد في الخطة", "stats"]);
   const overdue = approvedStudents().map(st => ({ st, r: reviewLeft(st) })).filter(x => x.r && x.r.left < 0).sort((x, y) => x.r.left - y.r.left);
   if (overdue.length) al.push(["#c0504d", `${overdue.length} تجاوزوا مهلة المراجعة`, `أكثرهم: ${esc(overdue[0].st.name)} — متجاوز ${-overdue[0].r.left} يوم`, "ready"]);
   if (fa.length) al.push(["var(--amber)", `${fa.length} غياب متكرر`, "غابوا آخر جلستين أو أكثر", "absence"]);
@@ -2257,7 +2259,7 @@ $("homeHalaqat").addEventListener("click", ev => {
 function renderPermits(){
   const list = activePermits().sort((a,b)=>(b.grantedAtMs||0)-(a.grantedAtMs||0));
   const lab = p => { const st = S.students.find(x=>x.id===p.studentId) || {}; const stp = buildPath(sDir(st)).find(x => x.type === p.type && x.start === p.startJuz);
-    return p.type === 30 ? "القرآن كاملاً" : juzLabel({ type:p.type, startJuz:p.startJuz, endJuz: stp ? stp.end : p.startJuz + p.type - 1, pathDir: sDir(st) }); };
+    return p.type === 30 ? "القرآن كاملًا" : juzLabel({ type:p.type, startJuz:p.startJuz, endJuz: stp ? stp.end : p.startJuz + p.type - 1, pathDir: sDir(st) }); };
   $("permitsList").innerHTML = list.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار</th><th>تاريخ التصريح</th><th></th></tr></thead><tbody>${
     list.map(p => { const st = S.students.find(x=>x.id===p.studentId) || {};
       return `<tr><td>${nameLink(p.studentId, st.name || p.studentName)}</td><td>${hqTag(st.halaqaId)}</td>
@@ -2293,16 +2295,16 @@ function renderStudentPage(){
     pathCard = `<div class="card">
       <div class="info4">
         <div><div class="muted">الحلقة</div>${esc(hName)}${sh ? `<div class="muted">${esc(sh)}</div>` : ""}</div>
-        <div><div class="muted">اتجاه المسار</div>${DIRS[sDir(st)]}<div class="muted">البداية: ${esc(startLabel(st))}</div></div>
+        <div><div class="muted">طريقة الحفظ</div>${DIRS[sDir(st)]}<div class="muted">البداية: ${esc(startLabel(st))}</div></div>
         <div><div class="muted">المرحلة الآن (التسميع)</div><b>${d ? esc(dailyTitle(d)) : "—"}</b></div>
         <div><div class="muted">الاختبار التالي</div><b>${p.hafiz ? '<span class="hafiz">حافظ للقرآن الكريم</span>' : esc(stepLabel(p.steps[p.next]))}</b>
           ${(() => { if (p.hafiz) return ""; const r = examReady(st), perm = examPermitted(st, p.steps[p.next]);
             return `<div style="margin-top:4px">${r.ok ? pill("p-ok", readyText(r)) : perm ? pill("p-wa", "مسموح بتصريح من الإدارة") : pill("p-no", esc(readyText(r)))}</div><div style="margin-top:4px">${deadlinePill(st)}</div>
             ${!r.ok && !perm && st.status !== "inactive" ? `<button class="small" style="margin-top:6px" data-eperm="${sid}">تصريح اختبار بدون الشرط</button>` : ""}`; })()}</div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:14px"><b>التقدم في مسار الحفظ</b><span class="muted">${doneN} من ${total} مرحلة · ${passedJuz(sid).size} جزءاً مجتازاً</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px"><b>التقدم في خطة المركز</b><span class="muted">${doneN} من ${total} مرحلة · الأجزاء المجتازة: ${passedJuz(sid).size}</span></div>
       <div class="steps">${cells}</div>
-      <div class="muted"><span style="color:var(--green)">■</span> اجتازها &nbsp; <span style="color:var(--gold)">■</span> التالية &nbsp; <span style="color:#cfd8d3">■</span> قبل نقطة البداية &nbsp; <span style="color:#e3e7e5">■</span> لم تبدأ — مرّر الماوس على المربع لترى المرحلة</div>
+      <div class="muted"><span style="color:var(--green)">■</span> اجتازها &nbsp; <span style="color:var(--gold)">■</span> التالية &nbsp; <span style="color:#cfd8d3">■</span> قبل مرحلة البداية &nbsp; <span style="color:#e3e7e5">■</span> لم تبدأ — مرّر الماوس على المربع لترى المرحلة</div>
     </div>`;
   }
   if (st) pathCard += infoCardHtml(st);
@@ -2318,7 +2320,7 @@ function renderStudentPage(){
       <div class="kpi"><div class="l">حفظ هذا الأسبوع</div><div class="v">${fp(W.newPages)} ص</div><div class="s">${W.sessions} جلسة</div></div>
       <div class="kpi"><div class="l">مراجعة هذا الأسبوع</div><div class="v">${fp(W.reviewPages)} ص</div><div class="s">الشهر: ${fp(M.reviewPages)} ص</div></div>
       <div class="kpi"><div class="l">الحضور هذا الشهر</div><div class="v">${M.sessions ? M.attendance + "%" : "—"}</div><div class="s">${M.sessions} جلسة · غائب ${M.absent} · بعذر ${M.excused}</div></div>
-      <div class="kpi"><div class="l">الاختبارات</div><div class="v">${exams.length}</div><div class="s">${pass} ناجح · ${exams.length - pass} راسب</div></div>
+      <div class="kpi"><div class="l">الاختبارات</div><div class="v">${exams.length}</div><div class="s">${pass} ناجح · ${exams.length - pass} لم يجتز</div></div>
     </div>
     ${st ? `<div class="card">${dailyRecordHtml(sid)}</div>` : ""}
     <div class="card"><h2>الاختبارات</h2>${examsTableHtml(sid)}</div>
@@ -2356,7 +2358,7 @@ function logEditor(sid, lg){
       <label>الحالة<select id="lgStatus">${Object.entries(ST_TEXT).map(([k,v]) => `<option value="${k}" ${k === (lg ? lg.status : "recited") ? "selected" : ""}>${v}</option>`).join("")}</select></label>
     </div>
     <div id="lgRecited">
-      <h3 style="margin:14px 0 6px">الحفظ الجديد <label style="display:inline-flex;flex-direction:row;gap:6px;font-weight:400;font-size:13px;margin-right:10px"><input type="checkbox" id="lgHasNew" ${nm || (isNew && s0.mode === "memorize") ? "checked" : ""}> سمّع حفظاً جديداً</label></h3>
+      <h3 style="margin:14px 0 6px">الحفظ الجديد <label style="display:inline-flex;flex-direction:row;gap:6px;font-weight:400;font-size:13px;margin-right:10px"><input type="checkbox" id="lgHasNew" ${nm || (isNew && s0.mode === "memorize") ? "checked" : ""}> سمّع حفظًا جديدًا</label></h3>
       <div id="lgNewBox" class="grid2">
         <label>من سورة<select id="lgFs">${surahOpts(fs)}</select></label><label>آية<input type="number" min="1" id="lgFa" value="${fa}"></label>
         <label>إلى سورة<select id="lgTs">${surahOpts(ts)}</select></label><label>آية<input type="number" min="1" id="lgTa" value="${ta}"></label>
@@ -2408,6 +2410,7 @@ function logEditor(sid, lg){
     const rv = rec ? reviews : [];
     const base = lg ? { ...lg } : { studentId: sid, studentName: st.name, halaqaId: st.halaqaId, date, sheikhId: null, sheikhName: "الإدارة",
       extraDay: !sessionDays().includes(new Date(date + "T12:00:00").getDay()), holiday: isHoliday(date, st.halaqaId), dir };
+    if (base.extraDay) base.extraHalaqa = isExtraSession(date, st.halaqaId);
     delete base.id;
     return { ...base, status, newMem: nr ? { fromG: nr.fromG, toG: nr.toG, pages: nr.pages, label: nr.label, ...(nr.sq ? { split: nr.split } : {}) } : null,
       reviews: rv, newPages: nr ? nr.pages : 0, reviewPages: rv.reduce((t, r) => t + (r.pages || 0), 0),
@@ -2544,7 +2547,7 @@ function transferStudent(id){
     <p>الحلقة الحالية: <b>${esc(halaqaName(s.halaqaId))}</b></p>
     <label class="muted">الحلقة الجديدة</label><select id="mvTo" style="width:100%;margin:6px 0 12px">${hs}</select>
     <p class="muted">يكمل الطالب حفظه مع شيخ الحلقة الجديدة من حيث وصل. اختباراته وسجله السابق تبقى باسم الحلقة القديمة لأنه كان فيها.</p>
-    <label style="display:block"><input type="checkbox" id="mvFix"> تصحيح خطأ (أُضيف للحلقة الخطأ من البداية): انقل اختباراته وسجله السابق للحلقة الجديدة أيضاً</label>`, [
+    <label style="display:block"><input type="checkbox" id="mvFix"> تصحيح خطأ (أُضيف للحلقة الخطأ من البداية): انقل اختباراته وسجله السابق للحلقة الجديدة أيضًا</label>`, [
     { text:"نقل", cls:"primary", onClick: async () => {
       const to = $("mvTo").value, fix = $("mvFix").checked, from = s.halaqaId;
       const batch = writeBatch(db);
@@ -2562,9 +2565,9 @@ function transferStudent(id){
 }
 function inactivateStudent(id){
   const s = stuById(id);
-  openDialog(`تسجيل ${s.name} منقطعاً`, `
-    <p class="muted">يختفي من قوائم المشايخ والمختبرين في التطبيق، ولا يدخل في الحضور والإحصائيات. سجله يبقى محفوظاً، ويمكن إعادة تفعيله في أي وقت.</p>
-    <label class="muted">السبب (اختياري)</label><input id="inReason" style="width:100%;margin-top:6px" placeholder="مثلاً: سافر، انتقل لمركز آخر">`, [
+  openDialog(`تسجيل ${s.name} منقطعًا`, `
+    <p class="muted">يختفي من قوائم المشايخ والمختبرين في التطبيق، ولا يدخل في الحضور والإحصائيات. سجله يبقى محفوظًا، ويمكن إعادة تفعيله في أي وقت.</p>
+    <label class="muted">السبب (اختياري)</label><input id="inReason" style="width:100%;margin-top:6px" placeholder="مثلًا: سافر، انتقل لمركز آخر">`, [
     { text:"تسجيل منقطع", cls:"primary danger", onClick: async () => {
       const reason = $("inReason").value.trim();
       await updateDoc(doc(db,"students",id), { status:"inactive", inactiveReason: reason, inactiveAtMs: Date.now() });
@@ -2642,9 +2645,9 @@ function rankingHtml(d){
   const empty = emptyHtml("لا توجد بيانات لهذا الشهر");
   return `
     <div class="homegrid">
-      <div class="card"><h2>الأكثر حفظاً (صفحات)</h2>${d.topNew.length ? `<table><thead><tr><th>#</th><th>الطالب</th><th>الحلقة</th><th>حفظ</th><th>مراجعة</th></tr></thead><tbody>${
+      <div class="card"><h2>الأكثر حفظًا (صفحات)</h2>${d.topNew.length ? `<table><thead><tr><th>#</th><th>الطالب</th><th>الحلقة</th><th>حفظ</th><th>مراجعة</th></tr></thead><tbody>${
         d.topNew.map((r,i) => `<tr><td>${medal(i)}</td><td>${nameLink(r.s.id, r.s.name)}</td><td>${esc(halaqaName(r.s.halaqaId))}</td><td><b>${fp(r.newPages)}</b></td><td>${fp(r.reviewPages)}</td></tr>`).join("")}</tbody></table>` : empty}</div>
-      <div class="card"><h2>الأكثر التزاماً بالحضور</h2>${d.topAtt.length ? `<table><thead><tr><th>#</th><th>الطالب</th><th>الحلقة</th><th>الحضور</th><th>الجلسات</th></tr></thead><tbody>${
+      <div class="card"><h2>الأكثر التزامًا بالحضور</h2>${d.topAtt.length ? `<table><thead><tr><th>#</th><th>الطالب</th><th>الحلقة</th><th>الحضور</th><th>الجلسات</th></tr></thead><tbody>${
         d.topAtt.map((r,i) => `<tr><td>${medal(i)}</td><td>${nameLink(r.s.id, r.s.name)}</td><td>${esc(halaqaName(r.s.halaqaId))}</td><td><b>${r.attendance}%</b></td><td>${r.sessions}</td></tr>`).join("")}</tbody></table>` : empty}</div>
     </div>
     <div class="card"><h2>ترتيب الحلقات</h2>${d.hal.some(x => x.sessions) ? `<table><thead><tr><th>#</th><th>الحلقة</th><th>الطلاب</th><th>نسبة الحضور</th><th>صفحات الحفظ</th><th>معدل الحفظ لكل طالب</th><th>صفحات المراجعة</th></tr></thead><tbody>${
@@ -2657,8 +2660,8 @@ function renderRanking(){ $("rkBody").innerHTML = rankingHtml(rankingData()); }
 $("rkPrint").onclick = () => { const d = rankingData(); printDoc(`الترتيب والتكريم — ${d.m}`, rankingHtml(d).replace(/<a class="name"[^>]*>/g, "").replace(/<\/a>/g, "").replace(/class="homegrid"/g, "")); };
 $("rkExcel").onclick = () => {
   const d = rankingData(), wb = newBook();
-  addSheet(wb, d.topNew.map((r,i) => ({ "الترتيب": i+1, "الطالب": r.s.name, "الحلقة": halaqaName(r.s.halaqaId), "صفحات الحفظ": +fp(r.newPages), "صفحات المراجعة": +fp(r.reviewPages) })), "الأكثر حفظاً");
-  addSheet(wb, d.topAtt.map((r,i) => ({ "الترتيب": i+1, "الطالب": r.s.name, "الحلقة": halaqaName(r.s.halaqaId), "نسبة الحضور %": r.attendance, "الجلسات": r.sessions })), "الأكثر حضوراً");
+  addSheet(wb, d.topNew.map((r,i) => ({ "الترتيب": i+1, "الطالب": r.s.name, "الحلقة": halaqaName(r.s.halaqaId), "صفحات الحفظ": +fp(r.newPages), "صفحات المراجعة": +fp(r.reviewPages) })), "الأكثر حفظًا");
+  addSheet(wb, d.topAtt.map((r,i) => ({ "الترتيب": i+1, "الطالب": r.s.name, "الحلقة": halaqaName(r.s.halaqaId), "نسبة الحضور %": r.attendance, "الجلسات": r.sessions })), "الأكثر حضورًا");
   addSheet(wb, d.hal.map((x,i) => ({ "الترتيب": i+1, "الحلقة": x.h.name, "الطلاب": x.n, "نسبة الحضور %": x.attendance, "صفحات الحفظ": +fp(x.newPages), "معدل الحفظ لكل طالب": +fp(x.perStudent), "صفحات المراجعة": +fp(x.reviewPages) })), "الحلقات");
   addSheet(wb, d.passed.map(e => ({ "الطالب": e.studentName, "الحلقة": e.halaqaName, "الاختبار": `${TYPES[e.type]||e.type} — ${juzLabel(e)}`, "العلامة": e.total, "التاريخ": dateText(e) })), "الناجحون");
   XLSX.writeFile(wb, `الترتيب-والتكريم-${d.m}.xlsx`);
@@ -2687,7 +2690,7 @@ function groupStats(list, keyFn){
 }
 function statsTable(rows, labelTitle){
   if (!rows.length) return `<p class="muted">لا توجد بيانات</p>`;
-  return `<table><thead><tr><th>${labelTitle}</th><th>الاختبارات</th><th>ناجح</th><th>راسب</th><th>منها أُغلق</th>
+  return `<table><thead><tr><th>${labelTitle}</th><th>الاختبارات</th><th>ناجح</th><th>لم يجتز</th><th>منها أُغلق</th>
     <th>إعادة</th><th>نسبة النجاح</th><th>متوسط المجموع</th><th>متوسط المدة</th></tr></thead><tbody>${
     rows.map(r => `<tr><td>${esc(r.label)}</td><td>${r.count}</td><td class="pass">${r.pass}</td><td class="fail">${r.fail}</td>
       <td>${r.closed}</td><td>${r.retest}</td>
@@ -2695,14 +2698,14 @@ function statsTable(rows, labelTitle){
       <td>${r.avgTotal===null?'—':fmtNum(r.avgTotal)}</td><td>${r.avgDur===null?'—':fmtDur(Math.round(r.avgDur))}</td></tr>`).join("")}</tbody></table>`;
 }
 function statRowsForExcel(rows, labelTitle){
-  return rows.map(r => ({ [labelTitle]: r.label, "الاختبارات": r.count, "ناجح": r.pass, "راسب": r.fail, "منها أُغلق": r.closed,
+  return rows.map(r => ({ [labelTitle]: r.label, "الاختبارات": r.count, "ناجح": r.pass, "لم يجتز": r.fail, "منها أُغلق": r.closed,
     "إعادة": r.retest, "نسبة النجاح %": r.rate, "متوسط المجموع": r.avgTotal===null?"":Math.round(r.avgTotal*10)/10,
     "متوسط المدة": r.avgDur===null?"":fmtDur(Math.round(r.avgDur)) }));
 }
 const byCount = (a,b) => b.count - a.count;
 function renderPathStats(){
   const studs = S.students.filter(isActive);
-  const blocks = new Map([["المستوى الأول",0],["المستوى الثاني",0],["المستوى الثالث",0],["اختبار المصحف كاملاً",0],["حافظ للقرآن",0]]);
+  const blocks = new Map([["المستوى الأول",0],["المستوى الثاني",0],["المستوى الثالث",0],["اختبار المصحف كاملًا",0],["حافظ للقرآن",0]]);
   const hafiz = [], stalled = [];
   const N = stallDays(), now = nowG();
   const durs = [[],[],[]];
@@ -2730,7 +2733,7 @@ function renderPathStats(){
     ${[...blocks.entries()].map(([k,v]) => `<tr><td>${k === "حافظ للقرآن" ? `<span class="hafiz">${k}</span>` : k}</td><td>${v}</td></tr>`).join("")}
     </tbody></table>
     <div class="stats" style="margin-top:10px">${durTxt}</div>
-    <h2 style="margin-top:16px">المتوقفون (أكثر من ${N} يوماً على نفس الاختبار) — ${stalled.length}</h2>
+    <h2 style="margin-top:16px">المتوقفون (أكثر من ${N} يومًا على نفس الاختبار) — ${stalled.length}</h2>
     ${stalled.length ? `<table><thead><tr><th>الطالب</th><th>الحلقة</th><th>الاختبار الحالي</th><th>منذ</th><th></th></tr></thead><tbody>
       ${stalled.map(x => `<tr><td>${esc(x.s.name)}</td><td>${esc(halaqaName(x.s.halaqaId))}</td><td>${esc(stepLabel(x.step))}</td>
       <td>${x.d} يوم</td><td><button class="small" data-rec="${x.s.id}">ملف الطالب</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">لا يوجد</p>`}
@@ -2744,7 +2747,7 @@ function renderStats(){
   const list = statsRange();
   const all = groupStats(list, () => "الكل")[0] || { count:0, pass:0, fail:0, closed:0, retest:0, rate:0, avgTotal:null, avgDur:null };
   $("stSummary").innerHTML = `<span>الاختبارات: <b>${all.count}</b></span><span>ناجح: <b class="pass">${all.pass}</b></span>
-    <span>راسب: <b class="fail">${all.fail}</b></span><span>نسبة النجاح: <b>${all.rate}%</b></span>
+    <span>لم يجتز: <b class="fail">${all.fail}</b></span><span>نسبة النجاح: <b>${all.rate}%</b></span>
     <span>متوسط المجموع: <b>${all.avgTotal===null?'—':fmtNum(all.avgTotal)}</b></span>
     <span>متوسط مدة الاختبار: <b>${all.avgDur===null?'—':fmtDur(Math.round(all.avgDur))}</b></span>
     <span>بانتظار الإعادة الآن: <b>${pendingRetests().length}</b></span>`;
@@ -2767,7 +2770,7 @@ function monthExams(){
 }
 $("repExcel").onclick = () => {
   const r = monthExams(); if (!r) return;
-  const all = groupStats(r.list, () => "الشهر كاملاً");
+  const all = groupStats(r.list, () => "الشهر كاملًا");
   const wb = newBook();
   addSheet(wb, [...statRowsForExcel(all, "البند"),
     ...statRowsForExcel(groupStats(r.list, e=>e.halaqaName).sort(byCount), "البند")], "الملخص وحسب الحلقة");
@@ -2781,7 +2784,7 @@ $("repExcel").onclick = () => {
 };
 $("repPrint").onclick = () => {
   const r = monthExams(); if (!r) return;
-  const all = groupStats(r.list, () => "الشهر كاملاً");
+  const all = groupStats(r.list, () => "الشهر كاملًا");
   const pr = pendingRetests();
   printDoc(`التقرير الشهري — ${r.m}`, `
     <h2>الملخص</h2>${statsTable(all, "البند")}
@@ -2901,7 +2904,7 @@ function editStudent(id, approving){
 $("addStudentBtn").onclick = async () => {
   const np = ["newN1","newN2","newN3","newN4"].map(id => $(id).value.trim().replace(/\s+/g, " "));
   const name = np.filter(Boolean).join(" "), halaqaId = $("newStudentHalaqa").value;
-  if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة (أضف حلقة أولاً إن لم توجد)"); return; }
+  if (!name || !halaqaId){ toast("اكتب الاسم واختر الحلقة (أضف حلقة أولًا إن لم توجد)"); return; }
   if (S.students.some(s=>s.name===name && s.halaqaId===halaqaId)){ toast("الطالب موجود بنفس الحلقة"); return; }
   const ref = await addDoc(collection(db,"students"), { name, halaqaId, status:"approved", createdBy:"الإدارة", createdAt: serverTimestamp(),
     pathDir: $("newDir").value, ...readStart($("newStart").value) });
@@ -2915,7 +2918,7 @@ fillPathSelects($("newDir"), $("newStart"), "desc", "1|30");
 
 $("importBtn").onclick = async () => {
   const file = $("importFile").files[0];
-  if (!file){ toast("اختر ملفاً أولاً"); return; }
+  if (!file){ toast("اختر ملفًا أولًا"); return; }
   const wb = XLSX.read(await file.arrayBuffer());
   const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, defval:"" }).slice(1);
   const halaqaByName = new Map(S.halaqat.map(h=>[h.name.trim(), h.id]));
@@ -2942,7 +2945,7 @@ $("importBtn").onclick = async () => {
   for (let i=0;i<ops.length;i+=400){
     const b = writeBatch(db); ops.slice(i,i+400).forEach(f=>f(b)); await b.commit();
   }
-  $("importFile").value = ""; audit("استيراد طلاب من Excel", "", `أُضيف ${added} طالب و${newH} حلقة`);
+  $("importFile").value = ""; audit("استيراد طلاب من Excel", "", `أُضيف ${studentsCount(added)} و${newH} حلقة`);
   openDialog("نتيجة الاستيراد", `<p>طلاب أُضيفوا: <b>${added}</b><br>حلقات جديدة: <b>${newH}</b><br>صفوف تم تجاهلها (فارغة أو مكررة): <b>${skipped}</b></p>`, [{text:"تم", cls:"primary"}]);
 };
 
@@ -2972,7 +2975,7 @@ function renderDataCheck(){
   const row = (t, n, extra) => `<tr><td>${t}</td><td><b class="${n ? "closed" : ""}">${n}</b></td><td>${extra || ""}</td></tr>`;
   box.innerHTML = `<table style="margin-top:10px"><thead><tr><th>الفحص</th><th>العدد</th><th></th></tr></thead><tbody>
     ${row("تسجيلات تسميع لطلاب محذوفين", r.logs.length)}
-    ${row("تقدّم (نقطة بداية) لطلاب محذوفين", r.progress.length)}
+    ${row("موضع الحفظ لطلاب محذوفين", r.progress.length)}
     ${row("بيانات شخصية لطلاب محذوفين", r.info.length)}
     ${row("أذونات إعادة لطلاب محذوفين", r.permits.length)}
     ${row("اختبارات لطلاب محذوفين", r.exams.length, r.exams.length ? '<span class="muted">تبقى للأرشيف ولا تُحذف</span>' : "")}
@@ -2980,7 +2983,7 @@ function renderDataCheck(){
     ${row("طلاب بدون حلقة", r.noHalaqa.length, r.noHalaqa.map(s => nameLink(s.id, s.name)).join("، "))}
     ${row("أسماء مكرّرة", r.dups.length, r.dups.map(l => l.map(s => nameLink(s.id, s.name) + ` <span class="muted">(${esc(halaqaName(s.halaqaId) || "—")})</span>`).join(" / ")).join("<br>"))}
   </tbody></table>
-  ${orphan ? `<div class="row" style="margin-top:10px"><button class="danger" id="dcClean">حذف بقايا الطلاب المحذوفين (${orphan})</button></div>` : `<p class="muted" style="margin-top:10px">لا توجد بقايا تحتاج حذفاً.</p>`}
+  ${orphan ? `<div class="row" style="margin-top:10px"><button class="danger" id="dcClean">حذف بقايا الطلاب المحذوفين (${orphan})</button></div>` : `<p class="muted" style="margin-top:10px">لا توجد بقايا تحتاج حذفًا.</p>`}
   <p class="muted" style="font-size:12.5px">الطلاب المعلّقون والمكرّرون وبدون حلقة لا تُحذف تلقائيًا: افتح كل طالب وقرّر بنفسك.</p>`;
 }
 $("dcRun").onclick = renderDataCheck;
@@ -3001,7 +3004,7 @@ function sessionDatesOfMonth(mk, halaqaId){
   for (let d = 1; d <= 31; d++){
     const dt = new Date(y, m - 1, d, 12); if (dt.getMonth() !== m - 1) break;
     const k = dayKey(dt); if (k > tk) break;
-    if (days.includes(dt.getDay()) && !isHoliday(k, halaqaId)) out.push(k);
+    if ((days.includes(dt.getDay()) && !isHoliday(k, halaqaId)) || isExtraSession(k, halaqaId)) out.push(k);
   }
   return out;
 }
@@ -3032,7 +3035,7 @@ function renderSheikhStats(){
   if (!$("skMonth").value) $("skMonth").value = dayKey(nowG()).slice(0, 7);
   const mk = $("skMonth").value, R = sheikhStats(mk), cur = mk === dayKey(nowG()).slice(0, 7);
   const lateList = cur ? R.filter(r => r.gap >= 2) : [];
-  $("skAlert").innerHTML = lateList.length ? `<div class="note-warn">فاتهم التسجيل في جلستين أو أكثر: ${lateList.map(r => `<b>${esc(r.sh.name)}</b> (${r.last ? `${r.gap} جلسات منذ ${esc(r.last)}` : "لم يسجّل أبدًا"})`).join("، ")}</div>` : "";
+  $("skAlert").innerHTML = lateList.length ? `<div class="note-warn">فاتهم التسجيل في جلستين أو أكثر: ${lateList.map(r => `<b>${esc(r.sh.name)}</b> (${r.last ? `${sessionsCount(r.gap)} منذ ${esc(r.last)}` : "لم يسجّل أبدًا"})`).join("، ")}</div>` : "";
   $("skBody").innerHTML = R.length ? R.map(r => {
     const pct = r.sess ? Math.round(r.days * 100 / r.sess) : null;
     const cls = pct === null ? "" : pct >= 90 ? "p-ok" : pct >= 70 ? "p-wa" : "p-no";
@@ -3157,14 +3160,18 @@ function dailyOf(s){ return dailyStatus(sDir(s), sStart(s), passedKeys(s.id), lo
 function dailyTitle(d){
   switch (d.mode){
     case "hafiz": return "حافظ للقرآن الكريم";
-    case "needs_start": return "لم تُحدَّد نقطة البداية";
+    case "needs_start": return "لم يُحدَّد موضع الحفظ";
     case "review_surah": return `مراجعة ${rangeLabel(d.segFrom, d.segTo)} كاملة (إجباري)`;
-    case "review_exam": return d.step && d.step.type === 30 ? "مراجعة المصحف كاملاً للاختبار" : (d.step && d.step.type > 1 ? `مراجعة ${TYPES[d.step.type]} (${d.step.start}–${d.step.end}) للاختبار` : `مراجعة الجزء ${unitNum(d.step ? d.step.dir : "desc", d.juzFrom)} للاختبار`);
+    case "review_exam": return d.step && d.step.type === 30 ? "مراجعة المصحف كاملًا للاختبار" : (d.step && d.step.type > 1 ? `مراجعة ${TYPES[d.step.type]} (${d.step.start}–${d.step.end}) للاختبار` : `مراجعة الجزء ${unitNum(d.step ? d.step.dir : "desc", d.juzFrom)} للاختبار`);
     default: return `في الجزء ${unitNum(d.step ? d.step.dir : "desc", d.juz)} — التالي من ${posLabel(d.fromG)}`;
   }
 }
-function isHoliday(date, halaqaId){ return S.holidays.some(h => h.date === date && (h.halaqaId === "all" || h.halaqaId === halaqaId)); }
-function logHoliday(l){ return l.holiday === true || isHoliday(l.date, l.halaqaId); }
+function isHoliday(date, halaqaId){ return S.holidays.some(h => h.kind !== "extra" && h.date === date && (h.halaqaId === "all" || h.halaqaId === halaqaId)); }
+// جلسة تحفيظ إضافية للحلقة كاملة (يفتحها الشيخ في يوم ليس يوم تحفيظ) — يُحسب فيها الغياب
+function isExtraSession(date, halaqaId){ return S.holidays.some(h => h.kind === "extra" && h.date === date && h.halaqaId === halaqaId); }
+// تسميع إضافي لطالب في يوم ليس يوم تحفيظ: تُحسب صفحاته ولا يدخل في الحضور والغياب
+function logExtraOnly(l){ return l.extraDay === true && l.extraHalaqa !== true && !isExtraSession(l.date, l.halaqaId); }
+function logHoliday(l){ return l.holiday === true || isHoliday(l.date, l.halaqaId) || logExtraOnly(l); }
 function logWarn(l){
   if (l.status !== "recited" || logHoliday(l)) return "";
   if (l.newMem && (l.newPages||0) < minNewPages() - 1e-9) return "أقل من حد الحفظ";
@@ -3198,7 +3205,7 @@ function renderDaily(){
     const hol = isHoliday(date, s.halaqaId);
     const d = dailyOf(s), w = l ? logWarn(l) : "";
     return `<tr><td>${esc(s.name)}</td><td>${esc(halaqaName(s.halaqaId))}</td>
-      <td>${l ? (ST_TEXT[l.status]||"") + (logHoliday(l) ? ' <span class="muted">(يوم إجازة)</span>' : "") : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
+      <td>${l ? (ST_TEXT[l.status]||"") + (logExtraOnly(l) ? ' <span class="muted">(إضافي)</span>' : logHoliday(l) ? ' <span class="muted">(يوم إجازة)</span>' : "") : (hol ? '<span class="muted">إجازة</span>' : '<span class="muted">لم يُسجّل</span>')}${w ? ` <span class="closed">(${w})</span>` : ""}</td>
       <td>${l && l.newMem ? `${esc(l.newMem.label)} <b>(${fp(l.newPages)})</b>` : ""}</td>
       <td>${l && (l.reviews||[]).length ? `${reviewsText(l)} <b>= ${fp(l.reviewPages)}</b>` : ""}</td>
       <td class="muted">${esc(dailyTitle(d))}${d.mode === "review_exam" ? (() => { const r = examReady(s); return " " + (r.ok ? pill("p-ok","جاهز ✓") : pill("p-wa", esc(readyText(r)))); })() : ""}</td><td>${esc(l ? l.sheikhName||"" : "")}</td>
@@ -3274,7 +3281,7 @@ $("dsExcel").onclick = () => {
 
 // ----- الإجازات
 function renderHolidays(){
-  const list = [...S.holidays].sort((a,b)=>b.date.localeCompare(a.date)).slice(0, 60);
+  const list = S.holidays.filter(h => h.kind !== "extra").sort((a,b)=>b.date.localeCompare(a.date)).slice(0, 60);
   $("hBody").innerHTML = list.length ? list.map(h => `<tr><td>${esc(h.date)}</td><td>${h.halaqaId === "all" ? "<b>المركز كله</b>" : esc(halaqaName(h.halaqaId))}</td>
     <td>${esc(h.reason||"")}</td><td class="muted">${esc(h.by||"")}</td><td class="actions"><button class="small danger" data-delh="${h.id}">حذف</button></td></tr>`).join("")
     : `<tr><td colspan="5" class="muted" style="text-align:center">لا توجد إجازات</td></tr>`;
@@ -3336,7 +3343,7 @@ function examRequiresLog(){ return !!(S.settings && S.settings.examRequiresLog);
 $("reqLog").onchange = () => {
   const on = $("reqLog").checked;
   $("reqLog").checked = !on;
-  confirmDlg(on ? "تفعيل شرط التسميع؟ لن يُختبر أي طالب لم يُسمِّع الجزء كاملاً في السجل اليومي (إلا بتصريح)." : "إيقاف الشرط؟ سيظهر للمختبر تنبيه فقط.", async () => {
+  confirmDlg(on ? "تفعيل شرط التسميع؟ لن يُختبر أي طالب لم يُسمِّع الجزء كاملًا في السجل اليومي (إلا بتصريح)." : "إيقاف الشرط؟ سيظهر للمختبر تنبيه فقط.", async () => {
     await setDoc(doc(db,"settings","app"), { examRequiresLog: on }, { merge:true });
     audit(on ? "تفعيل شرط التسميع قبل الاختبار" : "إيقاف شرط التسميع قبل الاختبار"); toast("تم الحفظ");
   });
@@ -3344,8 +3351,8 @@ $("reqLog").onchange = () => {
 $("saveDailySettingsBtn").onclick = async () => {
   const days = [...$("sessDays").querySelectorAll("input:checked")].map(i => +i.value);
   const mn = parseFloat($("minNewPages").value), mr = parseFloat($("minReviewPages").value);
-  if (!days.length){ toast("اختر يوماً واحداً على الأقل"); return; }
-  if (!(mn >= 0) || !(mr >= 0)){ toast("أدخل أرقاماً صحيحة"); return; }
+  if (!days.length){ toast("اختر يومًا واحدًا على الأقل"); return; }
+  if (!(mn >= 0) || !(mr >= 0)){ toast("أدخل أرقامًا صحيحة"); return; }
   await setDoc(doc(db,"settings","app"), { sessionDays: days, minNewPages: mn, minReviewPages: mr }, { merge:true });
   audit("إعدادات التسميع", "", "", `الأيام: ${sessionDays().map(d=>DAY_NAMES[d]).join("، ")} · حفظ ${minNewPages()} · مراجعة ${minReviewPages()}`, `الأيام: ${days.map(d=>DAY_NAMES[d]).join("، ")} · حفظ ${mn} · مراجعة ${mr}`);
   toast("تم الحفظ");
@@ -3382,7 +3389,7 @@ function dailyRecordHtml(sid){
     </table>
     <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px"><b>الجلسات</b><button class="small primary" data-addlog="${sid}">+ إضافة جلسة</button></div>
     <table><thead><tr><th>التاريخ</th><th>الحالة</th><th>الحفظ الجديد</th><th>المراجعة</th><th>المُسجِّل</th><th></th></tr></thead><tbody>
-    ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${logHoliday(l) ? ' <span class="muted">(إجازة)</span>' : (l.extraDay ? ' <span class="muted">(إضافية)</span>' : "")}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
+    ${ls.slice(0, 30).map(l => `<tr><td>${esc(l.date)}${l.extraDay ? ' <span class="muted">(إضافية)</span>' : (logHoliday(l) ? ' <span class="muted">(إجازة)</span>' : "")}</td><td>${ST_TEXT[l.status]||""}${logWarn(l) ? ` <span class="closed">(${logWarn(l)})</span>` : ""}</td>
       <td>${l.newMem ? `${esc(l.newMem.label)} (${fp(l.newPages)})` : ""}</td><td>${reviewsText(l)}${(l.reviews||[]).length ? ` = ${fp(l.reviewPages)}` : ""}</td>
       <td>${esc(l.sheikhName||"")}${l.editedBy ? ' <span class="muted">(عُدّلت)</span>' : ""}</td><td class="actions" style="white-space:nowrap"><button class="small" data-editlog="${l.id}">تعديل</button> <button class="small danger" data-dellog="${l.id}">حذف</button></td></tr>`).join("") || `<tr><td colspan="6" class="muted">لا توجد جلسات</td></tr>`}
     </tbody></table>`;
@@ -3393,7 +3400,7 @@ $("stuPage").addEventListener("click", async ev => {
   if (b.dataset.sedit){ editStudent(b.dataset.sedit, false); return; }
   if (b.dataset.smove){ transferStudent(b.dataset.smove); return; }
   if (b.dataset.eperm){ const x = stuById(b.dataset.eperm), stp = studentPath(x).steps[studentPath(x).next];
-    confirmDlg(`السماح لـ ${x.name} بدخول اختبار «${stepLabel(stp)}» بدون شرط تسميع الجزء كاملاً؟ (لمرة واحدة)`, async () => {
+    confirmDlg(`السماح لـ ${x.name} بدخول اختبار «${stepLabel(stp)}» بدون شرط تسميع الجزء كاملًا؟ (لمرة واحدة)`, async () => {
       await addDoc(collection(db,"permits"), { studentId:x.id, studentName:x.name, type:stp.type, startJuz:stp.start, kind:"exam", grantedAtMs: Date.now(), grantedAt: serverTimestamp() });
       audit("تصريح اختبار بدون شرط التسميع", x.name, stepLabel(stp)); toast("تم التصريح"); }); return; }
   if (b.dataset.sinact){ inactivateStudent(b.dataset.sinact); return; }
