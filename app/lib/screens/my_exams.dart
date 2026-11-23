@@ -11,7 +11,7 @@ class MyExamsScreen extends StatefulWidget {
   const MyExamsScreen({super.key});
 
   static String resultText(Map<String, dynamic> e) =>
-      e['closed'] == true ? 'أُغلق' : (e['passed'] == true ? 'ناجح' : 'راسب');
+      e['closed'] == true ? 'أُغلق' : (e['passed'] == true ? 'ناجح' : 'لم يجتز');
 
   static void details(BuildContext context, Map<String, dynamic> e) {
     final qs = (e['questions'] as List?) ?? [];
@@ -189,7 +189,7 @@ class _ExamListState extends State<ExamList> {
     final parts = tp == 1
         ? 'الجزء ${unitNum(dir, (sj as num).toInt())}'
         : tp == 30
-            ? 'المصحف كاملاً'
+            ? 'المصحف كاملًا'
             : '$tp أجزاء: $sj–$ej';
     final time = dt == null ? '' : '${two(dt.hour)}:${two(dt.minute)}';
     return Panel(
@@ -213,7 +213,7 @@ class _ExamListState extends State<ExamList> {
               Row(children: [
                 Icon(Icons.cloud_upload_outlined, size: 14, color: context.goldFg),
                 const SizedBox(width: 4),
-                Text('بانتظار الرفع', style: TextStyle(color: context.goldFg, fontSize: 11.5)),
+                Text('لم يُرسل بعد', style: TextStyle(color: context.goldFg, fontSize: 11.5)),
               ]),
           ]),
         ),

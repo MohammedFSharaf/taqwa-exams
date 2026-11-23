@@ -132,7 +132,7 @@ class Repo {
         return l;
       });
 
-  /// طالب جديد يضيفه المختبر — يُحفظ فوراً على الجهاز ويُرفع عند توفر الإنترنت
+  /// طالب جديد يضيفه المختبر — يُحفظ فورًا على الجهاز ويُرفع عند توفر الإنترنت
   Student addPendingStudent(String name, String halaqaId, String pathDir, int pathStart) {
     final ref = db.collection('students').doc();
     ref.set({
@@ -147,7 +147,7 @@ class Repo {
     return Student(ref.id, name, halaqaId, true, pathDir: pathDir, pathStart: pathStart);
   }
 
-  /// حفظ الاختبار — لا ننتظر السيرفر، Firestore يرفعه تلقائياً عند الاتصال
+  /// حفظ الاختبار — لا ننتظر السيرفر، Firestore يرفعه تلقائيًا عند الاتصال
   void saveExam(String id, Map<String, dynamic> data) {
     db.collection('exams').doc(id).set(data).then((_) {}, onError: (Object e) {});
   }
@@ -193,7 +193,7 @@ class Repo {
 
   Stream<List<Map<String, dynamic>>> studentLogs(String studentId) =>
       db.collection('logs').where('studentId', isEqualTo: studentId).snapshots().map(_docs);
-  /// سجل آخر [days] يوماً لكل المركز (لقائمة الجاهزين للاختبار)
+  /// سجل آخر [days] يومًا لكل المركز (لقائمة الجاهزين للاختبار)
   Stream<List<Map<String, dynamic>>> recentLogs(int days) {
     final n = DateTime.now();
     final d = DateTime(n.year, n.month, n.day - days);

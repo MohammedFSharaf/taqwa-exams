@@ -6,7 +6,7 @@ import 'ready.dart';
 import 'ui.dart';
 import 'widgets.dart';
 
-/// اختبار جديد: بحث + الحلقات + الجاهزون أولاً
+/// اختبار جديد: بحث + الحلقات + الجاهزون أولًا
 class PickStudentScreen extends StatefulWidget {
   const PickStudentScreen({super.key});
 
@@ -174,7 +174,7 @@ class _PickStudentScreenState extends State<PickStudentScreen> {
                         ].join(' · '),
                         retest
                             ? Tag('إعادة', fg: context.badFg, bg: context.badBg)
-                            : Tag('ليس جاهزاً', fg: context.goldFg, bg: context.goldBg),
+                            : Tag('ليس جاهزًا', fg: context.goldFg, bg: context.goldBg),
                         h: h,
                       );
                     }(),

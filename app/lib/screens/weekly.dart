@@ -11,7 +11,7 @@ DateTime weekStart(int offset) {
   final n = DateTime.now();
   final today = DateTime(n.year, n.month, n.day);
   final back = (today.weekday - DateTime.saturday) % 7; // السبت = 6
-  // بالتقويم (وليس بالساعات) حتى لا يخطئ يوماً عند تغيّر التوقيت الصيفي
+  // بالتقويم (وليس بالساعات) حتى لا يخطئ يومًا عند تغيّر التوقيت الصيفي
   return DateTime(today.year, today.month, today.day - back - 7 * offset);
 }
 
@@ -171,7 +171,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                   decoration: BoxDecoration(color: context.goldBg, borderRadius: BorderRadius.circular(14)),
-                  child: Text('⚠ ${s.name} غاب ${WeekSum(by[s.id]!).absent} جلسات هالأسبوع',
+                  child: Text('⚠ غاب ${s.name} ${sessionsCount(WeekSum(by[s.id]!).absent)} هذا الأسبوع',
                       style: TextStyle(color: context.goldFg, fontWeight: FontWeight.w700, fontSize: 13)),
                 ),
               SectionLabel('${widget.halaqaName.isEmpty ? 'الطلاب' : widget.halaqaName} (${widget.students.length}) — اضغط على الطالب للتفاصيل'),
@@ -183,6 +183,12 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
                 ),
               if (week.isNotEmpty)
                 for (final s in widget.students) _row(s, by[s.id] ?? const []),
+              if (week.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text('✓ سمّع · ل = حضر ولم يسمّع · غ = غائب · ع = غائب بعذر',
+                      textAlign: TextAlign.center, style: TextStyle(color: context.sub, fontSize: 12)),
+                ),
             ],
           );
         },
@@ -210,7 +216,7 @@ class _WeeklyScreenState extends State<WeeklyScreen> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(s.name, style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: context.ink)),
             if (logs.isEmpty)
-              Text('لا تسجيل هالأسبوع', style: TextStyle(color: context.sub, fontSize: 12.5))
+              Text('لا يوجد تسجيل هذا الأسبوع', style: TextStyle(color: context.sub, fontSize: 12.5))
             else ...[
               Padding(
                 padding: const EdgeInsets.only(top: 4, bottom: 4),

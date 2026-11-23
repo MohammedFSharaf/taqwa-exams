@@ -85,7 +85,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
   Iterable<Map<String, dynamic>> get _sameExams =>
       (_sExams ?? []).where((e) => e['type'] == _type && e['startJuz'] == _startJuz);
 
-  /// الطالب نجح سابقاً بهذا الاختبار (نفس النوع والأجزاء)
+  /// الطالب نجح سابقًا بهذا الاختبار (نفس النوع والأجزاء)
   bool get _passedBefore => _sameExams.any((e) => e['passed'] == true);
 
   /// إذن من الإدارة لم يُستخدم بعد (أحدث من آخر محاولة)
@@ -108,7 +108,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
     return nextPathStep(_student!.pathDir, _student!.pathStart, passed, _student!.pathFrom);
   }
 
-  /// اختبارات ناجحة سابقاً معها إذن إعادة من الإدارة لم يُستخدم بعد
+  /// اختبارات ناجحة سابقًا معها إذن إعادة من الإدارة لم يُستخدم بعد
   List<PathStep> get _permittedSteps {
     if (_sExams == null) return [];
     final out = <PathStep>[];
@@ -239,17 +239,17 @@ class _NewExamScreenState extends State<NewExamScreen> {
   Widget _prevBox() {
     final p = _prev!;
     final failed = p['passed'] != true;
-    final result = p['closed'] == true ? 'راسب – أُغلق الاختبار' : (failed ? 'راسب' : 'ناجح');
+    final result = p['closed'] == true ? 'لم يجتز – أُغلق الاختبار' : (failed ? 'لم يجتز' : 'ناجح');
     final total = p['closed'] == true ? '' : ' (${fmt(p['total'])})';
     final details = 'آخر نتيجة: $result$total — ${p['createdAtText'] ?? ''} — المختبر: ${p['examinerName'] ?? ''}';
     final String head;
     final Color bg, fg;
     if (_passedBefore && !_permitted) {
-      head = 'الطالب ناجح سابقاً بهذا الاختبار، ولا يمكن إعادته إلا بإذن من الإدارة.\n';
+      head = 'الطالب ناجح سابقًا بهذا الاختبار، ولا يمكن إعادته إلا بإذن من الإدارة.\n';
       bg = context.badBg;
       fg = context.badFg;
     } else if (_passedBefore && _permitted) {
-      head = 'إعادة بإذن الإدارة لاختبار ناجح سابقاً.\n';
+      head = 'إعادة بإذن الإدارة لاختبار ناجح سابقًا.\n';
       bg = context.goldBg;
       fg = context.goldFg;
     } else {
@@ -280,7 +280,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
       return _note('${r.message(s)}\nمسموح بتصريح من الإدارة', context.okBg, context.okFg, Icons.verified_rounded);
     }
     if (!_enforce) {
-      return _note('${r.message(s)}\n(تنبيه فقط — الشرط غير مفعّل حالياً)', context.goldBg, context.goldFg,
+      return _note('${r.message(s)}\n(تنبيه فقط — الشرط غير مفعّل حاليًا)', context.goldBg, context.goldFg,
           Icons.info_outline_rounded);
     }
     return _note(r.message(s), context.badBg, context.badFg, Icons.block_rounded);
@@ -317,9 +317,9 @@ class _NewExamScreenState extends State<NewExamScreen> {
     final reason = _ready
         ? null
         : _blocked
-            ? 'لا يمكن بدء الاختبار: الطالب ناجح فيه سابقاً، ويحتاج إذن الإدارة.'
+            ? 'لا يمكن بدء الاختبار: الطالب ناجح فيه سابقًا، ويحتاج إذن الإدارة.'
             : !_logOk
-                ? 'لا يمكن بدء الاختبار قبل تسميع ${(_suggested?.type ?? 1) == 1 ? 'الجزء كاملاً في جلسة واحدة' : 'كل الأجزاء المطلوبة كاملة'} في السجل اليومي، أو بتصريح من الإدارة.'
+                ? 'لا يمكن بدء الاختبار قبل تسميع ${(_suggested?.type ?? 1) == 1 ? 'الجزء كاملًا في جلسة واحدة' : 'كل الأجزاء المطلوبة كاملة'} في السجل اليومي، أو بتصريح من الإدارة.'
                 : !_pathKnown
                     ? 'جارٍ تحديد الاختبار التالي…'
                     : 'لا يوجد اختبار متاح لبدئه';
@@ -361,7 +361,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
             ]),
           ),
           if (_pathKnown && _suggested == null)
-            _note('الطالب حافظ للقرآن الكريم — أتمّ المسار. أي اختبار الآن يكون مراجعة بإذن من الإدارة.', context.soft,
+            _note('الطالب حافظ للقرآن الكريم — أتمّ خطة المركز. أي اختبار الآن يكون مراجعة بإذن من الإدارة.', context.soft,
                 context.accent, Icons.workspace_premium_rounded),
           if (_pathKnown && _options.length > 1) ...[
             const SectionLabel('اختر الاختبار'),
@@ -383,7 +383,7 @@ class _NewExamScreenState extends State<NewExamScreen> {
                       Text(o.label, style: TextStyle(fontWeight: FontWeight.w800, color: context.ink)),
                       Text(
                           (_suggested != null && o.key == _suggested!.key)
-                              ? 'حسب ترتيب المسار'
+                              ? 'حسب خطة المركز'
                               : 'إعادة اختبار ناجح بإذن الإدارة',
                           style: TextStyle(color: context.sub, fontSize: 12.5)),
                     ]),
@@ -392,14 +392,14 @@ class _NewExamScreenState extends State<NewExamScreen> {
               ),
           ],
           if (_pathKnown && _options.isEmpty)
-            _note('لا يوجد اختبار متاح لهذا الطالب الآن: أتمّ المسار، واختبار المراجعة يحتاج إذناً من الإدارة.',
+            _note('لا يوجد اختبار متاح لهذا الطالب الآن: أتمّ خطة المركز، واختبار المراجعة يحتاج إذنًا من الإدارة.',
                 context.badBg, context.badFg, Icons.block_rounded),
           if (logBox != null) logBox,
           if (_prev != null) _prevBox(),
           CheckboxListTile(
             value: _isRetest,
             onChanged: _forcedRetest ? null : (v) => setState(() => _retest = v ?? false),
-            subtitle: _forcedRetest ? const Text('تلقائي: الطالب راسب سابقاً بنفس الاختبار') : null,
+            subtitle: _forcedRetest ? const Text('تلقائي: لم يجتز الطالب هذا الاختبار سابقًا') : null,
             title: Text('اختبار إعادة', style: TextStyle(color: context.ink, fontWeight: FontWeight.w700)),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
@@ -459,17 +459,17 @@ class _StudentPickerState extends State<StudentPicker> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('سيُضاف إلى حلقة ${widget.halaqa.name}، وتراجعه الإدارة لاحقاً.'),
+                Text('سيُضاف إلى حلقة ${widget.halaqa.name}، وتراجعه الإدارة لاحقًا.'),
                 const SizedBox(height: 12),
                 TextField(
                     controller: ctrl,
                     autofocus: true,
-                    decoration: const InputDecoration(labelText: 'اسم الطالب رباعياً')),
+                    decoration: const InputDecoration(labelText: 'اسم الطالب رباعيًا')),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: dir,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'الاتجاه'),
+                  decoration: const InputDecoration(labelText: 'طريقة الحفظ'),
                   items: [for (final e in pathDirs.entries) DropdownMenuItem(value: e.key, child: Text(e.value))],
                   onChanged: (v) => setD(() {
                     dir = v ?? 'desc';
@@ -602,7 +602,7 @@ class _GlobalStudentPickerState extends State<GlobalStudentPicker> {
                     builder: (context, snap) {
                       if (_q.isEmpty) {
                         return const SingleChildScrollView(
-                            child: EmptyState(icon: Icons.person_search_rounded, title: 'اكتب جزءاً من اسم الطالب'));
+                            child: EmptyState(icon: Icons.person_search_rounded, title: 'اكتب جزءًا من اسم الطالب'));
                       }
                       final list = (snap.data ?? []).where((s) => s.name.contains(_q)).toList();
                       if (list.isEmpty) {

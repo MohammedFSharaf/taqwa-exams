@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'env.dart';
 
 /// يفحص إذا في نسخة كاملة جديدة من التطبيق على GitHub (للتحديثات التي تحتاج تنزيل)
-/// التحديثات العادية تصل تلقائياً عبر Shorebird بدون تنزيل.
+/// التحديثات العادية تصل تلقائيًا عبر Shorebird بدون تنزيل.
 const _latestUrl = 'https://api.github.com/repos/MohammedFSharaf/taqwa-exams/releases/latest';
 const _releasesUrl = 'https://api.github.com/repos/MohammedFSharaf/taqwa-exams/releases';
 
@@ -70,9 +70,9 @@ Future<void> checkForUpdate(BuildContext context) async {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(kBeta ? 'نسخة تجريبية جديدة' : 'نسخة جديدة من التطبيق'),
-        content: const Text('توجد نسخة جديدة من التطبيق تحتاج تنزيلاً. اضغط "تنزيل" ثم ثبّت الملف.\nبياناتك المحفوظة لن تُحذف.'),
+        content: const Text('توجد نسخة جديدة من التطبيق تحتاج تنزيلًا. اضغط "تنزيل" ثم ثبّت الملف.\nبياناتك المحفوظة لن تُحذف.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('لاحقاً')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('لاحقًا')),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);

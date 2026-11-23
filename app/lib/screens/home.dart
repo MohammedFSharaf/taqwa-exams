@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: Column(children: [
-        const OfflineBanner(text: 'بدون إنترنت — الاختبارات محفوظة وبتترفع لحالها'),
+        const OfflineBanner(text: 'لا يوجد إنترنت — الاختبارات محفوظة وتُرسل تلقائيًا عند الاتصال'),
         Expanded(
           child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: _mine,
@@ -166,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 .push(MaterialPageRoute(builder: (_) => const ExaminerScreen()));
                             if (mounted) setState(() {});
                           },
-                          child: Text('أهلاً ${Repo.I.examinerName ?? ''}',
+                          child: Text('أهلًا ${Repo.I.examinerName ?? ''}',
                               style: TextStyle(color: context.ink, fontSize: 22, fontWeight: FontWeight.w800)),
                         ),
                       ]),
@@ -175,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Tag(
-                          pending == 0 ? '✓ كل البيانات مرفوعة' : 'بانتظار الرفع: $pending',
+                          pending == 0 ? '✓ كل البيانات أُرسلت' : 'لم يُرسل بعد: $pending',
                           fg: pending == 0 ? context.okFg : context.goldFg,
                           bg: pending == 0 ? context.okBg : context.goldBg,
                         ),

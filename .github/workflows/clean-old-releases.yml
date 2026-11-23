@@ -1,0 +1,34 @@
+name: Clean old releases
+
+# يحذف كل الإصدارات القديمة من GitHub ويُبقي المذكورة فقط (تشغيل يدوي)
+on:
+  workflow_dispatch:
+    inputs:
+      keep:
+        description: 'الإصدارات التي تبقى (مفصولة بفاصلة)'
+        required: true
+        default: 'build-9,beta-38'
+      latest:
+        description: 'الإصدار الذي يكون الأحدث (رابط التحميل)'
+        required: true
+        default: 'build-9'
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Delete releases not in keep list
+        run: |
+          keep=",${{ inputs.keep }},"
+          for t in $(gh release list -R "$REPO" --limit 200 --json tagName -q '.[].tagName'); do
+            case "$keep" in *",$t,"*) echo "keep $t"; continue;; esac
+            gh release delete "$t" --cleanup-tag -y -R "$REPO" && echo "deleted $t"
+          done
+          gh release edit "${{ inputs.latest }}" --latest -R "$REPO"
+          gh release list -R "$REPO"

@@ -118,7 +118,7 @@ class _FinishScreenState extends State<FinishScreen> {
   void _next() {
     if (!_closed && _total == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('حدّد علامة التجويد والأداء أولاً')),
+        const SnackBar(content: Text('حدّد علامة التجويد والأداء أولًا')),
       );
       return;
     }
@@ -171,7 +171,7 @@ class _FinishScreenState extends State<FinishScreen> {
             Panel(
               color: context.badBg,
               child: Column(children: [
-                Text('راسب – أُغلق الاختبار',
+                Text('لم يجتز – أُغلق الاختبار',
                     style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: context.badFg)),
                 const SizedBox(height: 4),
                 Text(_closeReason!, style: TextStyle(fontSize: 15, color: context.badFg)),
@@ -206,7 +206,7 @@ class _FinishScreenState extends State<FinishScreen> {
                 Text('المجموع', style: TextStyle(color: context.ink, fontWeight: FontWeight.w800, fontSize: 16)),
                 const Spacer(),
                 Text(
-                  total == null ? '— / 100' : '${fmt(total)} / 100 · ${passed ? 'ناجح' : 'راسب'}',
+                  total == null ? '— / 100' : '${fmt(total)} / 100 · ${passed ? 'ناجح' : 'لم يجتز'}',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
@@ -292,7 +292,7 @@ class _ResultScreenState extends State<ResultScreen> {
     };
     Repo.I.saveExam(const Uuid().v4(), data);
     setState(() => _saved = true);
-    showSavedTick(context, title: 'تم حفظ النتيجة', sub: 'تُرفع تلقائياً عند توفر الإنترنت');
+    showSavedTick(context, title: 'تم حفظ النتيجة', sub: 'تُرسل تلقائيًا عند الاتصال بالإنترنت');
   }
 
   String get _parts {
@@ -307,7 +307,7 @@ class _ResultScreenState extends State<ResultScreen> {
         'نتيجة اختبار الطالب ${s.studentName} في مركز التقوى لتعليم وتحفيظ القرآن الكريم:\n'
         '${examTypes[s.type] ?? ''} — ${juzLabel(s.startJuz, s.endJuz, type: s.type, dir: s.dir)}\n'
         'النتيجة: $res\n'
-        '${_passed ? 'بارك الله فيه وزاده حفظاً وإتقاناً.' : 'يراجع $_parts ويعيد الاختبار بإذن الله.'}';
+        '${_passed ? 'بارك الله فيه وزاده حفظًا وإتقانًا.' : 'يراجع $_parts ويعيد الاختبار بإذن الله.'}';
     try {
       await launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}'), mode: LaunchMode.externalApplication);
     } catch (_) {}
@@ -393,7 +393,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(color: context.goldBg, borderRadius: BorderRadius.circular(16)),
                 child: Text(
-                  'المطلوب للإعادة: يراجع $_parts ويسمّعه كاملاً في جلسة واحدة عند الشيخ',
+                  'المطلوب للإعادة: يراجع $_parts ويسمّعه كاملًا في جلسة واحدة عند الشيخ',
                   style: TextStyle(color: context.goldFg, fontWeight: FontWeight.w700, height: 1.6),
                 ),
               ),
@@ -414,7 +414,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(color: context.okBg, borderRadius: BorderRadius.circular(14)),
-                child: Text('✓ تم الحفظ — يُرفع تلقائياً عند توفر الإنترنت',
+                child: Text('✓ تم الحفظ — يُرسل تلقائيًا عند الاتصال بالإنترنت',
                     textAlign: TextAlign.center, style: TextStyle(color: context.okFg, fontWeight: FontWeight.w800)),
               ),
               OutlinedButton.icon(
