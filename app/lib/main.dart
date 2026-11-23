@@ -18,6 +18,14 @@ Future<void> main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
   await Repo.I.init();
+  // جهاز أُلغي اعتماده: مسح نسخة البيانات المحفوظة عليه قبل أي استخدام
+  if (Repo.I.prefs.getBool('wipeCache') == true) {
+    try {
+      await FirebaseFirestore.instance.terminate();
+      await FirebaseFirestore.instance.clearPersistence();
+    } catch (_) {}
+    await Repo.I.prefs.remove('wipeCache');
+  }
   UpdateWatcher.I.start();
   NetWatcher.I.start();
   runApp(const TaqwaApp());

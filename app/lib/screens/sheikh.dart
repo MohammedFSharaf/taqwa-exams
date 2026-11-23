@@ -240,7 +240,10 @@ class _SheikhHomeScreenState extends State<SheikhHomeScreen> {
       _loaded = true;
     });
     on(Repo.I.halaqaLogs(_halaqaId), (List<Map<String, dynamic>> v) => _logs = v);
-    on(Repo.I.halaqaProgress(_halaqaId), (List<Map<String, dynamic>> v) => _progress = v);
+    on(Repo.I.halaqaProgress(_halaqaId), (List<Map<String, dynamic>> v) {
+      _progress = v;
+      _ordLocal.clear(); // نسخة السيرفر تشمل اختيار الشيخ (وأي تعديل من الإدارة بعده)
+    });
     on(Repo.I.halaqaExams(_halaqaId), (List<Map<String, dynamic>> v) => _exams = v);
     on(Repo.I.holidays(), (List<Map<String, dynamic>> v) => _holidays = v);
     on(Repo.I.settings(), (Map<String, dynamic> v) => _settings = v);
@@ -1199,6 +1202,7 @@ class _StudentDayScreenState extends State<StudentDayScreen> {
     final l = _c.todayLog;
     if (l != null) {
       _att = (l['status'] ?? 'recited').toString();
+      if (_c.extraOnly) _att = 'recited'; // يوم مقفل: تسميع إضافي فقط
       _notes.text = (l['notes'] ?? '').toString();
       for (final r in (l['reviews'] as List?) ?? []) {
         if (r is Map) _reviews.add(Map<String, dynamic>.from(r));

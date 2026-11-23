@@ -49,7 +49,7 @@ class _GateScreenState extends State<GateScreen> {
     }
     Repo.I.startSync();
     if (Repo.I.appPassword == null && !Repo.I.secReady) await Repo.I.fetchPasswordOnce();
-    await Repo.I.verifyDevice();
+    Repo.I.verifyDevice(); // بالخلفية: لا ننتظر السيرفر عند فتح التطبيق
     if (mounted) setState(() => _loading = false);
     if (_role != 'sheikh' && Bio.examinerPass != null) _bioLogin();
   }

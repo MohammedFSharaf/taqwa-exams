@@ -1939,7 +1939,8 @@ function passedJuz(sid){
   return set;
 }
 // ===== أذونات إعادة الاختبار الناجح =====
-function examMs(e){ const d = examDate(e); return d ? d.getTime() : 0; }
+// وقت حقيقي (للمقارنة مع أوقات الأذونات) — وليس بتوقيت العرض
+function examMs(e){ return e.createdAt && e.createdAt.toMillis ? e.createdAt.toMillis() : 0; }
 function activePermit(sid, type, startJuz){
   const last = Math.max(0, ...S.exams.filter(e=>e.studentId===sid && e.type===type && e.startJuz===startJuz).map(examMs));
   return S.permits.find(p => p.studentId===sid && p.type===type && p.startJuz===startJuz && (p.grantedAtMs||0) > last);
@@ -3024,6 +3025,7 @@ function sheikhStats(mk){
     const L = S.logs.filter(l => l.sheikhId === sh.id && (l.date || "").startsWith(mk));
     const dates = [...new Set(L.map(l => l.date))].sort();
     const sess = sessionDatesOfMonth(mk, sh.halaqaId);
+    const onSess = dates.filter(d => sess.includes(d)); // أيام التسميع الإضافي لطالب لا تُحسب أيام جلسات
     const missed = sess.filter(d => !dates.includes(d));
     const rec = L.filter(l => l.status === "recited");
     const studs = new Set(rec.map(l => l.studentId));
@@ -3036,7 +3038,7 @@ function sheikhStats(mk){
     let gap = 0;
     for (let k = 1; k <= 14; k++){ const dt = nowG(); dt.setHours(12,0,0,0); dt.setDate(dt.getDate() - k); const dk = dayKey(dt);
       if (last && dk <= last) break; if (sessionDays().includes(dt.getDay()) && !isHoliday(dk, sh.halaqaId)) gap++; }
-    return { sh, hq: halaqaName(sh.halaqaId), days: dates.length, sess: sess.length, missed, logs: L.length, studs: studs.size,
+    return { sh, hq: halaqaName(sh.halaqaId), days: onSess.length, sess: sess.length, missed, logs: L.length, studs: studs.size,
       np: rec.reduce((t, l) => t + (l.newPages || 0), 0), rp: rec.reduce((t, l) => t + (l.reviewPages || 0), 0),
       att: H.sessions ? H.attendance : null, last, idle, gap };
   });

@@ -147,7 +147,11 @@ class Repo {
           .doc(uid)
           .get(const GetOptions(source: Source.server))
           .timeout(const Duration(seconds: 10));
-      if (!d.exists) await prefs.remove('deviceUid');
+      if (!d.exists) {
+        // ألغت الإدارة اعتماد الجهاز ← يُمسح ما حُفظ عليه من بيانات عند الفتح القادم
+        await prefs.remove('deviceUid');
+        await prefs.setBool('wipeCache', true);
+      }
     } catch (_) {}
   }
 
