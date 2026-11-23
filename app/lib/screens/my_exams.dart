@@ -99,8 +99,8 @@ class _ExamListState extends State<ExamList> {
 
   static String _dayHeader(DateTime d) {
     final n = DateTime.now();
-    final today = DateTime(n.year, n.month, n.day);
-    final day = DateTime(d.year, d.month, d.day);
+    final today = DateTime.utc(n.year, n.month, n.day);
+    final day = DateTime.utc(d.year, d.month, d.day);
     final diff = today.difference(day).inDays;
     final date = '${dayName(d)} ${d.day}/${d.month}';
     if (diff == 0) return 'اليوم — $date';

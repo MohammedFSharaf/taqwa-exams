@@ -113,4 +113,8 @@ void main() {
   final qs = splitQuestionSegs('desc', gidOf(67, 1), gidOf(68, 10), o29);
   expect(qs.length == 1 && splitSegsLabel(qs) == 'سورة الملك', 'question segs ${splitSegsLabel(qs)}');
   expect(splitQuestionSegs('desc', gidOf(87, 1), gidOf(87, 19)).isEmpty, 'short surah no question');
+
+  // ===== التوقيت الصيفي =====
+  final ws = DateTime(2027, 3, 27 - 7); // أسبوع قبل
+  expect(DateTime(ws.year, ws.month, ws.day + 7).day == 27, 'calendar add across DST');
 }

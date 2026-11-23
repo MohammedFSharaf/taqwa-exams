@@ -11,19 +11,21 @@ DateTime weekStart(int offset) {
   final n = DateTime.now();
   final today = DateTime(n.year, n.month, n.day);
   final back = (today.weekday - DateTime.saturday) % 7; // السبت = 6
-  return today.subtract(Duration(days: back + 7 * offset));
+  // بالتقويم (وليس بالساعات) حتى لا يخطئ يوماً عند تغيّر التوقيت الصيفي
+  return DateTime(today.year, today.month, today.day - back - 7 * offset);
 }
 
 String _dm(DateTime d) => '${d.day}/${d.month}';
 
 String weekTitle(int offset) {
   final a = weekStart(offset);
-  final b = a.add(const Duration(days: 5));
+  final b = DateTime(a.year, a.month, a.day + 5);
   return 'السبت ${_dm(a)} – الخميس ${_dm(b)}';
 }
 
 List<Map<String, dynamic>> weekLogs(List<Map<String, dynamic>> logs, int offset) {
-  final a = dayKey(weekStart(offset)), b = dayKey(weekStart(offset).add(const Duration(days: 6)));
+  final s = weekStart(offset);
+  final a = dayKey(s), b = dayKey(DateTime(s.year, s.month, s.day + 6));
   final out = logs.where((l) {
     final d = (l['date'] ?? '').toString();
     return d.compareTo(a) >= 0 && d.compareTo(b) <= 0;

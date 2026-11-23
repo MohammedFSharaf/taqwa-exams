@@ -36,6 +36,10 @@ class ReadyWatcher extends ChangeNotifier {
   List<Student> _students = [];
   List<Halaqa> _halaqat = [];
   List<Map<String, dynamic>> _exams = [], _logs = [], _progress = [], _permits = [];
+  // سجل كامل لطلاب يمتد حفظهم قبل نافذة الـ180 يوماً
+  final Map<String, List<Map<String, dynamic>>> _fullLogs = {};
+  final Set<String> _fetching = {};
+  static const _windowDays = 180;
   int _got = 0;
   Timer? _debounce;
 
@@ -59,7 +63,7 @@ class ReadyWatcher extends ChangeNotifier {
       _exams = q.docs.map((d) => d.data()).toList();
       got();
     }, onError: (_) {});
-    Repo.I.recentLogs(180).listen((v) {
+    Repo.I.recentLogs(_windowDays).listen((v) {
       _logs = v;
       got();
     }, onError: (_) {});
@@ -84,6 +88,28 @@ class ReadyWatcher extends ChangeNotifier {
     final logsBy = <String, List<Map<String, dynamic>>>{};
     for (final l in _logs) {
       (logsBy[(l['studentId'] ?? '').toString()] ??= []).add(l);
+    }
+    // طالب أقدم سجلاته عند حافة النافذة ← غالباً له سجل أقدم: نجلب سجله كاملاً مرة واحدة وندمجه
+    final n = DateTime.now();
+    final edge = dayKey(DateTime(n.year, n.month, n.day - _windowDays + 7));
+    for (final sid in logsBy.keys.toList()) {
+      final list = logsBy[sid]!;
+      final full = _fullLogs[sid];
+      if (full != null) {
+        final byDate = {for (final l in full) (l['date'] ?? '').toString(): l};
+        for (final l in list) {
+          byDate[(l['date'] ?? '').toString()] = l;
+        }
+        logsBy[sid] = byDate.values.toList();
+        continue;
+      }
+      final oldest = list.map((l) => (l['date'] ?? '').toString()).reduce((a, b) => a.compareTo(b) <= 0 ? a : b);
+      if (oldest.compareTo(edge) <= 0 && _fetching.add(sid)) {
+        Repo.I.studentLogsOnce(sid).then((v) {
+          _fullLogs[sid] = v;
+          _schedule();
+        }, onError: (_) => _fetching.remove(sid));
+      }
     }
     final examsBy = <String, List<Map<String, dynamic>>>{};
     for (final e in _exams) {

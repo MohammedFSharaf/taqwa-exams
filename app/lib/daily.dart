@@ -449,7 +449,8 @@ int? reviewDaysLeft(String dir, DailyStatus st, List<Map<String, dynamic>> logs,
   final d = DateTime.tryParse(since);
   if (d == null) return null;
   final n = DateTime.now();
-  final days = DateTime(n.year, n.month, n.day).difference(DateTime(d.year, d.month, d.day)).inDays;
+  // فرق الأيام بالتقويم (UTC) حتى لا يخطئ يوماً عند تغيّر التوقيت الصيفي
+  final days = DateTime.utc(n.year, n.month, n.day).difference(DateTime.utc(d.year, d.month, d.day)).inDays;
   return st.step!.reviewDays - days;
 }
 
